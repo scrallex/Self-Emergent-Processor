@@ -92,7 +92,7 @@ SEP synthesizes foundational work from:
 - Edward Lorenz & Benoit Mandelbrot (*Chaos and Fractal Geometry*)
 - John Wheeler (*It from Bit, Participatory Universe*)
 
-For full citations, see the [References Section](https://github.com/scrallex/Self-Emergent-Processor/blob/main/REFERENCES.md) in the repository.
+For full citations, see the [References Section](REFERENCES.md) in the repository.
 
 ---
 
@@ -100,15 +100,15 @@ For full citations, see the [References Section](https://github.com/scrallex/Sel
 
 - [SEP Landing Page (iamsep.com)](https://iamsep.com)
 - [GitHub Repository](https://github.com/scrallex/Self-Emergent-Processor)
-- [Technical Documentation](https://github.com/scrallex/Self-Emergent-Processor/blob/main/TECHNICAL_DOCUMENTATION.md)
-- [Historical Foundations](https://github.com/scrallex/Self-Emergent-Processor/blob/main/HISTORICAL_FOUNDATIONS.md)
-- [Full Thesis PDF](https://github.com/scrallex/Self-Emergent-Processor/blob/main/SEP_FULL_THESIS.pdf)
+- [Technical Documentation](TECHNICAL_DOCUMENTATION.md)
+- [Historical Foundations](HISTORICAL_FOUNDATIONS.md)
+- [Full Thesis PDF](SEP_FULL_THESIS.pdf)
 
 ---
 
 ## 📜 **License**
 
-This project is open and available under [MIT License](https://github.com/scrallex/Self-Emergent-Processor/blob/main/LICENSE.md), encouraging free exploration and collaboration.
+This project is open and available under [MIT License](LICENSE.md), encouraging free exploration and collaboration.
 
 ---
 
