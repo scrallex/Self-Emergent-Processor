@@ -98,15 +98,15 @@ When referencing SEP or historical foundations, please use the provided structur
 
 ## 🔖 Further Reading and SEP Resources
 - [SEP GitHub Repository](https://github.com/scrallex/Self-Emergent-Processor)
-- [Full Thesis PDF](https://github.com/scrallex/Self-Emergent-Processor/blob/main/SEP_FULL_THESIS.pdf)
-- [Technical Documentation](https://github.com/scrallex/Self-Emergent-Processor/blob/main/TECHNICAL_DOCUMENTATION.md)
-- [Historical Foundations](https://github.com/scrallex/Self-Emergent-Processor/blob/main/HISTORICAL_FOUNDATIONS.md)
+- [Full Thesis PDF](SEP_FULL_THESIS.pdf)
+- [Technical Documentation](TECHNICAL_DOCUMENTATION.md)
+- [Historical Foundations](HISTORICAL_FOUNDATIONS.md)
 
 ---
 
 ## 📜 Licensing & Collaboration
 
-SEP references and documentation are provided under the [MIT License](https://github.com/scrallex/Self-Emergent-Processor/blob/main/LICENSE.md).
+SEP references and documentation are provided under the [MIT License](LICENSE.md).
 
 Community contributions and clarifications are welcome via pull requests.
 
