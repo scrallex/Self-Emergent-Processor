@@ -199,13 +199,13 @@ Interactive Three.js visualizations showcase real-time recursive identity and ph
 ---
 
 ## Additional Resources and Further Reading
-- [Historical Foundations](https://github.com/scrallex/Self-Emergent-Processor/blob/main/HISTORICAL_FOUNDATIONS.md)
-- [Full SEP Thesis](https://github.com/scrallex/Self-Emergent-Processor/blob/main/SEP_FULL_THESIS.pdf)
-- [References and Citations](https://github.com/scrallex/Self-Emergent-Processor/blob/main/REFERENCES.md)
+- [Historical Foundations](HISTORICAL_FOUNDATIONS.md)
+- [Full SEP Thesis](SEP_FULL_THESIS.pdf)
+- [References and Citations](REFERENCES.md)
 
 ---
 
 ## Licensing and Usage  
 SEP is available under the MIT License, promoting free collaboration and usage.
 
-See the [LICENSE](https://github.com/scrallex/Self-Emergent-Processor/blob/main/LICENSE.md) for details.
+See the [LICENSE](LICENSE.md) for details.
