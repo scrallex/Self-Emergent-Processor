@@ -179,15 +179,15 @@ SEP synthesizes groundbreaking historical insights into a unified theoretical fr
 
 ## 📖 Further Reading and Resources
 
-- [SEP Full Thesis](https://github.com/scrallex/Self-Emergent-Processor/blob/main/SEP_FULL_THESIS.pdf)
-- [Technical Documentation](https://github.com/scrallex/Self-Emergent-Processor/blob/main/TECHNICAL_DOCUMENTATION.md)
-- [Primary References](https://github.com/scrallex/Self-Emergent-Processor/blob/main/REFERENCES.md)
+- [SEP Full Thesis](SEP_FULL_THESIS.pdf)
+- [Technical Documentation](TECHNICAL_DOCUMENTATION.md)
+- [Primary References](REFERENCES.md)
 
 ---
 
 ## 📜 Licensing and Collaboration
 
-SEP historical foundations and documentation provided under [MIT License](https://github.com/scrallex/Self-Emergent-Processor/blob/main/LICENSE.md).
+SEP historical foundations and documentation provided under [MIT License](LICENSE.md).
 
 Collaboration encouraged—contribute insights, clarifications, or additional sources through pull requests.
 
