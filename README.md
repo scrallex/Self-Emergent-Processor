@@ -1,6 +1,6 @@
 # Self-Emergent Processor (SEP)
 **Recursive Identity and Phase Alignment in Infinite-Dimensional Quantum Information Systems**
-# Alexander J Nagy
+### Alexander J Nagy
 
 *Hosted at [iamsep.com](https://iamsep.com) • [GitHub Repo](https://github.com/scrallex/Self-Emergent-Processor)*
 
