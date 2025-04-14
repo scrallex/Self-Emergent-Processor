@@ -14,7 +14,7 @@ In a more concrete sense, Descartes’ development of the **Cartesian coordinate
 ### Euler: Complex Numbers and the Identity of Euler’s Formula  
 Leonhard Euler expanded our understanding of the continuum by introducing complex numbers into analysis and revealing deep connections among fundamental mathematical constants. Euler’s famous formula, $e^{i\theta} = \cos\theta + i\sin\theta$, and its special case known as **Euler’s identity** ($e^{i\pi} + 1 = 0$), exemplify the power of identifying a *reference* in an infinite domain. In the complex plane (a two-dimensional infinite domain with real and imaginary axes), the number 1 can be thought of as an identity reference on the real axis, and $-1$ as its inverse. Euler’s identity then astonishingly links $-1$ (the additive inverse of 1) with $e^{i\pi}$ (a half-rotation in the complex plane) by adding 1 to yield 0 (the additive identity). This equation, 
 
-\[ e^{i\pi} + 1 = 0, \]
+$e^{i\pi} + 1 = 0,$
 
 brings together five fundamental constants — 0, 1, $\pi$, $e$, and $i$ — in a single rela ([Euler's identity - Wikipedia](https://en.wikipedia.org/wiki/Euler%27s_identity#:~:text=is%20a%20special%20case%20of,the%20impossibility%20of%20%20130))33-L239】. Mathematicians and physicists often celebrate it as an exemplar of **mathematical beauty** because it shows a “profound connection between the most fundamental  ([Euler's identity - Wikipedia](https://en.wikipedia.org/wiki/Euler%27s_identity#:~:text=is%20a%20special%20case%20of,the%20impossibility%20of%20%20130))33-L239】. From our perspective, Euler’s identity highlights how an **inverse reference** (here $-1$, which is the inverse of the multiplicative identity 1) within a **complex domain** aligns with a phase rotation ($e^{i\pi}$ represents a 180° phase shift). In other words, the equation unites **identity** (1 and 0), **inversion** ($-1$), and **phase** ($e^{i\pi}$) in one concise relationship.
 
@@ -32,7 +32,7 @@ Shannon’s work made clear that **quantization** (discrete 0/1 units) is a powe
 
 One can also consider **combinatorial growth in terms of relationships**. If we have $n$ distinct pieces of information (or $n$ “atoms” of data), how many pairwise relationships can we define among them? The answer is given by a simple combinatorial formula: the number of unique pairs from $n$ items is 
 
-\[ I(n) = \binom{n}{2} = \frac{n(n-1)}{2}. \]
+$I(n) = \binom{n}{2} = \frac{n(n-1)}{2}.$
 
 This quantity $I(n)$ grows *quadratically* (which is still combinatorial growth) with $n$. For instance, 2 units produce $I(2)=1$ link, 3 units produce $I(3)=3$ links, 5 units produce $I(5)=10$ links, etc. In the limit of large $n$, $I(n)\sim \frac{n^2}{2}$. This formula often appears in graph theory (a complete graph on $n$ nodes  ([Complete Graph -- from Wolfram MathWorld](https://mathworld.wolfram.com/CompleteGraph.html#:~:text=vertices%20is%20denoted%20Image%3A%20K_n,are%20sometimes%20called%20universal%20graphs)))/2$ edges) and in social networks (if each of $n$ people knows every other, there are $n(n-1)/2$ relationships). We will leverage this idea to illustrate how **each new quantized unit not only adds its own content, but also links with all existing units**, yielding a rich web of *references*. In a sense, if each unit is an identity on its own, the pairwise combinations create second-order information (relationships) that rapidly outgrows the number of units. This underpins the concept of **recursive identity**: identities referencing identities to generate new information.
 
@@ -274,7 +274,7 @@ In a more concrete sense, Descartes’ development of the **Cartesian coordinate
 ### Euler: Complex Numbers and the Identity of Euler’s Formula  
 Leonhard Euler expanded our understanding of the continuum by introducing complex numbers into analysis and revealing deep connections among fundamental mathematical constants. Euler’s famous formula, $e^{i\theta} = \cos\theta + i\sin\theta$, and its special case known as **Euler’s identity** ($e^{i\pi} + 1 = 0$), exemplify the power of identifying a *reference* in an infinite domain. In the complex plane (a two-dimensional infinite domain with real and imaginary axes), the number 1 can be thought of as an identity reference on the real axis, and $-1$ as its inverse. Euler’s identity then astonishingly links $-1$ (the additive inverse of 1) with $e^{i\pi}$ (a half-rotation in the complex plane) by adding 1 to yield 0 (the additive identity). This equation, 
 
-\[ e^{i\pi} + 1 = 0, \]
+$e^{i\pi} + 1 = 0,$
 
 brings together five fundamental constants — 0, 1, $\pi$, $e$, and $i$ — in a single relationship. Mathematicians and physicists often celebrate it as an exemplar of **mathematical beauty** because it shows a “profound connection between the most fundamental numbers”. From our perspective, Euler’s identity highlights how an **inverse reference** (here $-1$, which is the inverse of the multiplicative identity 1) within a **complex domain** aligns with a phase rotation ($e^{i\pi}$ represents a 180° phase shift). In other words, the equation unites **identity** (1 and 0), **inversion** ($-1$), and **phase** ($e^{i\pi}$) in one concise relationship.
 
@@ -294,7 +294,7 @@ Shannon’s work made clear that **quantization** (discrete 0/1 units) is a powe
 
 One can also consider **combinatorial growth in terms of relationships**. If we have $n$ distinct pieces of information (or $n$ “atoms” of data), how many pairwise relationships can we define among them? The answer is given by a simple combinatorial formula: the number of unique pairs from $n$ items is 
 
-\[ I(n) = \binom{n}{2} = \frac{n(n-1)}{2}. \]
+$I(n) = \binom{n}{2} = \frac{n(n-1)}{2}.$
 
 This quantity $I(n)$ grows *quadratically* (which is still combinatorial growth) with $n$. For instance, 2 units produce $I(2)=1$ link, 3 units produce $I(3)=3$ links, 5 units produce $I(5)=10$ links, etc. In the limit of large $n$, $I(n)\sim \frac{n^2}{2}$. This formula often appears in graph theory (a complete graph on $n$ nodes has $n(n-1)/2$ edges) and in social networks (if each of $n$ people knows every other, there are $n(n-1)/2$ relationships). We will leverage this idea to illustrate how **each new quantized unit not only adds its own content, but also links with all existing units**, yielding a rich web of *references*. In a sense, if each unit is an identity on its own, the pairwise combinations create second-order information (relationships) that rapidly outgrows the number of units. This underpins the concept of **recursive identity**: identities referencing identities to generate new information.
 
