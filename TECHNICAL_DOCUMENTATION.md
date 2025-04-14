@@ -14,14 +14,10 @@ This documentation provides a structured breakdown of SEP’s technical core and
 Identity emerges through inverse recursive referencing, serving as the foundational axis within infinite-dimensional complex systems:
 
 - **Inverse Identity Axis:**
-\[
-I_{ref} = f^{-1}(R_n)
-\]
+$I_{ref} = f^{-1}(R_n)$
 
 - **Recursion Relation:**
-\[
-R_n = R_{n-1} + \frac{1}{R_{n-1}}
-\]
+$R_n = R_{n-1} + \frac{1}{R_{n-1}}$
 
 *(Identity recursively defined from previous states.)*
 
@@ -31,14 +27,10 @@ R_n = R_{n-1} + \frac{1}{R_{n-1}}
 Phase cannot be measured independently; it requires recursive encounters (minimum two states):
 
 - **Euler’s Identity (Phase definition):**
-\[
-e^{i\theta} = \cos\theta + i\sin\theta
-\]
+$e^{i\theta} = \cos\theta + i\sin\theta$
 
 - **Phase Superposition and Interference (Feynman’s Path Integral):**
-\[
-\psi_{total} = \sum_{paths} e^{iS/\hbar}
-\]
+$\psi_{total} = \sum_{paths} e^{iS/\hbar}$
 
 *(Phase measured only via recursive interference of multiple paths.)*
 
@@ -48,9 +40,7 @@ e^{i\theta} = \cos\theta + i\sin\theta
 Information grows combinationally with added quantized units:
 
 - **Information Complexity:**
-\[
-I(n) = \frac{n(n-1)}{2}
-\]
+$I(n) = \frac{n(n-1)}{2}$
 
 *(Number of pairwise interactions among n quantized units.)*
 
@@ -60,9 +50,7 @@ I(n) = \frac{n(n-1)}{2}
 Energy arises from misalignment of recursive phases across interacting units:
 
 - **Energy definition (phase difference):**
-\[
-E(\Delta\phi) \propto \sum_{k=1}^{n}|\Delta\phi_k|
-\]
+$E(\Delta\phi) \propto \sum_{k=1}^{n}|\Delta\phi_k|$
 
 *(Energy proportional to cumulative phase difference among units.)*
 
@@ -72,9 +60,7 @@ E(\Delta\phi) \propto \sum_{k=1}^{n}|\Delta\phi_k|
 Entropy increases as phases recursively align, approaching stable equilibrium:
 
 - **Entropy alignment function:**
-\[
-S = -k_B \sum_{i} p_i \ln(p_i)
-\]
+$S = -k_B \sum_{i} p_i \ln(p_i)$
 
 *(Recursive equilibrium reached as probability distribution \( p_i \) maximizes symmetry.)*
 
@@ -84,9 +70,7 @@ S = -k_B \sum_{i} p_i \ln(p_i)
 Information behaves analogously to gravity, creating structural coherence and relational stability through recursive interactions:
 
 - **Information coherence:**
-\[
-G_I = \frac{I_m I_n}{r^2}
-\]
+$G_I = \frac{I_m I_n}{r^2}$
 
 *(Information attraction between identity units decreases by the square of distance r.)*
 
