@@ -33,9 +33,7 @@ SEP leverages Cartesian principles by framing identity recursively, emphasizing 
 ### Key Insights:
 
 - **Euler’s Identity**:  
-\[
-e^{i\pi} + 1 = 0
-\]
+$e^{i\pi} + 1 = 0$
 
 Links identity, inverse reference, and complex exponential phases.
 
@@ -82,9 +80,7 @@ SEP uses recursion as a fundamental operational principle, embracing Gödelian i
   Information emerges combinationally from discrete quantized units (bits).
 
 - **Information Growth**:  
-\[
-I(n) = \frac{n(n-1)}{2}
-\]
+$I(n) = \frac{n(n-1)}{2}$
 
 The combinational explosion of relationships defines complexity.
 
