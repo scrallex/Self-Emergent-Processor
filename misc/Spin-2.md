@@ -115,7 +115,3 @@ This model provides a promising framework for understanding cosmological dynamic
 By adjusting the parameters \( m/H_0 \), \( \lambda_0 \), and \( \dot{\lambda}_0 \), the model can match observed cosmological data, including the CMB, supernovae, and large-scale structure surveys.
 
 For full technical details, consult the [Mathematical Formalism](data/Mathematical_Formalism.md) and the [Thesis Draft](data/Thesis.md).
-
----
-
-This structure integrates your mathematical derivations with the visual graphs you’ve uploaded, showcasing how the spin-2 field affects cosmological parameters and the evolution of the universe. It directly ties the technical derivations to observable phenomena such as gravitational wave propagation and perihelion precession, providing a solid foundation for further exploration and potential validation against observational data.
