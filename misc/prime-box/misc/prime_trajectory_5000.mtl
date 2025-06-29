@@ -1,0 +1,30 @@
+# Material definitions for prime path
+newmtl x_axis_material
+Ka 1.0 0.0 0.0
+Kd 1.0 0.0 0.0
+Ks 1.0 1.0 1.0
+Ns 100.0
+
+newmtl diagonal_material
+Ka 0.0 1.0 0.0
+Kd 0.0 1.0 0.0
+Ks 1.0 1.0 1.0
+Ns 100.0
+
+newmtl z_axis_material
+Ka 0.0 0.0 1.0
+Kd 0.0 0.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100.0
+
+newmtl other_material
+Ka 1.0 0.8 0.0
+Kd 1.0 0.8 0.0
+Ks 1.0 1.0 1.0
+Ns 100.0
+
+newmtl origin_material
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100.0
