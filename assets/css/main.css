@@ -753,6 +753,27 @@ code {
     padding: var(--space-sm) 0;
 }
 
+/* Architecture Section */
+.mermaid-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    min-height: 600px;
+}
+
+.architecture-link {
+    text-align: center;
+    margin-top: 2rem;
+}
+
 /* Footer */
 .footer {
     background: var(--dark-bg-light);

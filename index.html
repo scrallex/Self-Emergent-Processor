@@ -17,6 +17,9 @@
     <!-- Three.js for 3D visualizations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Mermaid for architecture diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -153,40 +156,117 @@
             </div>
             
             <div class="architecture-diagram">
-                <div class="arch-layer">
-                    <h4>API Layer</h4>
-                    <div class="arch-components">
-                        <span class="arch-component">HTTP Server</span>
-                        <span class="arch-component">C Bridge</span>
-                        <span class="arch-component">Rate Limiting</span>
-                    </div>
+                <div class="mermaid-container">
+                    <pre class="mermaid">
+graph TB
+    %% Main Executable
+    subgraph "Executable Layer"
+        exe[sep_engine<br/>Final Binary]
+    end
+
+    %% Static Libraries with detailed component mapping
+    subgraph "Static Library Layer"
+        subgraph "API & Interface"
+            api[libsep_api.a<br/>HTTP/C Bridge/Rate Limiting<br/>└─ server.cpp<br/>└─ bridge_c.cpp<br/>└─ crow_adapter.cpp<br/>└─ sep_engine.cpp]
+        end
+
+        subgraph "Domain Components"
+            blender[sep_blender<br/>Cycles Integration<br/>└─ cycles_renderer.cpp<br/>└─ mesh_handler.cpp<br/>└─ gpu_context.cpp]
+            audio[libsep_audio.a<br/>PipeWire Integration<br/>└─ pipewire_capture.cpp<br/>└─ pipeline.cpp]
+        end
+
+        subgraph "Quantum Processing"
+            quantum[libsep_quantum.a<br/>QBSA/QFH Algorithms<br/>└─ processor.cpp<br/>└─ evolution.cpp<br/>└─ pattern_processor.cpp<br/>└─ qfh.cpp]
+        end
+
+        subgraph "Memory Management"
+            memory[libsep_memory.a<br/>Tiered Storage<br/>└─ memory_tier_manager.cpp<br/>└─ quantum_coherence_manager.cpp<br/>└─ redis_manager.cpp]
+        end
+
+        subgraph "CUDA Backend"
+            compat[libsep_compat.a<br/>GPU Abstraction<br/>└─ core.cu<br/>└─ stream.cpp<br/>└─ cuda_api.cu<br/>└─ quantum_kernels.cu<br/>└─ pattern_kernels.cu]
+        end
+
+        subgraph "Core Foundation"
+            core[libsep_core.a<br/>Base Infrastructure<br/>└─ engine.cpp<br/>└─ manager.cpp<br/>└─ metrics_collector.cpp<br/>└─ logging.cpp<br/>└─ dag_graph.cpp]
+        end
+    end
+
+    %% External Dependencies
+    subgraph "Cycles Dependencies"
+        cycles_kernel[libcycles_kernel.a]
+        cycles_scene[libcycles_scene.a]
+        cycles_device[libcycles_device.a]
+        cycles_osl[libcycles_osl.a]
+        osl_exec[liboslexec.so]
+        osl_comp[liboslcomp.so]
+        osl_query[liboslquery.so]
+    end
+
+    subgraph "System Libraries"
+        cuda_runtime[CUDA Runtime<br/>cudart/cuda_driver]
+        pthread[pthread]
+        redis[hiredis]
+        pipewire[pipewire-0.3]
+    end
+
+    %% Dependency Arrows with Link Order
+    exe -.->|1| compat
+    exe -.->|2| cycles_kernel
+    exe -.->|3| cycles_scene
+    exe -.->|4| cycles_device
+    exe -.->|5| cycles_osl
+    exe -.->|6| osl_exec
+    exe -.->|7| osl_comp
+    exe -.->|8| osl_query
+    exe ==>|9| api
+    exe ==>|10| memory
+    exe ==>|11| quantum
+    exe ==>|12| core
+    exe ==>|13| audio
+    exe ==>|14| blender
+
+    %% Internal Dependencies
+    api --> quantum
+    api --> memory
+    api --> core
+
+    blender --> quantum
+    blender --> memory
+    blender --> cycles_kernel
+    blender --> cycles_scene
+    blender --> cycles_device
+    blender --> cycles_osl
+    blender --> core
+
+    audio --> quantum
+    audio --> memory
+    audio --> core
+
+    quantum --> compat
+    quantum --> core
+    quantum -.->|manifold symbols| memory
+
+    memory --> core
+    memory --> redis
+
+    compat --> cuda_runtime
+
+
+    %% Symbol Conflicts
+    quantum x--x|multiple defs<br/>manifold::memory<br/>manifold::quantum<br/>manifold::cuda<br/>manifold::api| memory
+
+
+    %% Styling
+    classDef conflict fill:#ffaa66,stroke:#ff6600,stroke-width:3px
+    classDef critical fill:#66ff66,stroke:#00ff00,stroke-width:2px
+    
+    class quantum,memory conflict
+    class compat,core critical
+                    </pre>
                 </div>
-                
-                <div class="arch-layer">
-                    <h4>Processing Layer</h4>
-                    <div class="arch-components">
-                        <span class="arch-component">Quantum Processor</span>
-                        <span class="arch-component">Pattern Evolution</span>
-                        <span class="arch-component">QBSA/QFH Algorithms</span>
-                    </div>
-                </div>
-                
-                <div class="arch-layer">
-                    <h4>Memory Layer</h4>
-                    <div class="arch-components">
-                        <span class="arch-component">Tiered Storage</span>
-                        <span class="arch-component">Coherence Manager</span>
-                        <span class="arch-component">Redis Integration</span>
-                    </div>
-                </div>
-                
-                <div class="arch-layer">
-                    <h4>Compute Layer</h4>
-                    <div class="arch-components">
-                        <span class="arch-component">CUDA Backend</span>
-                        <span class="arch-component">GPU Abstraction</span>
-                        <span class="arch-component">Parallel Kernels</span>
-                    </div>
+                <div class="architecture-link">
+                    <a href="architecture.html" class="btn btn-secondary">View Full Architecture →</a>
                 </div>
             </div>
             
@@ -308,43 +388,44 @@
                 <article class="research-paper">
                     <h3>Combinatorial Information Growth vs Logarithmic Energy Scaling</h3>
                     <p class="paper-abstract">
-                        Explores how information capacity grows combinatorially with each 
-                        additional unit while energy requirements scale logarithmically, 
+                        Explores how information capacity grows combinatorially with each
+                        additional unit while energy requirements scale logarithmically,
                         with applications to quantum mechanics, AI, and biological systems.
                     </p>
                     <div class="paper-meta">
                         <span class="paper-author">Alexander J Nagy</span>
-                        <span class="paper-year">2024</span>
+                        <span class="paper-year">2025</span>
                     </div>
                     <a href="QCPandResearch.md" class="paper-link">Read Paper →</a>
                 </article>
                 
                 <article class="research-paper">
-                    <h3>Prime Number Theory and Recursive Identity Formation</h3>
+                    <h3>The Unified Field Theory of Combinatorial Quantum Processing</h3>
                     <p class="paper-abstract">
-                        Investigates the role of prime numbers as fundamental units in 
-                        recursive systems, demonstrating how prime-indexed updates create 
-                        non-repeating, complex evolutionary patterns.
+                        A comprehensive exploration of how quantum computing principles,
+                        information theory, and prime number mathematics converge to create
+                        a new paradigm for understanding computation and consciousness.
                     </p>
                     <div class="paper-meta">
                         <span class="paper-author">Alexander J Nagy</span>
-                        <span class="paper-year">2024</span>
+                        <span class="paper-year">2025</span>
                     </div>
-                    <a href="docs/theory.md" class="paper-link">Read Paper →</a>
+                    <a href="https://x.com/alexanderjnagy/status/1944701576322424851" class="paper-link" target="_blank">Read Article →</a>
                 </article>
                 
                 <article class="research-paper">
-                    <h3>Quantum-Inspired Algorithms for Pattern Recognition</h3>
+                    <h3>SEP: A Journey into Self-Emergent Consciousness</h3>
                     <p class="paper-abstract">
-                        Presents QBSA and QFH algorithms that leverage quantum principles 
-                        in classical computation, achieving superior performance in pattern 
-                        recognition and information compression tasks.
+                        An interactive exploration of consciousness through the lens of
+                        self-emergent processing. Experience the philosophical foundations
+                        that inspired the SEP framework through quantum visualizations and
+                        reflection patterns.
                     </p>
                     <div class="paper-meta">
                         <span class="paper-author">Alexander J Nagy</span>
-                        <span class="paper-year">2024</span>
+                        <span class="paper-year">2025</span>
                     </div>
-                    <a href="docs/architecture.md" class="paper-link">Read Paper →</a>
+                    <a href="https://i-am-sep.github.io/sep/" class="paper-link" target="_blank">Explore Interactive Demo →</a>
                 </article>
             </div>
             
@@ -432,12 +513,11 @@ cd Self-Emergent-Processor
                 
                 <div class="start-option">
                     <h3>📚 Documentation</h3>
-                    <p>Comprehensive guides and API references</p>
+                    <p>Comprehensive guides and technical references</p>
                     <ul>
                         <li><a href="README.md">Technical Overview</a></li>
-                        <li><a href="docs/architecture.md">Architecture Guide</a></li>
-                        <li><a href="docs/theory.md">Theoretical Foundations</a></li>
-                        <li><a href="docs/api.md">API Reference</a></li>
+                        <li><a href="architecture.html">Architecture Guide</a></li>
+                        <li><a href="QCPandResearch.md">Theoretical Foundations</a></li>
                     </ul>
                 </div>
                 

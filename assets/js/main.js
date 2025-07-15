@@ -13,6 +13,27 @@ document.addEventListener('DOMContentLoaded', () => {
     initVisualizationTabs();
     initSmoothScroll();
     initHeroCanvas();
+    
+    // Initialize Mermaid diagrams
+    if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#7c3aed',
+                primaryBorderColor: '#6d28d9',
+                primaryTextColor: '#fff',
+                lineColor: '#4ade80',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#334155',
+                background: '#0f172a',
+                mainBkg: '#1e293b',
+                secondBkg: '#334155',
+                tertiaryBkg: '#475569',
+                darkMode: true
+            }
+        });
+    }
 });
 
 // Navigation scroll effect
