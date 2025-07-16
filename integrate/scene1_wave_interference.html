@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scene 1: The Hidden Code - Wave Interference</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        .info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 18px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .equation {
+            font-family: 'Courier New', monospace;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="info">
+        <h3>Wave Interference & Fourier Decomposition</h3>
+        <div class="equation">f(x) = Σ Aₙsin(nωx) + Bₙcos(nωx)</div>
+        <div id="components"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let time = 0;
+        const waves = [
+            { freq: 1, amp: 60, phase: 0, color: '#FF6B6B' },
+            { freq: 2, amp: 40, phase: Math.PI/4, color: '#4ECDC4' },
+            { freq: 3, amp: 20, phase: Math.PI/2, color: '#FFE66D' },
+            { freq: 5, amp: 10, phase: Math.PI, color: '#A8E6CF' }
+        ];
+        
+        function drawWave(wave, y, showIndividual = true) {
+            ctx.beginPath();
+            ctx.strokeStyle = showIndividual ? wave.color : '#fff';
+            ctx.lineWidth = showIndividual ? 1 : 3;
+            ctx.globalAlpha = showIndividual ? 0.5 : 1;
+            
+            for (let x = 0; x < canvas.width; x++) {
+                const angle = (x / canvas.width) * Math.PI * 4 + time * wave.freq;
+                const yPos = y + wave.amp * Math.sin(angle + wave.phase);
+                
+                if (x === 0) {
+                    ctx.moveTo(x, yPos);
+                } else {
+                    ctx.lineTo(x, yPos);
+                }
+            }
+            
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawCompositeWave() {
+            ctx.beginPath();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#fff';
+            
+            for (let x = 0; x < canvas.width; x++) {
+                let ySum = canvas.height / 2;
+                
+                waves.forEach(wave => {
+                    const angle = (x / canvas.width) * Math.PI * 4 + time * wave.freq;
+                    ySum += wave.amp * Math.sin(angle + wave.phase);
+                });
+                
+                if (x === 0) {
+                    ctx.moveTo(x, ySum);
+                } else {
+                    ctx.lineTo(x, ySum);
+                }
+            }
+            
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawFourierBars() {
+            const barWidth = 40;
+            const startX = canvas.width - 250;
+            const startY = canvas.height - 200;
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(startX - 20, startY - 20, 240, 180);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Arial';
+            ctx.fillText('Frequency Components', startX, startY - 5);
+            
+            waves.forEach((wave, i) => {
+                const x = startX + i * (barWidth + 10);
+                const height = wave.amp;
+                
+                ctx.fillStyle = wave.color;
+                ctx.fillRect(x, startY + 100 - height, barWidth, height);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`f=${wave.freq}`, x + barWidth/2, startY + 120);
+            });
+            
+            ctx.textAlign = 'left';
+        }
+        
+        function updateComponentsDisplay() {
+            const componentsDiv = document.getElementById('components');
+            componentsDiv.innerHTML = waves.map((wave, i) => 
+                `<div style="color: ${wave.color}">Wave ${i+1}: A=${wave.amp}, f=${wave.freq}Hz</div>`
+            ).join('');
+        }
+        
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw individual waves
+            waves.forEach((wave, i) => {
+                const y = 100 + i * 80;
+                drawWave(wave, y);
+            });
+            
+            // Draw composite wave
+            drawCompositeWave();
+            
+            // Draw Fourier decomposition bars
+            drawFourierBars();
+            
+            // Draw boundary reflections
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+            ctx.setLineDash([]);
+            
+            time += 0.02;
+            requestAnimationFrame(animate);
+        }
+        
+        updateComponentsDisplay();
+        animate();
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEP Interactive Demos - Self-Emergent Processor</title>
+    <meta name="description" content="Interactive demonstrations of Self-Emergent Processor concepts including quantum coherence, prime patterns, and emergent behaviors">
+    
+    <!-- Existing Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Demo-specific Styles -->
+    <style>
+        /* Demo Hub Styles */
+        .demo-hub {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Demo Navigation */
+        .demo-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demo-nav h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            background: linear-gradient(45deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Demo Grid */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 6rem 2rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .demo-card.active {
+            border-color: #00ff88;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .demo-card h3 {
+            margin: 0 0 0.5rem;
+            color: #00d4ff;
+        }
+
+        .demo-status {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+
+        .demo-status.ready {
+            background: #00ff88;
+        }
+
+        .demo-status.partial {
+            background: #ffaa00;
+        }
+
+        /* Demo Container */
+        .demo-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0a;
+            display: none;
+            z-index: 900;
+        }
+
+        .demo-container.active {
+            display: block;
+        }
+
+        #demo-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            min-width: 250px;
+            z-index: 1001;
+            transition: transform 0.3s ease;
+        }
+
+        .control-panel.hidden {
+            transform: translateX(300px);
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #00d4ff;
+            font-size: 0.9rem;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: white;
+            border-radius: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(45deg, #00d4ff, #0066cc);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-video {
+            background: linear-gradient(45deg, #ff0066, #ff3366);
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 212, 255, 0.3);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Video Mode */
+        body.video-mode .demo-nav,
+        body.video-mode .control-panel {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+                padding: 5rem 1rem 1rem;
+            }
+
+            .control-panel {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body class="demo-hub">
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Demo Navigation -->
+    <nav class="demo-nav">
+        <h1>SEP Interactive Demos</h1>
+        <div class="nav-controls">
+            <button class="btn btn-secondary" onclick="backToHub()">Demo Hub</button>
+            <button class="btn btn-secondary" onclick="toggleControls()">Toggle Controls</button>
+            <button class="btn btn-video" onclick="toggleVideoMode()">Video Mode</button>
+            <a href="index.html" class="btn">Back to Main Site</a>
+        </div>
+    </nav>
+
+    <!-- Demo Grid -->
+    <div class="demo-grid" id="demoGrid">
+        <div class="demo-card" data-scene="1" onclick="loadDemo(1)">
+            <div class="demo-status ready"></div>
+            <h3>Scene 1: SEP Introduction</h3>
+            <p>Interactive overview of Self-Emergent Processing concepts with animated visualizations.</p>
+        </div>
+
+        <div class="demo-card" data-scene="2" onclick="loadDemo(2)">
+            <div class="demo-status ready"></div>
+            <h3>Scene 2: Coherence Wave Patterns</h3>
+            <p>Explore quantum coherence patterns and wave interactions in real-time.</p>
+        </div>
+
+        <div class="demo-card" data-scene="3" onclick="loadDemo(3)">
+            <div class="demo-status ready"></div>
+            <h3>Scene 3: Complex Boundaries</h3>
+            <p>Visualize the emergence of complex boundaries and phase transitions.</p>
+        </div>
+
+        <div class="demo-card" data-scene="4" onclick="loadDemo(4)">
+            <div class="demo-status ready"></div>
+            <h3>Scene 4: Conscious Touch</h3>
+            <p>Interactive demonstration of consciousness through touch and response.</p>
+        </div>
+
+        <div class="demo-card" data-scene="5" onclick="loadDemo(5)">
+            <div class="demo-status partial"></div>
+            <h3>Scene 5: Information Pressure</h3>
+            <p>See how information pressure dynamics create emergent behaviors.</p>
+        </div>
+
+        <div class="demo-card" data-scene="6" onclick="loadDemo(6)">
+            <div class="demo-status partial"></div>
+            <h3>Scene 6: System Learning</h3>
+            <p>Watch the system evolve and learn through recursive processing.</p>
+        </div>
+
+        <div class="demo-card" data-scene="7" onclick="loadDemo(7)">
+            <div class="demo-status ready"></div>
+            <h3>Scene 7: Quantum Effects</h3>
+            <p>Experience quantum-inspired effects and entanglement visualizations.</p>
+        </div>
+
+        <div class="demo-card" data-scene="8" onclick="loadDemo(8)">
+            <div class="demo-status"></div>
+            <h3>Scene 8: Pattern Recognition</h3>
+            <p>Observe how patterns emerge and are recognized by the system.</p>
+        </div>
+
+        <div class="demo-card" data-scene="9" onclick="loadDemo(9)">
+            <div class="demo-status"></div>
+            <h3>Scene 9: Self-Reference Loops</h3>
+            <p>Explore recursive self-reference and strange loop formations.</p>
+        </div>
+
+        <div class="demo-card" data-scene="10" onclick="loadDemo(10)">
+            <div class="demo-status"></div>
+            <h3>Scene 10: Memory Formation</h3>
+            <p>See how memories form through pattern consolidation.</p>
+        </div>
+
+        <div class="demo-card" data-scene="11" onclick="loadDemo(11)">
+            <div class="demo-status"></div>
+            <h3>Scene 11: Meta-System Interface</h3>
+            <p>Interact with the meta-level system orchestration.</p>
+        </div>
+
+        <div class="demo-card" data-scene="12" onclick="loadDemo(12)">
+            <div class="demo-status"></div>
+            <h3>Scene 12: Full System</h3>
+            <p>Complete visualization of all SEP components working together.</p>
+        </div>
+    </div>
+
+    <!-- Demo Container -->
+    <div class="demo-container" id="demoContainer">
+        <canvas id="demo-canvas"></canvas>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel" id="controlPanel">
+        <h3>Demo Controls</h3>
+        
+        <div class="control-group">
+            <label>Quality</label>
+            <select id="qualitySelect" onchange="updateQuality()">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Speed</label>
+            <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1" oninput="updateSpeed()">
+            <span id="speedValue">1.0x</span>
+        </div>
+
+        <div class="control-group">
+            <label>Intensity</label>
+            <input type="range" id="intensitySlider" min="0" max="100" value="50" oninput="updateIntensity()">
+            <span id="intensityValue">50%</span>
+        </div>
+
+        <div class="control-group">
+            <label>Preset</label>
+            <select id="presetSelect" onchange="loadPreset()">
+                <option value="default">Default</option>
+                <option value="intro">Introduction</option>
+                <option value="demo">Demonstration</option>
+                <option value="climax">Climax</option>
+                <option value="outro">Outro</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <button class="btn" onclick="resetDemo()">Reset</button>
+            <button class="btn" onclick="exportFrame()">Export Frame</button>
+        </div>
+
+        <div class="control-group">
+            <label>FPS: <span id="fpsCounter">60</span></label>
+        </div>
+    </div>
+
+    <!-- Demo Framework Script -->
+    <script type="module">
+        import demoFramework from './assets/js/demos/framework.js';
+        
+        // Initialize framework
+        let framework = null;
+        
+        async function initFramework() {
+            framework = demoFramework;
+            await framework.init('demo-canvas');
+        }
+        
+        // Loading Management
+        function showLoading() {
+            document.getElementById('loadingScreen').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingScreen').classList.remove('active');
+        }
+
+        // Demo Loading
+        window.loadDemo = async function(sceneId) {
+            showLoading();
+            
+            // Hide demo grid, show container
+            document.getElementById('demoGrid').style.display = 'none';
+            document.getElementById('demoContainer').classList.add('active');
+            
+            try {
+                // Ensure framework is initialized
+                if (!framework) {
+                    await initFramework();
+                }
+                
+                // Load the scene
+                await framework.loadScene(sceneId);
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Failed to load demo:', error);
+                hideLoading();
+                backToHub();
+            }
+        }
+
+        // Navigation
+        window.backToHub = function() {
+            if (framework) {
+                framework.unloadCurrentScene();
+            }
+            
+            document.getElementById('demoContainer').classList.remove('active');
+            document.getElementById('demoGrid').style.display = 'grid';
+        }
+
+        // Controls
+        window.toggleControls = function() {
+            document.getElementById('controlPanel').classList.toggle('hidden');
+        }
+
+        window.toggleVideoMode = function() {
+            if (framework) {
+                const isVideoMode = framework.toggleVideoMode();
+                // Update button text if needed
+            }
+        }
+
+        window.updateQuality = function() {
+            const quality = document.getElementById('qualitySelect').value;
+            if (framework) {
+                framework.updateSettings({ quality });
+            }
+        }
+
+        window.updateSpeed = function() {
+            const speed = parseFloat(document.getElementById('speedSlider').value);
+            document.getElementById('speedValue').textContent = speed.toFixed(1) + 'x';
+            if (framework) {
+                framework.updateSettings({ speed });
+            }
+        }
+
+        window.updateIntensity = function() {
+            const intensity = parseInt(document.getElementById('intensitySlider').value);
+            document.getElementById('intensityValue').textContent = intensity + '%';
+            if (framework) {
+                framework.updateSettings({ intensity });
+            }
+        }
+
+        window.loadPreset = function() {
+            const presetName = document.getElementById('presetSelect').value;
+            if (framework && framework.applyPreset(presetName)) {
+                // Update UI sliders
+                const settings = framework.settings;
+                document.getElementById('speedSlider').value = settings.speed;
+                document.getElementById('intensitySlider').value = settings.intensity;
+                updateSpeed();
+                updateIntensity();
+            }
+        }
+
+        window.resetDemo = function() {
+            document.getElementById('presetSelect').value = 'default';
+            loadPreset();
+        }
+
+        window.exportFrame = function() {
+            if (framework) {
+                const dataUrl = framework.exportFrame();
+                if (dataUrl) {
+                    const link = document.createElement('a');
+                    link.download = `sep-demo-${framework.currentScene}-${Date.now()}.png`;
+                    link.href = dataUrl;
+                    link.click();
+                }
+            }
+        }
+
+        // FPS Counter
+        let lastTime = performance.now();
+        let frames = 0;
+        
+        function updateFPS() {
+            frames++;
+            const currentTime = performance.now();
+            
+            if (currentTime >= lastTime + 1000) {
+                document.getElementById('fpsCounter').textContent = frames;
+                frames = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // Start FPS counter
+        function animate() {
+            updateFPS();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            if (framework && framework.canvas) {
+                framework.resizeCanvas();
+            }
+        });
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                backToHub();
+            } else if (e.key === 'f' && framework && framework.currentScene) {
+                document.documentElement.requestFullscreen();
+            } else if (e.key === 'v') {
+                toggleVideoMode();
+            } else if (e.key === 'c') {
+                toggleControls();
+            }
+        });
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initFramework().catch(console.error);
+        });
+    </script>
+</body>
+</html>

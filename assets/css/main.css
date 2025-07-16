@@ -593,6 +593,55 @@ a:hover {
     color: var(--primary-blue);
 }
 
+/* Demos Callout */
+.demos-callout {
+    margin-top: var(--space-xxl);
+    padding: var(--space-xl);
+    background: linear-gradient(135deg, var(--glass), rgba(0, 212, 255, 0.1));
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.demos-callout::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--primary-blue) 0%, transparent 70%);
+    opacity: 0.05;
+    animation: pulse 4s ease-in-out infinite;
+}
+
+.demos-callout h3 {
+    font-size: 2rem;
+    margin-bottom: var(--space-md);
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.demos-callout p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-lg);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    z-index: 1;
+}
+
+.demos-callout .btn {
+    position: relative;
+    z-index: 1;
+}
 /* Research Section */
 .research-grid {
     display: grid;

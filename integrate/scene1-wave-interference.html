@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Hidden Code - Wave Interference</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .control-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 150px;
+        }
+        .value {
+            display: inline-block;
+            width: 50px;
+            text-align: right;
+            color: #4CAF50;
+        }
+        h3 {
+            margin: 0 0 15px 0;
+            color: #4CAF50;
+        }
+        .fourier-display {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 150px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <h3>Wave Interference</h3>
+        <div class="control-group">
+            <label>Wave 1 Freq:</label>
+            <input type="range" id="freq1" min="0.5" max="5" step="0.1" value="2">
+            <span class="value" id="freq1Val">2.0</span>
+        </div>
+        <div class="control-group">
+            <label>Wave 2 Freq:</label>
+            <input type="range" id="freq2" min="0.5" max="5" step="0.1" value="3">
+            <span class="value" id="freq2Val">3.0</span>
+        </div>
+        <div class="control-group">
+            <label>Wave 3 Freq:</label>
+            <input type="range" id="freq3" min="0.5" max="5" step="0.1" value="1.5">
+            <span class="value" id="freq3Val">1.5</span>
+        </div>
+        <div class="control-group">
+            <label>Amplitude:</label>
+            <input type="range" id="amplitude" min="10" max="100" step="5" value="50">
+            <span class="value" id="ampVal">50</span>
+        </div>
+    </div>
+    
+    <div class="fourier-display">
+        <canvas id="fourierCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const fourierCanvas = document.getElementById('fourierCanvas');
+        const fCtx = fourierCanvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        fourierCanvas.width = 270;
+        fourierCanvas.height = 120;
+        
+        let time = 0;
+        const waves = [];
+        const history = [];
+        const maxHistory = 500;
+        
+        // Control elements
+        const freq1 = document.getElementById('freq1');
+        const freq2 = document.getElementById('freq2');
+        const freq3 = document.getElementById('freq3');
+        const amplitude = document.getElementById('amplitude');
+        
+        freq1.oninput = () => document.getElementById('freq1Val').textContent = parseFloat(freq1.value).toFixed(1);
+        freq2.oninput = () => document.getElementById('freq2Val').textContent = parseFloat(freq2.value).toFixed(1);
+        freq3.oninput = () => document.getElementById('freq3Val').textContent = parseFloat(freq3.value).toFixed(1);
+        amplitude.oninput = () => document.getElementById('ampVal').textContent = amplitude.value;
+        
+        class Wave {
+            constructor(frequency, amplitude, phase, color) {
+                this.frequency = frequency;
+                this.amplitude = amplitude;
+                this.phase = phase;
+                this.color = color;
+            }
+            
+            getValue(x, t) {
+                return this.amplitude * Math.sin(this.frequency * x + t * 2 + this.phase);
+            }
+        }
+        
+        function computeFFT(signal) {
+            const N = signal.length;
+            const frequencies = new Array(N/2).fill(0);
+            
+            for (let k = 0; k < N/2; k++) {
+                let real = 0, imag = 0;
+                for (let n = 0; n < N; n++) {
+                    const angle = -2 * Math.PI * k * n / N;
+                    real += signal[n] * Math.cos(angle);
+                    imag += signal[n] * Math.sin(angle);
+                }
+                frequencies[k] = Math.sqrt(real * real + imag * imag) / N;
+            }
+            return frequencies;
+        }
+        
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const centerY = canvas.height / 2;
+            const amp = parseFloat(amplitude.value);
+            
+            // Update waves
+            waves[0] = new Wave(parseFloat(freq1.value), amp, 0, '#FF6B6B');
+            waves[1] = new Wave(parseFloat(freq2.value), amp, Math.PI/3, '#4ECDC4');
+            waves[2] = new Wave(parseFloat(freq3.value), amp, Math.PI/6, '#FFE66D');
+            
+            // Draw individual waves
+            waves.forEach((wave, index) => {
+                ctx.strokeStyle = wave.color;
+                ctx.globalAlpha = 0.3;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                for (let x = 0; x < canvas.width; x += 2) {
+                    const y = centerY + wave.getValue(x * 0.01, time);
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            });
+            
+            // Draw combined wave
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const combinedSignal = [];
+            for (let x = 0; x < canvas.width; x += 2) {
+                let y = centerY;
+                waves.forEach(wave => {
+                    y += wave.getValue(x * 0.01, time);
+                });
+                combinedSignal.push(y - centerY);
+                
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Draw standing wave patterns at boundaries
+            ctx.globalAlpha = 0.5;
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let x = 0; x < canvas.width; x += 2) {
+                let y = centerY;
+                waves.forEach(wave => {
+                    // Reflect at boundaries
+                    const reflected = wave.getValue(x * 0.01, time) * 
+                                    Math.sin(x * Math.PI / canvas.width);
+                    y += reflected;
+                });
+                
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Update Fourier display
+            if (combinedSignal.length >= 256) {
+                const fft = computeFFT(combinedSignal.slice(0, 256));
+                
+                fCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                fCtx.fillRect(0, 0, fourierCanvas.width, fourierCanvas.height);
+                
+                // Draw frequency bars
+                const barWidth = fourierCanvas.width / fft.length;
+                fft.forEach((magnitude, i) => {
+                    const height = Math.min(magnitude * 2, fourierCanvas.height - 10);
+                    const hue = (i * 360 / fft.length);
+                    fCtx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+                    fCtx.fillRect(i * barWidth, fourierCanvas.height - height, barWidth - 1, height);
+                });
+                
+                // Label
+                fCtx.fillStyle = '#4CAF50';
+                fCtx.font = '12px monospace';
+                fCtx.fillText('Fourier Decomposition', 10, 20);
+            }
+            
+            // Draw pendulum origin
+            const pendX = 100;
+            const pendY = centerY + Math.cos(time * 2) * amp * 2;
+            
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = '#4CAF50';
+            ctx.beginPath();
+            ctx.arc(pendX, pendY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pendX, centerY - 100);
+            ctx.lineTo(pendX, pendY);
+            ctx.stroke();
+            
+            time += 0.02;
+            requestAnimationFrame(animate);
+        }
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        animate();
+    </script>
+</body>
+</html>
