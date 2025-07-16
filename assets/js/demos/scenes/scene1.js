@@ -6,18 +6,30 @@
  * Fourier transform visualization.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene1 {
     /**
      * Constructor for the scene
      * @param {HTMLCanvasElement} canvas - The canvas element
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
+     * @param {Object} physics - Physics engine instance
+     * @param {Object} math - Math library instance
+     * @param {Object} eventManager - Event manager instance
+     * @param {Object} stateManager - State manager instance
+     * @param {Object} renderPipeline - Render pipeline instance
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.time = 0;
@@ -25,12 +37,18 @@ export default class Scene1 {
         this.frequency = 3; // Default frequency value
         this.interference = 'Constructive';
         this.waveValues = [];
+        this.waveAmplitude = this.settings.intensity || 50;
         
-        // Bind event handlers to maintain 'this' context
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseClick = this.handleMouseClick.bind(this);
+        // Interactive controller (initialized in init)
+        this.controller = null;
+        
+        // Interactive elements (defined in createInteractiveElements)
+        this.interactiveElements = [];
+        
+        // Waveform dragging state
+        this.isDraggingWave = false;
+        this.draggedWaveIndex = -1;
+        this.wavePhaseOffsets = [0, Math.PI / 3, 2 * Math.PI / 3];
     }
 
     /**
@@ -38,10 +56,15 @@ export default class Scene1 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
         
         this.reset();
         return Promise.resolve();
@@ -54,47 +77,128 @@ export default class Scene1 {
         this.time = 0;
         this.lastTime = 0;
         this.waveValues = new Array(this.canvas.width).fill(0);
+        this.frequency = 3;
+        this.wavePhaseOffsets = [0, Math.PI / 3, 2 * Math.PI / 3];
+        this.waveAmplitude = this.settings.intensity || 50;
     }
-
+    
     /**
-     * Handle mouse click event
-     * @param {MouseEvent} e - The mouse event
+     * Create interactive elements specific to this scene
+     * @param {InteractiveUtils} utils - Interactive utilities instance
+     * @returns {Array} - Array of interactive elements
      */
-    handleMouseClick(e) {
-        // Change frequency on click for interactive exploration
-        this.frequency = 2 + Math.random() * 4;
-    }
-
-    /**
-     * Handle mouse down event
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+    createInteractiveElements(utils) {
+        const elements = [];
         
-        // Start interactive adjustment
-    }
-
-    /**
-     * Handle mouse move event
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        // Create draggable wave control points
+        const centerY = this.canvas.height / 2;
+        const spacing = 80;
         
-        // Interactive adjustment if mouse is down
+        for (let i = 0; i < 3; i++) {
+            const waveControl = utils.createDraggable({
+                id: `wave_control_${i}`,
+                x: 100 + i * spacing,
+                y: centerY,
+                width: 30,
+                height: 30,
+                shape: 'circle',
+                color: `hsl(${240 + i * 30}, 70%, 60%)`,
+                tooltip: `Wave ${i+1} Control Point`,
+                constrainToCanvas: true,
+                
+                onDragStart: (x, y) => {
+                    this.isDraggingWave = true;
+                    this.draggedWaveIndex = i;
+                },
+                
+                onDrag: (dx, dy, x, y) => {
+                    // Adjust wave phase based on horizontal movement
+                    const phaseFactor = dx * 0.01;
+                    this.wavePhaseOffsets[i] += phaseFactor;
+                    
+                    // Adjust wave amplitude based on vertical position relative to center
+                    const relativeY = (centerY - y) / 100;
+                    this.individualAmplitudes = this.individualAmplitudes || [1, 1, 1];
+                    this.individualAmplitudes[i] = Math.max(0.1, Math.min(2, 1 + relativeY));
+                    
+                    // Reset position X to starting point (control point doesn't actually move horizontally)
+                    waveControl.x = 100 + i * spacing;
+                },
+                
+                onDragEnd: () => {
+                    this.isDraggingWave = false;
+                    this.draggedWaveIndex = -1;
+                }
+            });
+            
+            elements.push(waveControl);
+        }
+        
+        // Create an interactive frequency zone at the bottom
+        const freqControl = utils.createDraggable({
+            id: 'frequency_control',
+            x: this.canvas.width / 2 - 100,
+            y: this.canvas.height - 100,
+            width: 200,
+            height: 50,
+            color: 'rgba(255, 0, 255, 0.2)',
+            text: 'Drag to change frequency',
+            tooltip: 'Drag horizontally to adjust frequency',
+            
+            onDrag: (dx, dy, x, y) => {
+                // Adjust frequency based on horizontal position
+                const normalizedX = x / this.canvas.width;
+                this.frequency = 1 + normalizedX * 9; // Range 1-10 Hz
+            }
+        });
+        
+        elements.push(freqControl);
+        
+        return elements;
     }
-
+    
     /**
-     * Handle mouse up event
-     * @param {MouseEvent} e - The mouse event
+     * Provide custom controls for the control panel
+     * @returns {Array} Array of control configurations
      */
-    handleMouseUp(e) {
-        // End interactive adjustment
+    getCustomControls() {
+        return [
+            {
+                id: 'frequency_slider',
+                type: 'slider',
+                label: 'Frequency',
+                min: 1,
+                max: 10,
+                value: this.frequency,
+                step: 0.1,
+                onChange: (value) => {
+                    this.frequency = value;
+                }
+            },
+            {
+                id: 'wave_toggle',
+                type: 'toggle',
+                label: 'Show Individual Waves',
+                value: true,
+                onChange: (value) => {
+                    this.showIndividualWaves = value;
+                }
+            },
+            {
+                id: 'randomize_btn',
+                type: 'button',
+                label: 'Randomize Waves',
+                onClick: () => {
+                    // Randomize phase offsets
+                    for (let i = 0; i < 3; i++) {
+                        this.wavePhaseOffsets[i] = Math.random() * Math.PI * 2;
+                    }
+                    
+                    // Randomize frequency
+                    this.frequency = 2 + Math.random() * 4;
+                }
+            }
+        ];
     }
 
     /**
@@ -108,14 +212,26 @@ export default class Scene1 {
         this.lastTime = timestamp;
         
         // Use generic settings from the framework's control panel
-        const amplitude = this.settings.intensity || 50;
+        this.waveAmplitude = this.settings.intensity || 50;
         const speed = this.settings.speed || 1.0;
         
         // Update scene state
-        this.update(deltaTime * speed, amplitude);
+        this.update(deltaTime * speed, this.waveAmplitude);
         
         // Render the scene
-        this.draw(amplitude);
+        this.draw(this.waveAmplitude);
+        
+        // Update information panel
+        if (this.controller) {
+            this.controller.updateInfoPanel({
+                'Phase': (this.time * 0.1).toFixed(2) + ' rad',
+                'Frequency': this.frequency.toFixed(1) + ' Hz',
+                'Interference': this.interference
+            });
+            
+            // Render UI components
+            this.controller.render(timestamp);
+        }
     }
 
     /**
@@ -130,7 +246,8 @@ export default class Scene1 {
         // Calculate interference type
         let sumAtCenter = 0;
         for (let wave = 0; wave < 3; wave++) {
-            sumAtCenter += amplitude * Math.sin(this.time * 2 * this.frequency * 0.01 + wave * Math.PI / 3);
+            const waveAmplitude = this.individualAmplitudes ? amplitude * this.individualAmplitudes[wave] / 3 : amplitude / 3;
+            sumAtCenter += waveAmplitude * Math.sin(this.time * 2 * this.frequency * 0.01 + this.wavePhaseOffsets[wave]);
         }
         
         // Determine if interference is constructive or destructive
@@ -147,7 +264,8 @@ export default class Scene1 {
         for (let x = 0; x < this.canvas.width; x++) {
             let ySum = 0;
             for (let wave = 0; wave < 3; wave++) {
-                ySum += (amplitude / 3) * Math.sin((x + this.time * 2) * this.frequency * 0.01 + wave * Math.PI / 3);
+                const waveAmplitude = this.individualAmplitudes ? amplitude * this.individualAmplitudes[wave] / 3 : amplitude / 3;
+                ySum += waveAmplitude * Math.sin((x + this.time * 2) * this.frequency * 0.01 + this.wavePhaseOffsets[wave]);
             }
             this.waveValues[x] = ySum;
         }
@@ -180,17 +298,23 @@ export default class Scene1 {
             ctx.stroke();
         }
 
-        // Draw three individual waves with slight phase offsets
-        for (let wave = 0; wave < 3; wave++) {
-            ctx.strokeStyle = `hsl(${240 + wave * 30}, 70%, 60%)`;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            for (let x = 0; x < canvas.width; x++) {
-                const y = canvas.height / 2 + amplitude * Math.sin((x + this.time * 2) * this.frequency * 0.01 + wave * Math.PI / 3);
-                if (x === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+        // Draw three individual waves with custom phase offsets
+        if (this.showIndividualWaves !== false) {
+            for (let wave = 0; wave < 3; wave++) {
+                ctx.strokeStyle = `hsl(${240 + wave * 30}, 70%, 60%)`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                const waveAmplitude = this.individualAmplitudes ? amplitude * this.individualAmplitudes[wave] : amplitude;
+                
+                for (let x = 0; x < canvas.width; x++) {
+                    const y = canvas.height / 2 + (waveAmplitude / 3) *
+                        Math.sin((x + this.time * 2) * this.frequency * 0.01 + this.wavePhaseOffsets[wave]);
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
             }
-            ctx.stroke();
         }
 
         // Draw the resulting interference pattern (sum of the waves)
@@ -200,7 +324,8 @@ export default class Scene1 {
         for (let x = 0; x < canvas.width; x++) {
             let ySum = canvas.height / 2;
             for (let wave = 0; wave < 3; wave++) {
-                ySum += (amplitude / 3) * Math.sin((x + this.time * 2) * this.frequency * 0.01 + wave * Math.PI / 3);
+                const waveAmplitude = this.individualAmplitudes ? amplitude * this.individualAmplitudes[wave] / 3 : amplitude / 3;
+                ySum += waveAmplitude * Math.sin((x + this.time * 2) * this.frequency * 0.01 + this.wavePhaseOffsets[wave]);
             }
             if (x === 0) ctx.moveTo(x, ySum);
             else ctx.lineTo(x, ySum);
@@ -210,10 +335,8 @@ export default class Scene1 {
         // Draw simple frequency domain representation at the bottom
         this.drawFrequencyDomain(amplitude);
         
-        // Draw info panel if not in video mode
-        if (!this.settings.videoMode) {
-            this.drawInfo();
-        } else {
+        // Draw minimal video info if in video mode and no controller
+        if (this.settings.videoMode && !this.controller) {
             this.drawVideoInfo();
         }
     }
@@ -262,33 +385,10 @@ export default class Scene1 {
 
     /**
      * Draw the information panel for normal mode
+     * @deprecated - Replaced by the interactive controller's info panel
      */
     drawInfo() {
-        const { ctx } = this;
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(10, 10, 280, 100);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText('The Hidden Code', 20, 35);
-        
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#cccccc';
-        ctx.fillText(`Phase: ${(this.time * 0.1).toFixed(2)} rad`, 20, 60);
-        
-        // Set color based on interference type
-        if (this.interference === 'Constructive') {
-            ctx.fillStyle = '#00ff88';
-        } else if (this.interference === 'Destructive') {
-            ctx.fillStyle = '#ff5500';
-        } else {
-            ctx.fillStyle = '#ffaa00';
-        }
-        
-        ctx.fillText(`Interference: ${this.interference}`, 20, 80);
-        ctx.fillStyle = '#cccccc';
-        ctx.fillText(`Frequency: ${this.frequency.toFixed(1)}`, 20, 100);
+        // This is now handled by the interactive controller
     }
 
     /**
@@ -320,16 +420,24 @@ export default class Scene1 {
      */
     updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);
-        // You could also update internal scene parameters here based on settings
+        
+        // Update internal parameters based on settings
+        if (newSettings.intensity !== undefined) {
+            this.waveAmplitude = newSettings.intensity;
+        }
     }
 
     /**
      * Clean up resources when scene is unloaded
      */
     cleanup() {
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('click', this.handleMouseClick);
+        // Clean up the interactive controller
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+        
+        // Clear interactive elements
+        this.interactiveElements = [];
     }
 }
