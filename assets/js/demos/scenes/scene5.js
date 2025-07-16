@@ -4,24 +4,28 @@ export default class Scene5 {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
-        
+      this.lastTime = 0;
         // Parameters
         this.numParticles = 100;
         this.interactionRadius = 50;
-        this.cohesionFactor = 0.1;
-        this.alignmentFactor = 0.1;
-        this.separationFactor = 0.2;
-        this.boundaryStrength = 0.05;
+      this.cohesionFactor = 0.5;
+      this.alignmentFactor = 0.3;
+      this.separationFactor = 1.2;
+      this.boundaryStrength = 2.0;
         
         // Particles
-        this.particles = [];
-        this.initializeParticles();
+      this.particles = [];
     }
     
     init() {
+      this.initializeParticles();
         return Promise.resolve();
     }
-    
+
+  resize() {
+    this.initializeParticles();
+  }
+
     initializeParticles() {
         this.particles = [];
         for (let i = 0; i < this.numParticles; i++) {
@@ -37,7 +41,7 @@ export default class Scene5 {
     }
     
     update(deltaTime) {
-        const speed = this.settings.speed;
+      const speed = this.settings.speed * 50; // Base speed multiplier
         
         for (const particle of this.particles) {
             let avgDx = 0;
@@ -75,34 +79,34 @@ export default class Scene5 {
                 // Cohesion (move towards center of neighbors)
                 avgDx /= interactions;
                 avgDy /= interactions;
-                particle.vx += avgDx * this.cohesionFactor * 0.01 * speed;
-                particle.vy += avgDy * this.cohesionFactor * 0.01 * speed;
+              particle.vx += avgDx * this.cohesionFactor * deltaTime;
+              particle.vy += avgDy * this.cohesionFactor * deltaTime;
                 
                 // Alignment (match velocity with neighbors)
                 alignmentVx /= interactions;
                 alignmentVy /= interactions;
-                particle.vx += (alignmentVx - particle.vx) * this.alignmentFactor * 0.005 * speed;
-                particle.vy += (alignmentVy - particle.vy) * this.alignmentFactor * 0.005 * speed;
+              particle.vx += (alignmentVx - particle.vx) * this.alignmentFactor * deltaTime;
+              particle.vy += (alignmentVy - particle.vy) * this.alignmentFactor * deltaTime;
                 
                 // Apply separation
-                particle.vx += separationX * this.separationFactor * 0.02 * speed;
-                particle.vy += separationY * this.separationFactor * 0.02 * speed;
+              particle.vx += separationX * this.separationFactor * deltaTime;
+              particle.vy += separationY * this.separationFactor * deltaTime;
             }
             
             // Apply momentum
-            particle.x += particle.vx * speed;
-            particle.y += particle.vy * speed;
+          particle.x += particle.vx * speed * deltaTime;
+          particle.y += particle.vy * speed * deltaTime;
             
             // Boundary conditions (gentle repulsion)
             if (particle.x < 0) {
-                particle.vx += this.boundaryStrength * speed;
+              particle.vx += this.boundaryStrength * deltaTime;
             } else if (particle.x > this.canvas.width) {
-                particle.vx -= this.boundaryStrength * speed;
+              particle.vx -= this.boundaryStrength * deltaTime;
             }
             if (particle.y < 0) {
-                particle.vy += this.boundaryStrength * speed;
+              particle.vy += this.boundaryStrength * deltaTime;
             } else if (particle.y > this.canvas.height) {
-                particle.vy -= this.boundaryStrength * speed;
+              particle.vy -= this.boundaryStrength * deltaTime;
             }
             
             // Damping
@@ -134,9 +138,7 @@ export default class Scene5 {
         this.lastTime = timestamp;
         
         this.update(deltaTime);
-        this.draw();
-        
-        // Update this.time if needed, for potential time-based effects
+      this.draw();
     }
     
     updateSettings(newSettings) {

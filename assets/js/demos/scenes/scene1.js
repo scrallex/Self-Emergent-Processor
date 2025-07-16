@@ -11,35 +11,22 @@ export default class Scene1 {
         this.fourierComponents = [];
         
         // Initialize waves
-        this.initializeWaves();
+      this.init();
     }
     
     init() {
         // Setup initial state
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        
+    this.initializeWaves();
+    this.resize();
+    return Promise.resolve();
+  }
+
+  resize() {
         // Create wave sources
         this.waves = [
-            {
-                x: this.canvas.width * 0.3,
-                y: this.canvas.height * 0.5,
-                frequency: 0.02,
-                amplitude: 50,
-                phase: 0,
-                color: 'rgba(0, 212, 255, 0.6)'
-            },
-            {
-                x: this.canvas.width * 0.7,
-                y: this.canvas.height * 0.5,
-                frequency: 0.015,
-                amplitude: 40,
-                phase: Math.PI / 4,
-                color: 'rgba(0, 255, 136, 0.6)'
-            }
+          { x: this.canvas.width * 0.3, y: this.canvas.height * 0.5, frequency: 0.02, amplitude: 50, phase: 0, color: 'rgba(0, 212, 255, 0.6)' },
+          { x: this.canvas.width * 0.7, y: this.canvas.height * 0.5, frequency: 0.015, amplitude: 40, phase: Math.PI / 4, color: 'rgba(0, 255, 136, 0.6)' }
         ];
-        
-        return Promise.resolve();
     }
     
     initializeWaves() {
@@ -94,11 +81,11 @@ export default class Scene1 {
                 });
                 
                 // Map amplitude to color
-                const normalizedAmplitude = Math.abs(totalAmplitude) / 100;
-                const brightness = Math.min(255, normalizedAmplitude * 255 * intensity);
+              const normalizedAmp = Math.min(1, Math.abs(totalAmplitude) / (50 * intensity));
                 
-                if (brightness > 10) {
-                    this.ctx.fillStyle = `rgba(0, ${brightness}, ${brightness * 0.8}, ${brightness / 255})`;
+              if (normalizedAmp > 0.1) {
+                const hue = 180 + normalizedAmp * 60; // From cyan to green
+                this.ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${normalizedAmp * 0.8})`;
                     this.ctx.fillRect(x - gridSize/2, y - gridSize/2, gridSize, gridSize);
                 }
             }

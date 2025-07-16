@@ -44,26 +44,32 @@ export default class Scene3 {
         
         return Promise.resolve();
     }
-    
+
+  resize() {
+    // Re-initialize balls if canvas size changes significantly
+    // to prevent them from being stuck off-screen.
+    this.initializeBalls();
+  }
+
     initializeBalls() {
         this.balls = [];
         
         // Create initial balls with different velocities
         const configs = [
-            { x: 150, y: 200, vx: 2, vy: 1, color: '#ff6b6b' },
-            { x: this.canvas.width - 200, y: 300, vx: -1.5, vy: 1.5, color: '#4ecdc4' },
-            { x: this.canvas.width / 2, y: 100, vx: 0.5, vy: 2, color: '#45b7d1' },
-            { x: 300, y: this.canvas.height - 150, vx: -0.8, vy: -1.2, color: '#f7b731' },
-            { x: this.canvas.width - 300, y: this.canvas.height - 250, vx: 1.2, vy: -0.7, color: '#5f27cd' }
+          { x: 0.2, y: 0.3, vx: 120, vy: 60, color: '#ff6b6b' },
+          { x: 0.8, y: 0.4, vx: -90, vy: 90, color: '#4ecdc4' },
+          { x: 0.5, y: 0.2, vx: 30, vy: 120, color: '#45b7d1' },
+          { x: 0.3, y: 0.8, vx: -50, vy: -70, color: '#f7b731' },
+          { x: 0.7, y: 0.7, vx: 70, vy: -40, color: '#5f27cd' }
         ];
         
         configs.forEach((config, index) => {
             this.balls.push({
                 id: index,
-                x: config.x,
-                y: config.y,
-                vx: config.vx * this.settings.speed,
-                vy: config.vy * this.settings.speed,
+              x: config.x * this.canvas.width,
+              y: config.y * this.canvas.height,
+              vx: config.vx,
+              vy: config.vy,
                 radius: 20,
                 mass: 1,
                 color: config.color,
@@ -149,11 +155,11 @@ export default class Scene3 {
             ball.vy *= this.friction;
             
             // Update position
-            ball.x += ball.vx * deltaTime * 60;
-            ball.y += ball.vy * deltaTime * 60;
+          ball.x += ball.vx * deltaTime * this.settings.speed;
+          ball.y += ball.vy * deltaTime * this.settings.speed;
             
             // Boundary collisions
-            if (ball.x - ball.radius < 0 || ball.x + ball.radius > this.canvas.width) {
+          if (ball.x - ball.radius < 0 || ball.x + ball.radius > this.canvas.width) { // a
                 ball.vx *= -this.restitution;
                 ball.x = ball.x - ball.radius < 0 ? ball.radius : this.canvas.width - ball.radius;
             }
@@ -375,15 +381,14 @@ export default class Scene3 {
     }
     
     updateSettings(newSettings) {
+      const oldSpeed = this.settings.speed;
         Object.assign(this.settings, newSettings);
+      const speedRatio = this.settings.speed / oldSpeed;
         
         // Update ball velocities based on speed setting
         for (const ball of this.balls) {
-            const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-            if (speed > 0) {
-                ball.vx = (ball.vx / speed) * speed * (newSettings.speed / this.settings.speed);
-                ball.vy = (ball.vy / speed) * speed * (newSettings.speed / this.settings.speed);
-            }
+          ball.vx *= speedRatio;
+          ball.vy *= speedRatio;
         }
     }
     

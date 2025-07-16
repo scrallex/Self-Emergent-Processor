@@ -63,7 +63,7 @@ class SEPDemoFramework {
             },
             8: { 
                 name: "Pattern Recognition", 
-                status: "pending",
+              status: "ready",
                 module: () => import('./scenes/scene8.js')
             },
             9: { 

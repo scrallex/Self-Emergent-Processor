@@ -51,7 +51,7 @@ export default class Scene4 {
     
     init() {
         // Initialize springs
-        this.initializeSprings();
+      this.resize();
         
         // Add event listeners
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
@@ -60,7 +60,17 @@ export default class Scene4 {
         
         return Promise.resolve();
     }
-    
+
+  resize() {
+    this.billiardBounds = {
+      left: 50,
+      right: this.canvas.width / 2 - 50,
+      top: 150,
+      bottom: this.canvas.height - 150
+    };
+    this.initializeSprings();
+  }
+
     initializeSprings() {
         this.springs = [];
         const springCount = 20;
@@ -498,28 +508,26 @@ export default class Scene4 {
             // Tangent
             this.ctx.strokeStyle = this.tangentExplosion ? '#ff0066' : '#ff9900';
             this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
             
-            let lastY = null;
-            
+          let lastY = null;
             for (let px = 0; px < width; px++) {
                 const angle = (px / width) * Math.PI;
-                const tanValue = Math.tan(angle);
-                
-                if (Math.abs(tanValue) < 10) {
-                    const py = y + height / 2 - tanValue * height / 10;
-                    
-                    if (lastY !== null && Math.abs(py - lastY) < height) {
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(x + px - 1, lastY);
-                        this.ctx.lineTo(x + px, py);
-                        this.ctx.stroke();
-                    }
-                    
-                    lastY = py;
+              const tanValue = Math.tan(angle);
+              const py = y + height / 2 - tanValue * height / 10;
+
+              if (angle > Math.PI / 2 - 0.02 && angle < Math.PI / 2 + 0.02) {
+                // Asymptote, break the line
+                this.ctx.moveTo(x + px, py);
+                lastY = null;
+              } else if (lastY !== null) {
+                this.ctx.lineTo(x + px, py);
                 } else {
-                    lastY = null;
+                  this.ctx.moveTo(x + px, py);
+                  lastY = py;
                 }
             }
+          this.ctx.stroke();
         }
         
         // Current angle indicator
