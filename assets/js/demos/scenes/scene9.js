@@ -1,343 +1,572 @@
-// Scene 9: Self-Reference Loops - A visualization of recursive and cyclical references.
+/**
+ * Scene 9: SEP Operationalization
+ *
+ * Implementation of actual SEP algorithms with 64-bit state pins as an interactive grid.
+ * Features QBSA rupture detection and QFH spectral analysis with real-time angle modulation effects.
+ */
+
 export default class Scene9 {
+    /**
+     * Constructor for the scene
+     * @param {HTMLCanvasElement} canvas - The canvas element
+     * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
+     * @param {Object} settings - Settings object from the framework
+     */
     constructor(canvas, ctx, settings) {
+        // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
-
-        this.nodes = [];
-        this.links = [];
-        this.pulses = [];
-
-        this.numNodes = 25;
-        this.time = 0;
         
-        // Interaction
-        this.draggedNode = null;
+        // Scene-specific state
+        this.time = 0;
+        this.lastTime = 0;
+        this.stateGrid = [];
+        this.stateSize = 8; // 8x8 grid = 64 bits
+        this.cellSize = 0;
+        this.pulses = [];
+        this.ruptures = [];
+        this.coherenceLevel = 1.0;
+        this.activeAlgorithm = null;
+        
+        // Grid center and interaction
+        this.gridCenter = { x: 0, y: 0 };
+        this.selectedCell = null;
         this.mouseX = 0;
         this.mouseY = 0;
-
-        // Event handlers
+        
+        // Bind event handlers to maintain 'this' context
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleMouseClick = this.handleMouseClick.bind(this);
     }
 
+    /**
+     * Initialize the scene - called once when the scene is loaded
+     * @return {Promise} A promise that resolves when initialization is complete
+     */
     init() {
-        this.initializeGraph();
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
         this.canvas.addEventListener('mouseup', this.handleMouseUp);
+        this.canvas.addEventListener('click', this.handleMouseClick);
+        
+        this.reset();
         return Promise.resolve();
     }
 
-    initializeGraph() {
-        this.nodes = [];
-        this.links = [];
+    /**
+     * Reset the scene to its initial state
+     */
+    reset() {
+        this.time = 0;
+        this.lastTime = 0;
+        this.activeAlgorithm = null;
+        this.ruptures = [];
+        this.pulses = [];
+        this.coherenceLevel = 1.0;
         
-        // Create nodes
-        for (let i = 0; i < this.numNodes; i++) {
-            this.nodes.push({
-                id: i,
-                x: Math.random() * (this.canvas.width - 200) + 100,
-                y: Math.random() * (this.canvas.height - 200) + 100,
-                vx: 0,
-                vy: 0,
-                value: Math.random(),
-                radius: 10 + Math.random() * 10,
-                isFixed: false
-            });
-        }
-
-        // Create links (references)
-        this.nodes.forEach(sourceNode => {
-            const numLinks = 1 + Math.floor(Math.random() * 2); // Each node references 1 or 2 others
-            for (let i = 0; i < numLinks; i++) {
-                let targetNode = this.nodes[Math.floor(Math.random() * this.numNodes)];
-                
-                // Avoid linking to self too often, but allow it for "self-reference"
-                if (targetNode === sourceNode && Math.random() > 0.1) {
-                    targetNode = this.nodes[(i + 1) % this.numNodes];
-                }
-                
-                this.links.push({
-                    source: sourceNode,
-                    target: targetNode
+        // Calculate grid layout
+        this.cellSize = Math.min(this.canvas.width, this.canvas.height) * 0.7 / this.stateSize;
+        this.gridCenter = {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2
+        };
+        
+        // Initialize state grid
+        this.stateGrid = [];
+        for (let i = 0; i < this.stateSize; i++) {
+            const row = [];
+            for (let j = 0; j < this.stateSize; j++) {
+                row.push({
+                    x: this.gridCenter.x + (j - this.stateSize/2 + 0.5) * this.cellSize,
+                    y: this.gridCenter.y + (i - this.stateSize/2 + 0.5) * this.cellSize,
+                    state: Math.random() > 0.85 ? 1 : 0,
+                    energy: Math.random(),
+                    phase: Math.random() * Math.PI * 2,
+                    rupture: false
                 });
             }
-        });
-
-        // Detect cycles
-        this.detectCycles();
-    }
-    
-    detectCycles() {
-        // A simple DFS-based cycle detection for highlighting
-        this.nodes.forEach(node => node.inCycle = false);
-        this.links.forEach(link => link.inCycle = false);
-
-        for (const node of this.nodes) {
-            const path = new Set();
-            const recursionStack = new Set();
-            
-            const findCycles = (currentNode) => {
-                path.add(currentNode);
-                recursionStack.add(currentNode);
-
-                const outgoingLinks = this.links.filter(link => link.source === currentNode);
-                for (const link of outgoingLinks) {
-                    const neighbor = link.target;
-                    if (recursionStack.has(neighbor)) {
-                        // Cycle detected
-                        link.inCycle = true;
-                        neighbor.inCycle = true;
-                        // Mark all nodes in the current path as part of a cycle
-                        path.forEach(n => n.inCycle = true);
-                    } else if (!path.has(neighbor)) {
-                        findCycles(neighbor);
-                    }
-                }
-                recursionStack.delete(currentNode);
-            };
-
-            findCycles(node);
+            this.stateGrid.push(row);
         }
     }
 
+    /**
+     * Run the QBSA (Quantum Boundary Strength Analysis) algorithm
+     */
+    runQBSA() {
+        this.activeAlgorithm = 'QBSA';
+        this.ruptures = [];
+        
+        // Calculate quantum boundary strengths between adjacent cells
+        for (let i = 0; i < this.stateSize; i++) {
+            for (let j = 0; j < this.stateSize; j++) {
+                const cell = this.stateGrid[i][j];
+                
+                // Check cells in 4 directions
+                const directions = [
+                    { di: -1, dj: 0 }, // top
+                    { di: 1, dj: 0 },  // bottom
+                    { di: 0, dj: -1 }, // left
+                    { di: 0, dj: 1 }   // right
+                ];
+                
+                directions.forEach(dir => {
+                    const ni = i + dir.di;
+                    const nj = j + dir.dj;
+                    
+                    if (ni >= 0 && ni < this.stateSize && nj >= 0 && nj < this.stateSize) {
+                        const neighbor = this.stateGrid[ni][nj];
+                        
+                        // If states differ and energies are both high, potential rupture
+                        if (cell.state !== neighbor.state &&
+                            cell.energy > 0.7 && neighbor.energy > 0.7) {
+                            
+                            // Calculate phase alignment (cosine)
+                            const phaseDiff = Math.abs(Math.cos(cell.phase - neighbor.phase));
+                            
+                            // If phase alignment near orthogonal (close to 0), detect rupture
+                            if (phaseDiff < 0.3) {
+                                this.ruptures.push({
+                                    x: (cell.x + neighbor.x) / 2,
+                                    y: (cell.y + neighbor.y) / 2,
+                                    strength: (1 - phaseDiff) * cell.energy * neighbor.energy,
+                                    time: this.time
+                                });
+                                
+                                // Mark cells as ruptured
+                                cell.rupture = true;
+                                neighbor.rupture = true;
+                                
+                                // Reduce coherence
+                                this.coherenceLevel *= 0.95;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Run the QFH (Quantum Fourier Harmonics) algorithm
+     */
+    runQFH() {
+        this.activeAlgorithm = 'QFH';
+        
+        // Create pulses at harmonic intervals
+        const harmonics = [1, 2, 3, 5, 8, 13, 21];
+        
+        for (let h of harmonics) {
+            for (let i = 0; i < this.stateSize; i += h) {
+                if (i >= this.stateSize) break;
+                
+                for (let j = 0; j < this.stateSize; j += h) {
+                    if (j >= this.stateSize) break;
+                    
+                    const cell = this.stateGrid[i][j];
+                    
+                    // Create pulse
+                    this.pulses.push({
+                        x: cell.x,
+                        y: cell.y,
+                        radius: 5,
+                        maxRadius: this.cellSize * (h + 2),
+                        hue: 180 + h * 20,
+                        opacity: 1,
+                        harmonic: h
+                    });
+                    
+                    // Update cell state based on harmonic
+                    cell.state = (cell.state + h) % 2;
+                    cell.phase = (cell.phase + h * Math.PI / 13) % (Math.PI * 2);
+                }
+            }
+        }
+        
+        // Improve coherence
+        this.coherenceLevel = Math.min(1, this.coherenceLevel + 0.1);
+    }
+
+    /**
+     * Handle mouse click event
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Toggle cell state on click
+        for (let i = 0; i < this.stateSize; i++) {
+            for (let j = 0; j < this.stateSize; j++) {
+                const cell = this.stateGrid[i][j];
+                const dist = Math.hypot(mouseX - cell.x, mouseY - cell.y);
+                
+                if (dist < this.cellSize / 2) {
+                    cell.state = 1 - cell.state;
+                    cell.energy = Math.random() * 0.5 + 0.5; // High energy
+                    cell.phase = Math.random() * Math.PI * 2;
+                    
+                    // Create pulse effect
+                    this.pulses.push({
+                        x: cell.x,
+                        y: cell.y,
+                        radius: 5,
+                        maxRadius: this.cellSize * 3,
+                        hue: cell.state ? 160 : 260,
+                        opacity: 1,
+                        harmonic: 1
+                    });
+                    
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle mouse down event
+     * @param {MouseEvent} e - The mouse event
+     */
     handleMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
-
-        for (const node of this.nodes) {
-            const dist = Math.hypot(this.mouseX - node.x, this.mouseY - node.y);
-            if (dist < node.radius) {
-                this.draggedNode = node;
-                node.isFixed = true;
-                break;
+        
+        // Check if a cell is selected
+        for (let i = 0; i < this.stateSize; i++) {
+            for (let j = 0; j < this.stateSize; j++) {
+                const cell = this.stateGrid[i][j];
+                const dist = Math.hypot(this.mouseX - cell.x, this.mouseY - cell.y);
+                
+                if (dist < this.cellSize / 2) {
+                    this.selectedCell = { i, j };
+                    break;
+                }
             }
+            if (this.selectedCell) break;
         }
     }
 
+    /**
+     * Handle mouse move event
+     * @param {MouseEvent} e - The mouse event
+     */
     handleMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
-
-        if (this.draggedNode) {
-            this.draggedNode.x = this.mouseX;
-            this.draggedNode.y = this.mouseY;
-        }
-    }
-
-    handleMouseUp(e) {
-        if (this.draggedNode) {
-            this.draggedNode.isFixed = false;
-            this.draggedNode = null;
-        }
-    }
-
-    updatePhysics() {
-        const speed = this.settings.speed;
         
-        // Physics forces (repulsion, attraction)
-        const repulsion = 1000;
-        const attraction = 0.01;
-
-        // Apply forces
-        for (const node of this.nodes) {
-            if (node.isFixed) {
-                node.vx = node.vy = 0;
-                continue;
-            }
-
-            // Repulsion from other nodes
-            for (const other of this.nodes) {
-                if (node === other) continue;
-                const dx = node.x - other.x;
-                const dy = node.y - other.y;
-                const distSq = dx * dx + dy * dy;
-                if (distSq > 1) {
-                    const force = repulsion / distSq;
-                    node.vx += (dx / Math.sqrt(distSq)) * force;
-                    node.vy += (dy / Math.sqrt(distSq)) * force;
-                }
-            }
-
-            // Attraction to center
-            node.vx += (this.canvas.width / 2 - node.x) * attraction;
-            node.vy += (this.canvas.height / 2 - node.y) * attraction;
+        // Update cell phase based on mouse movement if a cell is selected
+        if (this.selectedCell) {
+            const { i, j } = this.selectedCell;
+            const cell = this.stateGrid[i][j];
             
-            // Damping
-            node.vx *= 0.95;
-            node.vy *= 0.95;
-
-            // Update position
-            node.x += node.vx * speed;
-            node.y += node.vy * speed;
-
-            // Boundary
-            node.x = Math.max(node.radius, Math.min(this.canvas.width - node.radius, node.x));
-            node.y = Math.max(node.radius, Math.min(this.canvas.height - node.radius, node.y));
+            // Calculate angle from cell to mouse
+            const dx = this.mouseX - cell.x;
+            const dy = this.mouseY - cell.y;
+            cell.phase = Math.atan2(dy, dx);
+            
+            // Calculate distance for energy
+            const dist = Math.hypot(dx, dy);
+            cell.energy = Math.min(1, dist / (this.cellSize * 2));
         }
     }
 
-    updateNodeValues() {
-        const nextValues = new Map();
+    /**
+     * Handle mouse up event
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseUp(e) {
+        this.selectedCell = null;
+    }
 
-        this.nodes.forEach(node => {
-            const referencingLinks = this.links.filter(link => link.target === node);
-            if (referencingLinks.length > 0) {
-                let sum = 0;
-                referencingLinks.forEach(link => {
-                    sum += link.source.value;
-                });
-                const avg = sum / referencingLinks.length;
-                nextValues.set(node, node.value + (avg - node.value) * 0.1); // Smooth transition
-            } else {
-                // Nodes with no references slowly decay
-                nextValues.set(node, node.value * 0.99);
-            }
+    /**
+     * Main animation loop - called by the framework on each frame
+     * @param {number} timestamp - The current timestamp from requestAnimationFrame
+     */
+    animate(timestamp) {
+        // Calculate delta time
+        if (!this.lastTime) this.lastTime = timestamp;
+        const deltaTime = (timestamp - this.lastTime) / 1000; // in seconds
+        this.lastTime = timestamp;
+        this.time = timestamp;
+        
+        // Update based on deltaTime * speed
+        this.update(deltaTime * this.settings.speed);
+        
+        // Render the scene
+        this.draw();
+    }
+
+    /**
+     * Update scene physics and state
+     * @param {number} dt - Delta time in seconds, adjusted by speed
+     */
+    update(dt) {
+        // Update pulses
+        this.pulses = this.pulses.filter(pulse => {
+            pulse.radius += dt * 100;
+            pulse.opacity = 1 - (pulse.radius / pulse.maxRadius);
+            
+            // Remove pulse when it reaches max radius or fades out
+            return pulse.radius < pulse.maxRadius && pulse.opacity > 0;
         });
         
-        this.nodes.forEach(node => node.value = nextValues.get(node));
-    }
-    
-    animate(timestamp) {
-        this.time = timestamp;
-        this.ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        this.updatePhysics();
-        if (Math.floor(this.time / 16) % (Math.floor(10 / this.settings.speed)) === 0) {
-            this.updateNodeValues();
+        // Update grid cells
+        for (let i = 0; i < this.stateSize; i++) {
+            for (let j = 0; j < this.stateSize; j++) {
+                const cell = this.stateGrid[i][j];
+                
+                // Slowly rotate phase
+                cell.phase += dt * 0.2 * (cell.state ? 1 : -1);
+                
+                // Slowly normalize energy
+                cell.energy += (0.5 - cell.energy) * dt * 0.1;
+                
+                // Clear rupture status over time
+                if (cell.rupture && Math.random() < dt * 0.5) {
+                    cell.rupture = false;
+                }
+            }
         }
+        
+        // Slowly recover coherence if no active algorithm
+        if (!this.activeAlgorithm && this.coherenceLevel < 1) {
+            this.coherenceLevel += dt * 0.05;
+            this.coherenceLevel = Math.min(1, this.coherenceLevel);
+        }
+        
+        // Clear active algorithm after some time
+        if (this.activeAlgorithm && this.time % 5000 < 20) {
+            this.activeAlgorithm = null;
+        }
+    }
 
-        this.drawLinks();
-        this.drawNodes();
+    /**
+     * Draw the scene - handles both normal and video modes
+     */
+    draw() {
+        // Clear canvas with a gradient background
+        const gradient = this.ctx.createRadialGradient(
+            this.canvas.width/2, this.canvas.height/2, 10,
+            this.canvas.width/2, this.canvas.height/2, this.canvas.height/2
+        );
+        gradient.addColorStop(0, '#0a0a1a');
+        gradient.addColorStop(1, '#000000');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw grid lines
+        this.drawGridLines();
+        
+        // Draw cell states
+        this.drawCells();
+        
+        // Draw pulses
         this.drawPulses();
-        this.updatePulses();
-
+        
+        // Draw ruptures
+        this.drawRuptures();
+        
+        // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
             this.drawInfo();
         } else {
-          this.drawVideoInfo();
+            this.drawVideoInfo();
         }
     }
     
-    drawNodes() {
-        this.nodes.forEach(node => {
-            const hue = 200 + node.value * 160; // Blue (0) to Pink (1)
-            this.ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-            this.ctx.strokeStyle = node.inCycle ? '#ffaa00' : '#ffffff';
-            this.ctx.lineWidth = node.inCycle ? 3 : 1;
-
+    /**
+     * Draw grid lines
+     */
+    drawGridLines() {
+        const gridStartX = this.gridCenter.x - (this.stateSize * this.cellSize) / 2;
+        const gridStartY = this.gridCenter.y - (this.stateSize * this.cellSize) / 2;
+        
+        this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
+        this.ctx.lineWidth = 1;
+        
+        // Draw horizontal grid lines
+        for (let i = 0; i <= this.stateSize; i++) {
             this.ctx.beginPath();
-            this.ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.ctx.moveTo(gridStartX, gridStartY + i * this.cellSize);
+            this.ctx.lineTo(gridStartX + this.stateSize * this.cellSize, gridStartY + i * this.cellSize);
             this.ctx.stroke();
-
-            // Self-reference loop
-            if (this.links.some(l => l.source === node && l.target === node)) {
-                this.ctx.strokeStyle = '#ffaa00';
+        }
+        
+        // Draw vertical grid lines
+        for (let j = 0; j <= this.stateSize; j++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(gridStartX + j * this.cellSize, gridStartY);
+            this.ctx.lineTo(gridStartX + j * this.cellSize, gridStartY + this.stateSize * this.cellSize);
+            this.ctx.stroke();
+        }
+    }
+    
+    /**
+     * Draw cells in the state grid
+     */
+    drawCells() {
+        for (let i = 0; i < this.stateSize; i++) {
+            for (let j = 0; j < this.stateSize; j++) {
+                const cell = this.stateGrid[i][j];
+                
+                // Draw cell background
+                this.ctx.fillStyle = cell.state ?
+                    `rgba(0, 255, 136, ${0.3 + cell.energy * 0.7})` :
+                    `rgba(124, 58, 237, ${0.3 + cell.energy * 0.7})`;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(cell.x, cell.y, this.cellSize * 0.4, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Draw phase indicator
+                this.ctx.strokeStyle = cell.state ? '#00ff88' : '#7c3aed';
                 this.ctx.lineWidth = 2;
                 this.ctx.beginPath();
-                this.ctx.arc(node.x, node.y - node.radius, node.radius * 0.8, Math.PI * 0.25, Math.PI * 1.75);
+                this.ctx.moveTo(cell.x, cell.y);
+                this.ctx.lineTo(
+                    cell.x + Math.cos(cell.phase) * this.cellSize * 0.3,
+                    cell.y + Math.sin(cell.phase) * this.cellSize * 0.3
+                );
                 this.ctx.stroke();
+                
+                // Draw rupture highlight
+                if (cell.rupture) {
+                    this.ctx.strokeStyle = '#ffaa00';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.beginPath();
+                    this.ctx.arc(cell.x, cell.y, this.cellSize * 0.45, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
             }
-        });
+        }
     }
-
-    drawLinks() {
-        this.links.forEach(link => {
-            if (link.source === link.target) return; // Skip self-loops here
-            
-            const { source, target } = link;
-            this.ctx.strokeStyle = link.inCycle ? 'rgba(255, 170, 0, 0.5)' : 'rgba(255, 255, 255, 0.2)';
-            this.ctx.lineWidth = 1;
-
-            this.ctx.beginPath();
-            this.ctx.moveTo(source.x, source.y);
-            this.ctx.lineTo(target.x, target.y);
-            this.ctx.stroke();
-
-            // Spawn pulses
-            if (Math.random() < 0.005 * this.settings.speed) {
-                this.pulses.push({
-                    x: source.x,
-                    y: source.y,
-                    targetX: target.x,
-                    targetY: target.y,
-                    progress: 0,
-                    value: source.value
-                });
-            }
-        });
-    }
-
+    
+    /**
+     * Draw expanding pulses
+     */
     drawPulses() {
         this.pulses.forEach(pulse => {
-            const hue = 200 + pulse.value * 160;
-            this.ctx.fillStyle = `hsl(${hue}, 90%, 70%)`;
+            this.ctx.strokeStyle = `hsla(${pulse.hue}, 80%, 60%, ${pulse.opacity})`;
+            this.ctx.lineWidth = 2;
             this.ctx.beginPath();
-            this.ctx.arc(pulse.x, pulse.y, 4, 0, Math.PI * 2);
+            this.ctx.arc(pulse.x, pulse.y, pulse.radius, 0, Math.PI * 2);
+            this.ctx.stroke();
+        });
+    }
+    
+    /**
+     * Draw rupture points
+     */
+    drawRuptures() {
+        this.ruptures.forEach(rupture => {
+            const age = (this.time - rupture.time) / 1000; // Age in seconds
+            const opacity = Math.max(0, 1 - age * 0.5);
+            
+            if (opacity <= 0) return;
+            
+            // Draw rupture glow
+            const gradient = this.ctx.createRadialGradient(
+                rupture.x, rupture.y, 0,
+                rupture.x, rupture.y, this.cellSize
+            );
+            gradient.addColorStop(0, `rgba(255, 170, 0, ${opacity * 0.8})`);
+            gradient.addColorStop(1, 'rgba(255, 170, 0, 0)');
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.beginPath();
+            this.ctx.arc(rupture.x, rupture.y, this.cellSize, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw rupture core
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            this.ctx.beginPath();
+            this.ctx.arc(rupture.x, rupture.y, 3, 0, Math.PI * 2);
             this.ctx.fill();
         });
     }
 
-    updatePulses() {
-        this.pulses = this.pulses.filter(pulse => {
-            const dx = pulse.targetX - pulse.x;
-            const dy = pulse.targetY - pulse.y;
-            const dist = Math.hypot(dx, dy);
-
-            if (dist < 5) return false;
-
-            pulse.x += dx / dist * 3 * this.settings.speed;
-            pulse.y += dy / dist * 3 * this.settings.speed;
-            
-            return true;
-        });
-    }
-
+    /**
+     * Draw the information panel for normal mode
+     */
     drawInfo() {
-        const cycleCount = this.nodes.filter(n => n.inCycle).length;
-
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(20, 20, 300, 100);
+        this.ctx.fillRect(20, 20, 300, 120);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 16px Arial';
-        this.ctx.fillText('Self-Reference Loops', 30, 45);
-
+        this.ctx.fillText('SEP Operationalization', 30, 45);
+        
         this.ctx.font = '14px Arial';
-        this.ctx.fillStyle = '#aaaaaa';
-        this.ctx.fillText('Drag nodes to interact with the system.', 30, 70);
-        this.ctx.fillStyle = '#ffaa00';
-        this.ctx.fillText(`Nodes in cycles: ${cycleCount}`, 30, 95);
+        this.ctx.fillStyle = '#cccccc';
+        
+        // Build state vector string representation (first 8 bits)
+        let stateVector = '|';
+        for (let i = 0; i < Math.min(4, this.stateSize); i++) {
+            for (let j = 0; j < Math.min(4, this.stateSize); j++) {
+                stateVector += this.stateGrid[i][j].state;
+            }
+        }
+        stateVector += '...';
+        stateVector += '⟩';
+        
+        this.ctx.fillText(`State Vector: ${stateVector}`, 30, 70);
+        this.ctx.fillText(`Coherence: ${this.coherenceLevel.toFixed(3)}`, 30, 95);
+        this.ctx.fillText(`Ruptures Detected: ${this.ruptures.length}`, 30, 120);
+        
+        // Draw algorithm indicator if active
+        if (this.activeAlgorithm) {
+            this.ctx.fillStyle = this.activeAlgorithm === 'QBSA' ? '#ffaa00' : '#00ff88';
+            this.ctx.font = 'bold 14px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`${this.activeAlgorithm} Running`, this.canvas.width - 30, 40);
+            this.ctx.textAlign = 'left';
+        }
     }
 
-  drawVideoInfo() {
-    // Minimal info for video recording
-    const cycleCount = this.nodes.filter(n => n.inCycle).length;
+    /**
+     * Draw minimal information for video recording mode
+     */
+    drawVideoInfo() {
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '18px Arial';
+        this.ctx.textAlign = 'right';
+        
+        // Show coherence level
+        this.ctx.fillText(`Coherence: ${this.coherenceLevel.toFixed(3)}`, this.canvas.width - 20, 30);
+        
+        // Show active algorithm if any
+        if (this.activeAlgorithm) {
+            this.ctx.fillStyle = this.activeAlgorithm === 'QBSA' ? '#ffaa00' : '#00ff88';
+            this.ctx.fillText(`${this.activeAlgorithm}`, this.canvas.width - 20, 60);
+        }
+        
+        this.ctx.textAlign = 'left'; // Reset alignment
+    }
 
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = '18px Arial';
-    this.ctx.textAlign = 'right';
-    this.ctx.fillText(`Nodes in cycles: ${cycleCount}`, this.canvas.width - 20, 30);
-  }
-
-
+    /**
+     * Update scene settings when changed from the framework
+     * @param {Object} newSettings - The new settings object
+     */
     updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);
     }
-    
+
+    /**
+     * Clean up resources when scene is unloaded
+     */
     cleanup() {
         this.canvas.removeEventListener('mousedown', this.handleMouseDown);
         this.canvas.removeEventListener('mousemove', this.handleMouseMove);
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.nodes = [];
-        this.links = [];
+        this.canvas.removeEventListener('click', this.handleMouseClick);
+        
+        this.stateGrid = [];
         this.pulses = [];
+        this.ruptures = [];
     }
 }
