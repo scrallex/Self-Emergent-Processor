@@ -68,23 +68,23 @@ class SEPDemoFramework {
             },
             9: { 
                 name: "Self-Reference Loops", 
-                status: "pending",
+              status: "ready",
                 module: () => import('./scenes/scene9.js')
             },
             10: { 
                 name: "Memory Formation", 
-                status: "pending",
+              status: "ready",
                 module: () => import('./scenes/scene10.js')
             },
             11: { 
                 name: "Meta-System Interface", 
                 status: "pending",
-                module: () => import('./scenes/scene11.js')
+              module: () => import('./scenes/scene11.js') // This file won't exist, will show placeholder
             },
             12: { 
                 name: "Full System Visualization", 
                 status: "pending",
-                module: () => import('./scenes/scene12.js')
+              module: () => import('./scenes/scene12.js') // This file won't exist, will show placeholder
             }
         };
     }
