@@ -173,6 +173,8 @@ export default class Scene7 {
         
         if (!this.settings.videoMode) {
             this.drawInfo();
+        } else {
+          this.drawVideoInfo();
         }
         
         // Update wave function collapse
@@ -460,6 +462,21 @@ export default class Scene7 {
         this.ctx.fillText(`Superposition: ${superpositionCount} | Collapsed: ${collapsedCount}`, 
                           infoX + 10, infoY + 130);
     }
+
+  drawVideoInfo() {
+    // Minimal info for video recording
+    const superpositionCount = this.particles.filter(p => p.superposition).length;
+    const collapsedCount = this.particles.filter(p => p.collapsed).length;
+
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = '16px Arial';
+    this.ctx.textAlign = 'right';
+    this.ctx.fillText(`Superposition: ${superpositionCount}`, this.canvas.width - 20, 30);
+    this.ctx.textAlign = 'left';
+    this.ctx.fillText(` | Collapsed: ${collapsedCount}`, this.canvas.width - 120, 30);
+  }
+
+
     
     updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);

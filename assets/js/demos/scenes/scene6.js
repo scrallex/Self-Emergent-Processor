@@ -46,7 +46,7 @@ export default class Scene6 {
                 }
                 
                 // Simple rules:
-                if (this.cells[x][y].value === 1) {
+              if (this.cells[x][y].value === 1) {
                     // Cell is alive
                     if (neighbors < 2 || neighbors > 3) {
                         this.cells[x][y].nextValue = 0; // Dies

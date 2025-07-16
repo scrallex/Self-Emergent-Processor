@@ -177,6 +177,8 @@ export default class Scene8 {
 
         if (!this.settings.videoMode) {
             this.drawInfo();
+        } else {
+          this.drawVideoInfo();
         }
     }
 
@@ -193,6 +195,16 @@ export default class Scene8 {
         this.ctx.fillText(`Rule: ${this.rule}`, 30, 70);
         this.ctx.fillText('Click first row to change seed.', 30, 90);
     }
+
+  drawVideoInfo() {
+    // Minimal info for video recording
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = '18px Arial';
+    this.ctx.textAlign = 'right';
+    const patternsToScan = this.patterns[this.rule] || [];
+    const patternNames = patternsToScan.map(p => p.name).join(', ') || 'None';
+    this.ctx.fillText(`Rule ${this.rule} - Patterns: ${patternNames}`, this.canvas.width - 20, 30);
+  }
 
     updateSettings(newSettings) {
         let needsReset = false;

@@ -220,6 +220,8 @@ export default class Scene9 {
 
         if (!this.settings.videoMode) {
             this.drawInfo();
+        } else {
+          this.drawVideoInfo();
         }
     }
     
@@ -314,6 +316,17 @@ export default class Scene9 {
         this.ctx.fillStyle = '#ffaa00';
         this.ctx.fillText(`Nodes in cycles: ${cycleCount}`, 30, 95);
     }
+
+  drawVideoInfo() {
+    // Minimal info for video recording
+    const cycleCount = this.nodes.filter(n => n.inCycle).length;
+
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = '18px Arial';
+    this.ctx.textAlign = 'right';
+    this.ctx.fillText(`Nodes in cycles: ${cycleCount}`, this.canvas.width - 20, 30);
+  }
+
 
     updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);

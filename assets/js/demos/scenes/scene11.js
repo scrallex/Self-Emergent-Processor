@@ -19,7 +19,7 @@ export default class Scene11 {
         this.draw();
         
         // Custom update for this scene using intensity slider
-        document.getElementById('intensitySlider').addEventListener('input', this.handleIntensityUpdate);
+      // document.getElementById('intensitySlider').addEventListener('input', this.handleIntensityUpdate);
         
         return Promise.resolve();
     }
@@ -169,7 +169,7 @@ export default class Scene11 {
     
     updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);
-        // The intensity is handled by the event listener now.
+      // The intensity is handled by the event listener now. (or is it? consider separate slider)
         this.volatility = this.settings.intensity * 2;
     }
     

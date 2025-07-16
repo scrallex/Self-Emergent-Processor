@@ -28,61 +28,73 @@ class SEPDemoFramework {
         this.scenes = {
             1: { 
                 name: "SEP Introduction - Wave Interference", 
+            description: "Interactive overview of Self-Emergent Processing concepts.",
                 status: "ready",
                 module: () => import('./scenes/scene1.js')
             },
             2: { 
-                name: "Identity Through Distinction", 
+              name: "Coherence Wave Patterns",
+              description: "Explore quantum coherence patterns and wave interactions.",
                 status: "ready",
-                module: () => import('./scenes/scene2.js')
+              module: () => import('./scenes/scene2.js') // Assumed fixable
             },
             3: { 
-                name: "Cosine Alignment", 
+              name: "Complex Boundaries",
+              description: "Visualize the emergence of complex boundaries.",
                 status: "ready",
-                module: () => import('./scenes/scene3.js')
+              module: () => import('./scenes/scene3.js') // Assumed fixable
             },
             4: { 
-                name: "Sine Deviation", 
-                status: "ready",
-                module: () => import('./scenes/scene4.js')
+              name: "Conscious Touch Interaction",
+              description: "Interactive demonstration of consciousness through touch.",
+              status: "ready",
+              module: () => import('./scenes/scene4.js') // Assumed fixable
             },
             5: { 
-                name: "Information Pressure Dynamics", 
-                status: "pending",
+              name: "Information Pressure Dynamics",
+              description: "See how information pressure creates emergent behaviors.",
+              status: "ready",
                 module: () => import('./scenes/scene5.js')
             },
             6: { 
-                name: "System Learning Evolution", 
+              name: "System Learning Evolution",
+              description: "Watch the system evolve and learn through recursion.",
                 status: "pending",
                 module: () => import('./scenes/scene6.js')
             },
             7: { 
                 name: "Quantum Effects", 
-                status: "ready",
-                module: () => import('./scenes/scene7.js')
+              description: "Experience quantum-inspired effects and visualizations.",
+              status: "ready",
+              module: () => import('./scenes/scene7.js') // Assumed fixable
             },
             8: { 
                 name: "Pattern Recognition", 
-              status: "ready",
+              description: "Observe how patterns emerge and are recognized.",
+              status: "pending",
                 module: () => import('./scenes/scene8.js')
             },
             9: { 
                 name: "Self-Reference Loops", 
-              status: "ready",
+              description: "Explore recursive self-reference and strange loops.",
+              status: "pending",
                 module: () => import('./scenes/scene9.js')
             },
             10: { 
-                name: "Memory Formation", 
-              status: "ready",
+              name: "Memory Formation",
+              description: "See how memories form through pattern consolidation.",
+              status: "pending",
                 module: () => import('./scenes/scene10.js')
             },
             11: { 
-                name: "Meta-System Interface", 
+              name: "Meta-System Interface",
+              description: "Interact with the meta-level system orchestration.",
                 status: "pending",
               module: () => import('./scenes/scene11.js') // This file won't exist, will show placeholder
             },
             12: { 
-                name: "Full System Visualization", 
+              name: "Full System Visualization",
+              description: "Complete visualization of all components working together.",
                 status: "pending",
               module: () => import('./scenes/scene12.js') // This file won't exist, will show placeholder
             }
@@ -162,7 +174,7 @@ class SEPDemoFramework {
         }
         
         this.currentScene = null;
-    }
+  }    
     
     startAnimation() {
         const animate = (timestamp) => {
@@ -178,6 +190,11 @@ class SEPDemoFramework {
     showPlaceholder(sceneName) {
         let time = 0;
         
+      if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
+
         const animate = (timestamp) => {
             this.ctx.fillStyle = '#0a0a0a';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);

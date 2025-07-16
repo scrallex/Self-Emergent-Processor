@@ -1,153 +1,158 @@
-// Scene 5: Information Pressure Dynamics - Emergent Patterns
+// Scene 5: Information Pressure Dynamics
+
 export default class Scene5 {
     constructor(canvas, ctx, settings) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+
+      this.bodies = [];
+      this.G = 0.5;
+      this.showTrails = true;
       this.lastTime = 0;
-        // Parameters
-        this.numParticles = 100;
-        this.interactionRadius = 50;
-      this.cohesionFactor = 0.5;
-      this.alignmentFactor = 0.3;
-      this.separationFactor = 1.2;
-      this.boundaryStrength = 2.0;
         
-        // Particles
-      this.particles = [];
+      this.handleClick = this.handleClick.bind(this);
+      this.lastClickTime = 0;
     }
-    
+
     init() {
-      this.initializeParticles();
+      this.canvas.addEventListener('click', this.handleClick);
+      this.reset();
         return Promise.resolve();
     }
 
-  resize() {
-    this.initializeParticles();
+  handleClick() {
+    const now = performance.now();
+    if (now - this.lastClickTime < 300) { // Double click
+      this.reset();
+    } else { // Single click
+      this.showTrails = !this.showTrails;
+      if (!this.showTrails) { // Clear trails when toggling off
+        this.bodies.forEach(b => b.trail = []);
+      }
+        }
+    this.lastClickTime = now;
+    }
+    
+  reset() {
+    this.bodies = [
+      { x: this.canvas.width * 0.4, y: this.canvas.height / 2, vx: 0, vy: -50, m: 20, color: '#ff4444', trail: [] },
+      { x: this.canvas.width * 0.6, y: this.canvas.height / 2, vx: 0, vy: 50, m: 20, color: '#00d4ff', trail: [] },
+      { x: this.canvas.width / 2, y: this.canvas.height * 0.4, vx: 50, vy: 0, m: 20, color: '#00ff88', trail: [] }
+    ];
+    this.lastTime = 0;
   }
 
-    initializeParticles() {
-        this.particles = [];
-        for (let i = 0; i < this.numParticles; i++) {
-            this.particles.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                vx: (Math.random() - 0.5) * 2,
-                vy: (Math.random() - 0.5) * 2,
-                pressure: 0,
-                interactions: 0
-            });
+  animate(timestamp) {
+    if (!this.lastTime) this.lastTime = timestamp;
+    const deltaTime = (timestamp - this.lastTime) / 1000; // in seconds
+    this.lastTime = timestamp;
+
+    this.update(deltaTime * this.settings.speed);
+    this.draw();
+  }
+
+  update(dt) {
+    if (dt <= 0) return;
+
+    // Calculate forces (information pressure)
+    for (const body of this.bodies) {
+      let fx = 0, fy = 0;
+      for (const other of this.bodies) {
+        if (body === other) continue;
+                
+          const dx = other.x - body.x;
+          const dy = other.y - body.y;
+          const r2 = dx * dx + dy * dy;
+          if (r2 < 100) continue; // Avoid singularity
+          const r = Math.sqrt(r2);
+          const force = this.G * body.m * other.m / r2;
+                
+        fx += force * dx / r;
+        fy += force * dy / r;
+      }
+      body.ax = fx / body.m;
+      body.ay = fy / body.m;
+    }
+
+    // Update velocities and positions
+    for (const body of this.bodies) {
+      body.vx += body.ax * dt;
+      body.vy += body.ay * dt;
+      body.x += body.vx * dt;
+      body.y += body.vy * dt;
+
+        // Add to trail
+        if (this.showTrails) {
+          body.trail.push({ x: body.x, y: body.y });
+          if (body.trail.length > 200 / this.settings.speed) body.trail.shift();
+            }
+
+        // Boundary (simple wrap around)
+        if (body.x < -body.m) body.x = this.canvas.width + body.m;
+        if (body.x > this.canvas.width + body.m) body.x = -body.m;
+        if (body.y < -body.m) body.y = this.canvas.height + body.m;
+        if (body.y > this.canvas.height + body.m) body.y = -body.m;
         }
     }
-    
-    update(deltaTime) {
-      const speed = this.settings.speed * 50; // Base speed multiplier
-        
-        for (const particle of this.particles) {
-            let avgDx = 0;
-            let avgDy = 0;
-            let alignmentVx = 0;
-            let alignmentVy = 0;
-            let separationX = 0;
-            let separationY = 0;
-            let interactions = 0;
-            
-            for (const other of this.particles) {
-                if (particle !== other) {
-                    const dx = other.x - particle.x;
-                    const dy = other.y - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist < this.interactionRadius) {
-                        interactions++;
-                        avgDx += dx;
-                        avgDy += dy;
-                        alignmentVx += other.vx;
-                        alignmentVy += other.vy;
-                        
-                        // Separation (avoid crowding)
-                        separationX -= dx / dist;
-                        separationY -= dy / dist;
-                    }
-                }
-            }
-            
-            particle.interactions = interactions;
-            particle.pressure = interactions / this.numParticles;
-            
-            if (interactions > 0) {
-                // Cohesion (move towards center of neighbors)
-                avgDx /= interactions;
-                avgDy /= interactions;
-              particle.vx += avgDx * this.cohesionFactor * deltaTime;
-              particle.vy += avgDy * this.cohesionFactor * deltaTime;
-                
-                // Alignment (match velocity with neighbors)
-                alignmentVx /= interactions;
-                alignmentVy /= interactions;
-              particle.vx += (alignmentVx - particle.vx) * this.alignmentFactor * deltaTime;
-              particle.vy += (alignmentVy - particle.vy) * this.alignmentFactor * deltaTime;
-                
-                // Apply separation
-              particle.vx += separationX * this.separationFactor * deltaTime;
-              particle.vy += separationY * this.separationFactor * deltaTime;
-            }
-            
-            // Apply momentum
-          particle.x += particle.vx * speed * deltaTime;
-          particle.y += particle.vy * speed * deltaTime;
-            
-            // Boundary conditions (gentle repulsion)
-            if (particle.x < 0) {
-              particle.vx += this.boundaryStrength * deltaTime;
-            } else if (particle.x > this.canvas.width) {
-              particle.vx -= this.boundaryStrength * deltaTime;
-            }
-            if (particle.y < 0) {
-              particle.vy += this.boundaryStrength * deltaTime;
-            } else if (particle.y > this.canvas.height) {
-              particle.vy -= this.boundaryStrength * deltaTime;
-            }
-            
-            // Damping
-            particle.vx *= 0.99;
-            particle.vy *= 0.99;
-        }
-    }
-    
+
     draw() {
-        this.ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+      this.ctx.fillStyle = `rgba(10, 10, 10, ${this.showTrails ? 0.1 : 1.0})`;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Draw trails
+      if (this.showTrails) {
+        this.bodies.forEach(body => {
+          this.ctx.strokeStyle = body.color;
+          this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
+          if (body.trail.length > 0) {
+            this.ctx.moveTo(body.trail[0].x, body.trail[0].y);
+            for (let i = 1; i < body.trail.length; i++) {
+              this.ctx.lineTo(body.trail[i].x, body.trail[i].y);
+            }
+          }
+          this.ctx.stroke();
+        });
+      }
         
-        for (const particle of this.particles) {
-            const hue = 200 + Math.floor(particle.pressure * 100);
-            this.ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+      // Draw bodies
+      this.bodies.forEach(body => {
             this.ctx.beginPath();
-            this.ctx.arc(particle.x, particle.y, 5, 0, Math.PI * 2);
+        this.ctx.arc(body.x, body.y, body.m / 2, 0, Math.PI * 2);
+        this.ctx.fillStyle = body.color;
             this.ctx.fill();
-            
-            // Optional: Draw pressure indicator
-            // this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            // this.ctx.font = '10px Arial';
-            // this.ctx.fillText(particle.pressure.toFixed(2), particle.x + 10, particle.y);
+      });
+
+      if (!this.settings.videoMode) {
+        this.drawInfo();
         }
     }
-    
-    animate(timestamp) {
-        const deltaTime = (timestamp - (this.lastTime || timestamp)) / 1000;
-        this.lastTime = timestamp;
+
+  drawInfo() {
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(10, 10, 300, 100);
+
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 16px Arial';
+    this.ctx.fillText('Information Pressure Dynamics', 20, 35);
         
-        this.update(deltaTime);
-      this.draw();
+    this.ctx.font = '14px Arial';
+    this.ctx.fillStyle = '#cccccc';
+    this.ctx.fillText(`Gravitational Constant (G): ${this.G.toFixed(2)}`, 20, 60);
+    this.ctx.fillText(`Click to toggle trails`, 20, 80);
+    this.ctx.fillText(`Double-click to reset`, 20, 100);
     }
     
     updateSettings(newSettings) {
-        Object.assign(this.settings, newSettings);
-        // Apply any setting changes that need to be propagated to the simulation
+      if (newSettings.intensity !== undefined) {
+        // Map intensity 0-100 to G 0-2.0
+        this.G = (newSettings.intensity / 50.0);
+      }
+      Object.assign(this.settings, newSettings);
     }
-    
+
     cleanup() {
-        // Clean up resources if necessary (e.g., event listeners)
-        this.particles = [];
+      this.canvas.removeEventListener('click', this.handleClick);
     }
 }

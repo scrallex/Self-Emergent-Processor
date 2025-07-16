@@ -1,406 +1,153 @@
-// Scene 3: Cosine Alignment - Billiard Ball Collision with Cosine Highlighting
+// Scene 3: Complex Boundaries
+
 export default class Scene3 {
     constructor(canvas, ctx, settings) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
-        
-        // Physics parameters
-        this.gravity = 0.0;
-        this.friction = 0.99;
-        this.restitution = 0.9;
-        
-        // Balls array
+
         this.balls = [];
+      this.lastTime = 0;
+      this.impactInfo = { cosine: 0, transfer: 0, time: 0 };
         
-        // Collision state
-        this.collisionPairs = [];
-        this.impactHistory = [];
-        this.cosineThreshold = 0.7;
-        
-        // Animation timing
-        this.lastTime = performance.now();
-        
-        // Interaction state
-        this.mouseX = 0;
-        this.mouseY = 0;
-        this.dragging = false;
-        this.dragBall = null;
-        
-        // Event handlers
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
+      this.handleMouseClick = this.handleMouseClick.bind(this);
     }
-    
+
     init() {
-        // Initialize balls
-        this.initializeBalls();
-        
-        // Add event listeners
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        
+      this.canvas.addEventListener('click', this.handleMouseClick);
+      this.reset();
         return Promise.resolve();
     }
 
-  resize() {
-    // Re-initialize balls if canvas size changes significantly
-    // to prevent them from being stuck off-screen.
-    this.initializeBalls();
+  handleMouseClick() {
+    this.reset();
   }
 
-    initializeBalls() {
-        this.balls = [];
-        
-        // Create initial balls with different velocities
-        const configs = [
-          { x: 0.2, y: 0.3, vx: 120, vy: 60, color: '#ff6b6b' },
-          { x: 0.8, y: 0.4, vx: -90, vy: 90, color: '#4ecdc4' },
-          { x: 0.5, y: 0.2, vx: 30, vy: 120, color: '#45b7d1' },
-          { x: 0.3, y: 0.8, vx: -50, vy: -70, color: '#f7b731' },
-          { x: 0.7, y: 0.7, vx: 70, vy: -40, color: '#5f27cd' }
+  reset() {
+    const impactAngle = this.settings.intensity * 1.8; // Map 0-100 to 0-180 degrees
+    const rad = impactAngle * Math.PI / 180;
+    const radius = 20;
+
+      this.balls = [
+        { x: this.canvas.width * 0.25, y: this.canvas.height * 0.5, vx: 200 * Math.cos(rad), vy: 200 * Math.sin(rad), r: radius, color: '#00d4ff' },
+        { x: this.canvas.width * 0.75, y: this.canvas.height * 0.5, vx: 0, vy: 0, r: radius, color: '#7c3aed' }
         ];
-        
-        configs.forEach((config, index) => {
-            this.balls.push({
-                id: index,
-              x: config.x * this.canvas.width,
-              y: config.y * this.canvas.height,
-              vx: config.vx,
-              vy: config.vy,
-                radius: 20,
-                mass: 1,
-                color: config.color,
-                trail: []
-            });
-        });
+      this.lastTime = 0;
     }
-    
-    handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouseX = e.clientX - rect.left;
-        this.mouseY = e.clientY - rect.top;
-        
-        // Check if clicking on a ball
-        for (const ball of this.balls) {
-            const dist = Math.sqrt(
-                Math.pow(this.mouseX - ball.x, 2) + 
-                Math.pow(this.mouseY - ball.y, 2)
-            );
-            
-            if (dist < ball.radius) {
-                this.dragging = true;
-                this.dragBall = ball;
-                this.dragBall.vx = 0;
-                this.dragBall.vy = 0;
-                break;
-            }
-        }
-    }
-    
-    handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouseX = e.clientX - rect.left;
-        this.mouseY = e.clientY - rect.top;
-        
-        if (this.dragging && this.dragBall) {
-            this.dragBall.x = this.mouseX;
-            this.dragBall.y = this.mouseY;
-        }
-    }
-    
-    handleMouseUp() {
-        if (this.dragging && this.dragBall) {
-            // Give the ball some velocity based on mouse movement
-            this.dragBall.vx = (Math.random() - 0.5) * 4;
-            this.dragBall.vy = (Math.random() - 0.5) * 4;
-        }
-        this.dragging = false;
-        this.dragBall = null;
-    }
-    
+
     animate(timestamp) {
-        const deltaTime = Math.min((timestamp - this.lastTime) / 1000, 0.1) * this.settings.speed;
+      if (!this.lastTime) this.lastTime = timestamp;
+      const deltaTime = (timestamp - this.lastTime) / 1000; // in seconds
         this.lastTime = timestamp;
-        
-        // Clear canvas
-        this.ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Update physics
-        this.updatePhysics(deltaTime);
-        
-        // Check collisions
-        this.checkCollisions();
-        
-        // Draw everything
-        this.drawBalls();
-        this.drawCollisionInfo();
-        this.drawImpactHistory();
-        
-        if (!this.settings.videoMode) {
-            this.drawInfo();
-        }
+
+      this.update(deltaTime * this.settings.speed);
+      this.draw();
     }
-    
-    updatePhysics(deltaTime) {
-        for (const ball of this.balls) {
-            if (this.dragging && ball === this.dragBall) continue;
-            
-            // Apply gravity and friction
-            ball.vy += this.gravity * deltaTime;
-            ball.vx *= this.friction;
-            ball.vy *= this.friction;
-            
-            // Update position
-          ball.x += ball.vx * deltaTime * this.settings.speed;
-          ball.y += ball.vy * deltaTime * this.settings.speed;
-            
-            // Boundary collisions
-          if (ball.x - ball.radius < 0 || ball.x + ball.radius > this.canvas.width) { // a
-                ball.vx *= -this.restitution;
-                ball.x = ball.x - ball.radius < 0 ? ball.radius : this.canvas.width - ball.radius;
-            }
-            
-            if (ball.y - ball.radius < 0 || ball.y + ball.radius > this.canvas.height) {
-                ball.vy *= -this.restitution;
-                ball.y = ball.y - ball.radius < 0 ? ball.radius : this.canvas.height - ball.radius;
-            }
-            
-            // Update trail
-            ball.trail.push({ x: ball.x, y: ball.y });
-            if (ball.trail.length > 30) {
-                ball.trail.shift();
-            }
-        }
-    }
-    
-    checkCollisions() {
-        this.collisionPairs = [];
-        
+
+  update(dt) {
+    // Move balls
+    this.balls.forEach(ball => {
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
+    });
+
+      // Wall collisions form boundaries
+      this.balls.forEach(ball => {
+        if (ball.x - ball.r < 0) { ball.vx *= -1; ball.x = ball.r; }
+        if (ball.x + ball.r > this.canvas.width) { ball.vx *= -1; ball.x = this.canvas.width - ball.r; }
+        if (ball.y - ball.r < 0) { ball.vy *= -1; ball.y = ball.r; }
+        if (ball.y + ball.r > this.canvas.height) { ball.vy *= -1; ball.y = this.canvas.height - ball.r; }
+      });
+
+      // Ball-ball collisions
         for (let i = 0; i < this.balls.length; i++) {
             for (let j = i + 1; j < this.balls.length; j++) {
-                const ball1 = this.balls[i];
-                const ball2 = this.balls[j];
-                
-                const dx = ball2.x - ball1.x;
-                const dy = ball2.y - ball1.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < ball1.radius + ball2.radius) {
-                    // Collision detected
-                    this.resolveCollision(ball1, ball2);
+              const b1 = this.balls[i];
+              const b2 = this.balls[j];
+
+              const dx = b2.x - b1.x;
+              const dy = b2.y - b1.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < b1.r + b2.r) {
+                // Collision normal
+                const nx = dx / dist;
+                const ny = dy / dist;
+
+                  // Relative velocity
+                  const dvx = b2.vx - b1.vx;
+                  const dvy = b2.vy - b1.vy;
                     
-                    // Calculate cosine of angle between velocities
-                    const v1Mag = Math.sqrt(ball1.vx * ball1.vx + ball1.vy * ball1.vy);
-                    const v2Mag = Math.sqrt(ball2.vx * ball2.vx + ball2.vy * ball2.vy);
-                    
-                    if (v1Mag > 0 && v2Mag > 0) {
-                        const cosine = (ball1.vx * ball2.vx + ball1.vy * ball2.vy) / (v1Mag * v2Mag);
-                        
-                        this.collisionPairs.push({
-                            ball1: ball1,
-                            ball2: ball2,
-                            cosine: cosine,
-                            distance: distance
-                        });
-                        
-                        // Add to impact history
-                        this.impactHistory.push({
-                            x: (ball1.x + ball2.x) / 2,
-                            y: (ball1.y + ball2.y) / 2,
-                            cosine: cosine,
-                            time: Date.now(),
-                            intensity: Math.abs(cosine)
-                        });
-                        
-                        // Keep only recent impacts
-                        const now = Date.now();
-                        this.impactHistory = this.impactHistory.filter(impact => 
-                            now - impact.time < 3000
-                        );
-                    }
+                  // Impulse if moving towards each other
+                  const impulse = dvx * nx + dvy * ny;
+                  if (impulse > 0) continue;
+
+                  // Apply impulse (elastic collision)
+                  b1.vx += impulse * nx;
+                  b1.vy += impulse * ny;
+                  b2.vx -= impulse * nx;
+                  b2.vy -= impulse * ny;
+
+                  // Store impact info
+                  this.impactInfo = {
+                    cosine: Math.abs(nx), // cosine alignment
+                    transfer: Math.abs(nx) * 100, // %
+                    time: performance.now()
+                  };
+
+                  // Prevent sticking
+                  const overlap = (b1.r + b2.r - dist) / 2;
+                  b1.x -= overlap * nx;
+                  b1.y -= overlap * ny;
+                  b2.x += overlap * nx;
+                  b2.y += overlap * ny;
                 }
             }
         }
     }
-    
-    resolveCollision(ball1, ball2) {
-        const dx = ball2.x - ball1.x;
-        const dy = ball2.y - ball1.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Normalize collision vector
-        const nx = dx / distance;
-        const ny = dy / distance;
-        
-        // Relative velocity
-        const dvx = ball2.vx - ball1.vx;
-        const dvy = ball2.vy - ball1.vy;
-        
-        // Relative velocity in collision normal direction
-        const dvn = dvx * nx + dvy * ny;
-        
-        // Do not resolve if velocities are separating
-        if (dvn > 0) return;
-        
-        // Collision impulse
-        const impulse = 2 * dvn / (ball1.mass + ball2.mass);
-        
-        // Update velocities
-        ball1.vx += impulse * ball2.mass * nx * this.restitution;
-        ball1.vy += impulse * ball2.mass * ny * this.restitution;
-        ball2.vx -= impulse * ball1.mass * nx * this.restitution;
-        ball2.vy -= impulse * ball1.mass * ny * this.restitution;
-        
-        // Separate balls
-        const overlap = ball1.radius + ball2.radius - distance;
-        const separationX = nx * overlap / 2;
-        const separationY = ny * overlap / 2;
-        
-        ball1.x -= separationX;
-        ball1.y -= separationY;
-        ball2.x += separationX;
-        ball2.y += separationY;
-    }
-    
-    drawBalls() {
-        for (const ball of this.balls) {
-            // Draw trail
-            if (ball.trail.length > 1) {
-                this.ctx.strokeStyle = ball.color + '40';
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                
-                for (let i = 0; i < ball.trail.length; i++) {
-                    if (i === 0) {
-                        this.ctx.moveTo(ball.trail[i].x, ball.trail[i].y);
-                    } else {
-                        this.ctx.lineTo(ball.trail[i].x, ball.trail[i].y);
-                    }
-                }
-                
-                this.ctx.stroke();
-            }
-            
-            // Draw ball
-            this.ctx.fillStyle = ball.color;
-            this.ctx.beginPath();
-            this.ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+
+  draw() {
+    this.ctx.fillStyle = '#0a0a0a';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Draw balls
+      this.balls.forEach(ball => {
+        this.ctx.beginPath();
+          this.ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+          this.ctx.fillStyle = ball.color;
             this.ctx.fill();
-            
-            // Draw velocity vector
-            const velocityScale = 10;
-            this.ctx.strokeStyle = ball.color;
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.moveTo(ball.x, ball.y);
-            this.ctx.lineTo(
-                ball.x + ball.vx * velocityScale,
-                ball.y + ball.vy * velocityScale
-            );
-            this.ctx.stroke();
+        });
+
+      if (!this.settings.videoMode) {
+        this.drawInfo();
         }
     }
-    
-    drawCollisionInfo() {
-        // Draw collision connections
-        for (const pair of this.collisionPairs) {
-            const intensity = Math.abs(pair.cosine);
-            const color = intensity > this.cosineThreshold ? '#00ff88' : '#ff9900';
-            
-            this.ctx.strokeStyle = color + Math.floor(intensity * 255).toString(16).padStart(2, '0');
-            this.ctx.lineWidth = 3 * intensity;
-            this.ctx.beginPath();
-            this.ctx.moveTo(pair.ball1.x, pair.ball1.y);
-            this.ctx.lineTo(pair.ball2.x, pair.ball2.y);
-            this.ctx.stroke();
-        }
-    }
-    
-    drawImpactHistory() {
-        const now = Date.now();
-        
-        for (const impact of this.impactHistory) {
-            const age = (now - impact.time) / 3000; // Normalize to 0-1
-            const opacity = 1 - age;
-            
-            // Draw impact ripple
-            const radius = 30 * age + 10;
-            this.ctx.strokeStyle = `rgba(0, 255, 136, ${opacity * impact.intensity})`;
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.arc(impact.x, impact.y, radius, 0, Math.PI * 2);
-            this.ctx.stroke();
-            
-            // Draw cosine value
-            if (age < 0.5) {
-                this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-                this.ctx.font = '14px monospace';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(
-                    `cos: ${impact.cosine.toFixed(2)}`,
-                    impact.x,
-                    impact.y - radius - 10
-                );
-            }
-        }
-    }
-    
+
     drawInfo() {
-        // Info box
-        const boxX = 20;
-        const boxY = 20;
-        
+      const now = performance.now();
+      const age = (now - this.impactInfo.time) / 1000;
+      const opacity = Math.max(0, 1 - age * 2);
+
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(boxX, boxY, 300, 120);
-        
+      this.ctx.fillRect(10, 10, 280, 100);
+
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 16px Arial';
-        this.ctx.textAlign = 'left';
-        this.ctx.fillText('Cosine Alignment Demo', boxX + 10, boxY + 25);
+      this.ctx.fillText('Complex Boundaries', 20, 35);
         
         this.ctx.font = '14px Arial';
-        this.ctx.fillStyle = '#aaaaaa';
-        this.ctx.fillText('Drag balls to reposition', boxX + 10, boxY + 50);
-        this.ctx.fillText(`Active collisions: ${this.collisionPairs.length}`, boxX + 10, boxY + 70);
-        this.ctx.fillText(`Threshold: ${this.cosineThreshold}`, boxX + 10, boxY + 90);
-        
-        // Legend
-        this.ctx.fillStyle = '#00ff88';
-        this.ctx.fillRect(boxX + 180, boxY + 40, 20, 10);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('Aligned', boxX + 205, boxY + 49);
-        
-        this.ctx.fillStyle = '#ff9900';
-        this.ctx.fillRect(boxX + 180, boxY + 60, 20, 10);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('Orthogonal', boxX + 205, boxY + 69);
+      this.ctx.fillStyle = `rgba(204, 204, 204, ${opacity})`;
+      this.ctx.fillText(`Last Impact Cosine: ${this.impactInfo.cosine.toFixed(3)}`, 20, 60);
+      this.ctx.fillText(`Energy Transfer: ${this.impactInfo.transfer.toFixed(1)}%`, 20, 80);
+      this.ctx.fillText('Click to reset with new angle', 20, 100);
     }
-    
-    updateSettings(newSettings) {
-      const oldSpeed = this.settings.speed;
+
+  updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);
-      const speedRatio = this.settings.speed / oldSpeed;
-        
-        // Update ball velocities based on speed setting
-        for (const ball of this.balls) {
-          ball.vx *= speedRatio;
-          ball.vy *= speedRatio;
-        }
+      // The intensity setting will be used on the next reset.
     }
-    
+
     cleanup() {
-        // Remove event listeners
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        
-        // Clear arrays
-        this.balls = [];
-        this.collisionPairs = [];
-        this.impactHistory = [];
+      this.canvas.removeEventListener('click', this.handleMouseClick);
     }
 }
