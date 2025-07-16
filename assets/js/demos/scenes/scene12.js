@@ -80,6 +80,7 @@ export default class Scene12 {
         
         // Interactive controller (initialized in init)
         this.controller = null;
+        this.paused = false;
     }
 
     /**
@@ -542,6 +543,7 @@ export default class Scene12 {
      * @param {number} timestamp - The current timestamp from requestAnimationFrame
      */
     animate(timestamp) {
+        if (this.paused) return;
         // Calculate delta time
         if (!this.lastTime) this.lastTime = timestamp;
         const deltaTime = (timestamp - this.lastTime) / 1000; // in seconds
