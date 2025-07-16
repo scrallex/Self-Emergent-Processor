@@ -59,7 +59,7 @@ class SEPDemoFramework {
             6: { 
               name: "System Learning Evolution",
               description: "Watch the system evolve and learn through recursion.",
-                status: "pending",
+                status: "ready",
                 module: () => import('./scenes/scene6.js')
             },
             7: { 
@@ -71,31 +71,31 @@ class SEPDemoFramework {
             8: { 
                 name: "Pattern Recognition", 
               description: "Observe how patterns emerge and are recognized.",
-              status: "pending",
+              status: "ready",
                 module: () => import('./scenes/scene8.js')
             },
             9: { 
                 name: "Self-Reference Loops", 
               description: "Explore recursive self-reference and strange loops.",
-              status: "pending",
+              status: "ready",
                 module: () => import('./scenes/scene9.js')
             },
             10: { 
               name: "Memory Formation",
               description: "See how memories form through pattern consolidation.",
-              status: "pending",
+              status: "ready",
                 module: () => import('./scenes/scene10.js')
             },
             11: { 
               name: "Meta-System Interface",
               description: "Interact with the meta-level system orchestration.",
-                status: "pending",
+                status: "ready",
               module: () => import('./scenes/scene11.js') // This file won't exist, will show placeholder
             },
             12: { 
               name: "Full System Visualization",
               description: "Complete visualization of all components working together.",
-                status: "pending",
+                status: "ready",
               module: () => import('./scenes/scene12.js') // This file won't exist, will show placeholder
             }
         };
