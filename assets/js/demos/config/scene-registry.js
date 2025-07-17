@@ -226,12 +226,12 @@ export const SCENES = {
             focusPoints: ['state_grid', 'rupture_detection', 'coherence_visualization']
         }
     },
-    10: { 
+    10: {
         id: 10,
         name: "Unified Emergence",
-        description: "Navier-Stokes Vorticity Simulation",
-        longDescription: "Particle-based fluid simulation with vorticity coloring. Observe how no-plane-hit constraint forces rotation, creating lattice emergence from chaos and stable configurations through evolution.",
-        status: STATUS.READY,  
+        description: "Conway's Game of Life",
+        longDescription: "Interactive cellular automaton showing how complex patterns emerge from simple rules. Create, save, and load patterns to observe gliders, oscillators, and other emergent structures.",
+        status: STATUS.READY,
         type: 'divergent',
         color: SCENE_COLORS.DIVERGENT,
         demoName: DEMO_NAMES.FLUID_DYNAMICS,
@@ -244,7 +244,7 @@ export const SCENES = {
         videoSequence: {
             duration: 45,
             transition: 'flow',
-            focusPoints: ['vortex_center', 'lattice_formation', 'chaos_order_transition']
+            focusPoints: ['pattern_evolution', 'glider_movement', 'oscillator_behavior']
         }
     },
     11: { 

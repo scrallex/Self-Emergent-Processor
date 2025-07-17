@@ -1,10 +1,10 @@
 /**
- * Scene 10: Neural Memory - A Hopfield network simulation
+ * Scene 10: Conway's Game of Life
  *
- * This scene demonstrates pattern storage and retrieval in an associative memory
- * network based on the Hopfield model. The network can store multiple patterns
- * and retrieve them even from noisy or partial inputs.
+ * Interactive cellular automaton showing how complex patterns emerge from simple rules.
+ * Create, save, and load patterns to observe gliders, oscillators, and other emergent structures.
  */
+
 export default class Scene10 {
     /**
      * Constructor for the scene
@@ -21,55 +21,45 @@ export default class Scene10 {
         // Animation and timing
         this.time = 0;
         this.lastTime = 0;
-        this.updatesPerFrame = 100;
+        this.animationSpeed = 1.0;
+        this.lastStepTime = 0;
+        this.stepInterval = 100; // ms between generations
         
-        // Network parameters
-        this.gridSize = 20;
-        this.rows = Math.floor(canvas.height / this.gridSize);
-        this.cols = Math.floor(canvas.width / this.gridSize);
-        this.numNeurons = this.rows * this.cols;
+        // Grid parameters
+        this.cellSize = 15;
+        this.rows = Math.floor(canvas.height / this.cellSize);
+        this.cols = Math.floor(canvas.width / this.cellSize);
         
-        // Neurons and weights
-        this.neurons = new Array(this.numNeurons).fill(1);
-        this.weights = new Array(this.numNeurons).fill(0).map(() => new Array(this.numNeurons).fill(0));
+        // Game state
+        this.grid = [];
+        this.nextGrid = [];
+        this.isRunning = false;
+        this.generation = 0;
+        this.populationCount = 0;
         
-        // Memory patterns
-        this.memories = [];
-        this.storedPatternCount = 0;
-        this.currentPattern = -1; // -1 = none, 0+ = pattern index
-        this.patternNames = [];
-        
-        // Network dynamics
-        this.energy = 0;
-        this.retrievalAccuracy = 0;
-        this.stabilityMetric = 0;
-        this.stableCount = 0;
-        this.updateHistory = [];
+        // Preset patterns
+        this.presets = this.createPresets();
         
         // Interaction state
         this.isDrawing = false;
-        this.drawMode = 1; // 1 = ON, -1 = OFF
+        this.drawMode = 1; // 1 = draw, 0 = erase
         this.brushSize = 1;
-        this.activationHeatmap = false;
-        this.useActivationColor = true;
-        this.showPatternOverlay = false;
-        this.overlayPattern = 0;
-        this.convergenceMode = 'async'; // 'async' or 'sync'
+        this.mouseCell = { x: -1, y: -1 };
         
-        // Visual elements
-        this.activations = new Array(this.numNeurons).fill(0);
-        this.cellChanges = new Array(this.numNeurons).fill(0);
-        this.neuronActivities = new Array(this.numNeurons).fill(0);
+        // Display options
+        this.showGrid = true;
+        this.showHud = true;
+        this.colorMode = 'age'; // 'binary', 'age', 'heatmap'
+        
+        // Cell history for visualization
+        this.cellAge = [];
+        this.cellHeat = [];
         
         // Bind event handlers
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
-        
-        // Mouse coordinates
-        this.mouseX = 0;
-        this.mouseY = 0;
     }
 
     /**
@@ -77,14 +67,8 @@ export default class Scene10 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        // Create predefined patterns
-        this.defineMemories();
-        
-        // Store patterns in the network
-        this.storeMemories();
-        
-        // Start with a noisy pattern
-        this.scrambleNetwork(0.3);
+        // Initialize grids
+        this.initializeGrids();
         
         // Add event listeners
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
@@ -93,132 +77,64 @@ export default class Scene10 {
         document.addEventListener('mouseup', this.handleMouseUp);
         window.addEventListener('keydown', this.handleKeyDown);
         
+        // Add a random pattern to start
+        this.randomizeGrid(0.3);
+        
         return Promise.resolve();
     }
     
     /**
-     * Define memory patterns for the network
+     * Initialize the grid and related data structures
      */
-    defineMemories() {
-        this.memories = [];
-        this.patternNames = [];
-        
-        // Define pattern functions
-        const patterns = [
-            // Pattern 1: Letter T
-            {
-                name: "Letter T",
-                func: (c, r) => (c > this.cols/2 - 6 && c < this.cols/2 + 6 && r > this.rows/2 - 10 && r < this.rows/2 - 8) ||
-                               (c > this.cols/2 - 1 && c < this.cols/2 + 1 && r > this.rows/2 - 10 && r < this.rows/2 + 6)
-            },
-            // Pattern 2: Letter X
-            {
-                name: "Letter X",
-                func: (c, r) => (Math.abs(c - this.cols/2) < Math.abs(r - this.rows/2) + 2 &&
-                               Math.abs(c - this.cols/2) + 2 > Math.abs(r - this.rows/2) &&
-                               Math.abs(c - this.cols/2) < 8 && Math.abs(r - this.rows/2) < 8)
-            },
-            // Pattern 3: Letter O
-            {
-                name: "Letter O",
-                func: (c, r) => {
-                    const dx = c - this.cols/2;
-                    const dy = r - this.rows/2;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    return dist > 4 && dist < 7;
-                }
-            },
-            // Pattern 4: Square
-            {
-                name: "Square",
-                func: (c, r) => {
-                    const dx = Math.abs(c - this.cols/2);
-                    const dy = Math.abs(r - this.rows/2);
-                    return (dx === 5 && dy <= 5) || (dy === 5 && dx <= 5);
-                }
-            },
-            // Pattern 5: Checkerboard
-            {
-                name: "Checkerboard",
-                func: (c, r) => (c % 4 < 2) ^ (r % 4 < 2)
-            },
-            // Pattern 6: Diagonal Line
-            {
-                name: "Diagonal",
-                func: (c, r) => Math.abs(c - r) < 2 && c > this.cols/2 - 10 && c < this.cols/2 + 10
-            }
-        ];
-
-        // Create patterns from functions
-        patterns.forEach(pattern => {
-            const patternArray = new Array(this.numNeurons).fill(-1);
-            for (let r = 0; r < this.rows; r++) {
-                for (let c = 0; c < this.cols; c++) {
-                    if (pattern.func(c, r)) {
-                        patternArray[r * this.cols + c] = 1;
-                    }
-                }
-            }
-            this.memories.push(patternArray);
-            this.patternNames.push(pattern.name);
-        });
-    }
-
-    /**
-     * Store memory patterns in the network weights
-     */
-    storeMemories() {
-        // Reset weights
-        this.weights = new Array(this.numNeurons).fill(0).map(() => new Array(this.numNeurons).fill(0));
-        
-        // Hebbian learning rule
-        this.memories.forEach(pattern => {
-            for (let i = 0; i < this.numNeurons; i++) {
-                for (let j = 0; j < this.numNeurons; j++) {
-                    if (i !== j) {
-                        this.weights[i][j] += pattern[i] * pattern[j];
-                    }
-                }
-            }
-        });
-
-        // Normalize weights
-        this.weights.forEach(row => {
-            for (let i = 0; i < row.length; i++) {
-                row[i] /= this.memories.length;
-            }
-        });
-        
-        this.storedPatternCount = this.memories.length;
-    }
-
-    /**
-     * Randomize the network state with noise
-     * @param {number} noiseLevel - Probability of flipping a neuron (0-1)
-     */
-    scrambleNetwork(noiseLevel = 0.5) {
-        for (let i = 0; i < this.numNeurons; i++) {
-            this.neurons[i] = Math.random() < noiseLevel ? -1 : 1;
-        }
-        this.currentPattern = -1;
-        this.updateActivations();
+    initializeGrids() {
+        this.grid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        this.nextGrid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        this.cellAge = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        this.cellHeat = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
     }
     
     /**
-     * Load a stored pattern with noise
-     * @param {number} index - Pattern index
-     * @param {number} noiseLevel - Probability of flipping a neuron (0-1)
+     * Create a library of preset patterns
+     * @returns {Object} Dictionary of preset patterns
      */
-    loadNoisyMemory(index, noiseLevel = 0.2) {
-        if (index >= this.memories.length) return;
-        
-        const pattern = this.memories[index];
-        for (let i = 0; i < this.numNeurons; i++) {
-            this.neurons[i] = Math.random() < noiseLevel ? -pattern[i] : pattern[i];
-        }
-        
-        this.currentPattern = index;
-        this.updateActivations();
+    createPresets() {
+        return {
+            'glider': [
+                [0, 1, 0],
+                [0, 0, 1],
+                [1, 1, 1]
+            ],
+            'blinker': [
+                [0, 0, 0],
+                [1, 1, 1],
+                [0, 0, 0]
+            ],
+            'block': [
+                [1, 1],
+                [1, 1]
+            ],
+            'toad': [
+                [0, 1, 1, 1],
+                [1, 1, 1, 0]
+            ],
+            'beacon': [
+                [1, 1, 0, 0],
+                [1, 1, 0, 0],
+                [0, 0, 1, 1],
+                [0, 0, 1, 1]
+            ],
+            'glider_gun': [
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+                [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+                [1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            ]
+        };
     }
     
     /**
@@ -227,16 +143,15 @@ export default class Scene10 {
      */
     handleMouseDown(e) {
         this.isDrawing = true;
+        this.drawOnGrid(e);
         
-        // Right click for eraser mode
+        // Right-click for eraser
         if (e.button === 2) {
-            this.drawMode = -1;
+            this.drawMode = 0;
             e.preventDefault();
         } else {
             this.drawMode = 1;
         }
-        
-        this.drawOnCanvas(e);
     }
     
     /**
@@ -245,17 +160,22 @@ export default class Scene10 {
      */
     handleMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
-        this.mouseX = e.clientX - rect.left;
-        this.mouseY = e.clientY - rect.top;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Update mouse cell position
+        this.mouseCell = {
+            x: Math.floor(mouseX / this.cellSize),
+            y: Math.floor(mouseY / this.cellSize)
+        };
         
         if (this.isDrawing) {
-            this.drawOnCanvas(e);
+            this.drawOnGrid(e);
         }
     }
-
+    
     /**
      * Handle mouse up event
-     * @param {MouseEvent} e - The mouse event
      */
     handleMouseUp() {
         this.isDrawing = false;
@@ -266,41 +186,46 @@ export default class Scene10 {
      * @param {KeyboardEvent} e - The keyboard event
      */
     handleKeyDown(e) {
-        // Number keys (1-9) to load patterns
-        if (e.key >= '1' && e.key <= '9') {
-            const patternIndex = parseInt(e.key) - 1;
-            if (patternIndex < this.memories.length) {
-                this.loadNoisyMemory(patternIndex, 0.2);
-            }
-        }
-        
         switch (e.key) {
+            case ' ':
+                // Space to toggle simulation
+                this.isRunning = !this.isRunning;
+                break;
             case 'c':
-                // Clear network
-                this.scrambleNetwork(0.5);
+                // C to clear grid
+                this.clearGrid();
                 break;
             case 'r':
-                // Reset to random pattern
-                this.scrambleNetwork(0.3);
+                // R to randomize grid
+                this.randomizeGrid(0.3);
                 break;
-            case 'a':
-                // Toggle activation color mode
-                this.useActivationColor = !this.useActivationColor;
+            case 'g':
+                // G to toggle grid lines
+                this.showGrid = !this.showGrid;
                 break;
             case 'h':
-                // Toggle heatmap
-                this.activationHeatmap = !this.activationHeatmap;
+                // H to toggle HUD display
+                this.showHud = !this.showHud;
                 break;
-            case 'o':
-                // Toggle pattern overlay
-                this.showPatternOverlay = !this.showPatternOverlay;
-                if (this.showPatternOverlay) {
-                    this.overlayPattern = (this.overlayPattern + 1) % this.memories.length;
+            case 'n':
+                // N to step a single generation
+                if (!this.isRunning) {
+                    this.stepGeneration();
                 }
                 break;
-            case 's':
-                // Toggle convergence mode
-                this.convergenceMode = this.convergenceMode === 'async' ? 'sync' : 'async';
+            case 'm':
+                // M to cycle color modes
+                const modes = ['binary', 'age', 'heatmap'];
+                const currentIndex = modes.indexOf(this.colorMode);
+                this.colorMode = modes[(currentIndex + 1) % modes.length];
+                break;
+            case '1': case '2': case '3': case '4': case '5':
+                // Number keys for preset patterns
+                const patternKeys = Object.keys(this.presets);
+                const patternIndex = parseInt(e.key) - 1;
+                if (patternIndex >= 0 && patternIndex < patternKeys.length) {
+                    this.placePreset(patternKeys[patternIndex]);
+                }
                 break;
             case '+':
             case '=':
@@ -313,183 +238,206 @@ export default class Scene10 {
                 break;
         }
     }
-
+    
     /**
-     * Update neurons when drawing on the canvas
+     * Draw on the grid at the mouse position
      * @param {MouseEvent} e - The mouse event
      */
-    drawOnCanvas(e) {
+    drawOnGrid(e) {
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-
-        const centerC = Math.floor(mouseX / this.gridSize);
-        const centerR = Math.floor(mouseY / this.gridSize);
         
-        // Draw with brush size
-        for (let r = centerR - this.brushSize + 1; r <= centerR + this.brushSize - 1; r++) {
-            for (let c = centerC - this.brushSize + 1; c <= centerC + this.brushSize - 1; c++) {
+        const col = Math.floor(mouseX / this.cellSize);
+        const row = Math.floor(mouseY / this.cellSize);
+        
+        // Apply brush with size
+        for (let i = -this.brushSize + 1; i < this.brushSize; i++) {
+            for (let j = -this.brushSize + 1; j < this.brushSize; j++) {
+                const r = row + i;
+                const c = col + j;
+                
+                // Check if within grid bounds
                 if (r >= 0 && r < this.rows && c >= 0 && c < this.cols) {
-                    const index = r * this.cols + c;
+                    // Only fill cells within the brush radius
+                    const dx = i;
+                    const dy = j;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
                     
-                    // Only draw if within the brush radius
-                    const dx = c - centerC;
-                    const dy = r - centerR;
-                    const distance = Math.sqrt(dx*dx + dy*dy);
-                    
-                    if (distance < this.brushSize) {
-                        if (this.neurons[index] !== this.drawMode) {
-                            this.neurons[index] = this.drawMode;
-                            this.cellChanges[index] = 10; // Visual feedback duration
+                    if (dist < this.brushSize - 0.5) {
+                        this.grid[r][c] = this.drawMode;
+                        
+                        // Reset age for newly drawn cells
+                        if (this.drawMode === 1) {
+                            this.cellAge[r][c] = 0;
+                        } else {
+                            this.cellAge[r][c] = 0;
+                            this.cellHeat[r][c] = 0;
                         }
                     }
                 }
             }
         }
         
-        this.currentPattern = -1; // Custom pattern
-        this.updateActivations();
-    }
-
-    /**
-     * Update the network state according to Hopfield dynamics
-     */
-    updateNetwork() {
-        // Scale updates based on settings speed
-        const updates = Math.max(1, Math.floor(this.updatesPerFrame * this.settings.speed));
-        
-        if (this.convergenceMode === 'async') {
-            // Asynchronous updates (classic Hopfield)
-            for (let i = 0; i < updates; i++) {
-                // Pick a random neuron
-                const neuronIndex = Math.floor(Math.random() * this.numNeurons);
-                
-                // Get current state for tracking changes
-                const oldState = this.neurons[neuronIndex];
-                
-                // Calculate activation
-                let activation = 0;
-                for (let j = 0; j < this.numNeurons; j++) {
-                    activation += this.weights[neuronIndex][j] * this.neurons[j];
-                }
-                
-                // Store activation for visualization
-                this.activations[neuronIndex] = activation;
-                
-                // Update state (threshold rule)
-                this.neurons[neuronIndex] = activation >= 0 ? 1 : -1;
-                
-                // Record if the neuron changed state
-                if (oldState !== this.neurons[neuronIndex]) {
-                    this.cellChanges[neuronIndex] = 10; // Visual feedback duration
-                    this.neuronActivities[neuronIndex] = 1;
-                }
-            }
-        } else {
-            // Synchronous updates (all neurons at once)
-            const newStates = new Array(this.numNeurons);
-            
-            // Calculate all activations
-            for (let i = 0; i < this.numNeurons; i++) {
-                let activation = 0;
-                for (let j = 0; j < this.numNeurons; j++) {
-                    activation += this.weights[i][j] * this.neurons[j];
-                }
-                
-                this.activations[i] = activation;
-                newStates[i] = activation >= 0 ? 1 : -1;
-                
-                // Record if the neuron will change state
-                if (this.neurons[i] !== newStates[i]) {
-                    this.cellChanges[i] = 10; // Visual feedback duration
-                    this.neuronActivities[i] = 1;
-                }
-            }
-            
-            // Update all neurons at once
-            this.neurons = [...newStates];
-        }
-        
-        // Track changes for stability metric
-        const changes = this.cellChanges.filter(c => c > 0).length;
-        this.stabilityMetric = 1 - changes / this.numNeurons;
-        
-        // Count stable neurons
-        this.stableCount = this.neurons.reduce((count, _, idx) => {
-            let stable = true;
-            let activation = 0;
-            for (let j = 0; j < this.numNeurons; j++) {
-                activation += this.weights[idx][j] * this.neurons[j];
-            }
-            const expectedState = activation >= 0 ? 1 : -1;
-            stable = this.neurons[idx] === expectedState;
-            return count + (stable ? 1 : 0);
-        }, 0);
+        // Update population count
+        this.countPopulation();
     }
     
     /**
-     * Update neuron activations for visualization
+     * Clear the entire grid
      */
-    updateActivations() {
-        for (let i = 0; i < this.numNeurons; i++) {
-            let activation = 0;
-            for (let j = 0; j < this.numNeurons; j++) {
-                activation += this.weights[i][j] * this.neurons[j];
-            }
-            this.activations[i] = activation;
-        }
-    }
-
-    /**
-     * Calculate the network energy (Lyapunov function)
-     */
-    calculateEnergy() {
-        let energy = 0;
-        for (let i = 0; i < this.numNeurons; i++) {
-            for (let j = 0; j < this.numNeurons; j++) {
-                energy -= this.weights[i][j] * this.neurons[i] * this.neurons[j];
+    clearGrid() {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                this.grid[row][col] = 0;
+                this.cellAge[row][col] = 0;
+                this.cellHeat[row][col] = 0;
             }
         }
-        this.energy = energy / (2 * this.numNeurons * this.numNeurons); // Normalize
+        this.generation = 0;
+        this.populationCount = 0;
     }
     
     /**
-     * Calculate the overlap with stored patterns
+     * Fill the grid with random cells
+     * @param {number} density - Probability of live cells (0-1)
      */
-    calculatePatternOverlap() {
-        const overlaps = this.memories.map(pattern => {
-            let overlap = 0;
-            for (let i = 0; i < this.numNeurons; i++) {
-                overlap += this.neurons[i] * pattern[i];
+    randomizeGrid(density = 0.5) {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                this.grid[row][col] = Math.random() < density ? 1 : 0;
+                this.cellAge[row][col] = 0;
+                this.cellHeat[row][col] = 0;
             }
-            return overlap / this.numNeurons;
-        });
-        
-        // Find the best matching pattern
-        const maxOverlap = Math.max(...overlaps);
-        const bestMatch = overlaps.indexOf(maxOverlap);
-        
-        if (maxOverlap > 0.7) {
-            this.currentPattern = bestMatch;
         }
+        this.generation = 0;
+        this.countPopulation();
+    }
+    
+    /**
+     * Place a preset pattern at the mouse position
+     * @param {string} patternName - Name of the pattern to place
+     */
+    placePreset(patternName) {
+        const pattern = this.presets[patternName];
+        if (!pattern) return;
         
-        // Calculate retrieval accuracy
-        if (this.currentPattern >= 0) {
-            let matches = 0;
-            const pattern = this.memories[this.currentPattern];
-            for (let i = 0; i < this.numNeurons; i++) {
-                if (this.neurons[i] === pattern[i]) {
-                    matches++;
+        const { x, y } = this.mouseCell;
+        
+        // Place pattern centered at mouse
+        const patternHeight = pattern.length;
+        const patternWidth = pattern[0].length;
+        
+        const startRow = y - Math.floor(patternHeight / 2);
+        const startCol = x - Math.floor(patternWidth / 2);
+        
+        for (let i = 0; i < patternHeight; i++) {
+            for (let j = 0; j < patternWidth; j++) {
+                const r = startRow + i;
+                const c = startCol + j;
+                
+                if (r >= 0 && r < this.rows && c >= 0 && c < this.cols) {
+                    this.grid[r][c] = pattern[i][j];
+                    
+                    // Reset age for newly placed cells
+                    if (pattern[i][j] === 1) {
+                        this.cellAge[r][c] = 0;
+                    }
                 }
             }
-            this.retrievalAccuracy = matches / this.numNeurons;
-        } else {
-            this.retrievalAccuracy = 0;
         }
         
-        return overlaps;
+        this.countPopulation();
     }
-
+    
+    /**
+     * Count the total population (live cells)
+     */
+    countPopulation() {
+        this.populationCount = 0;
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                this.populationCount += this.grid[row][col];
+            }
+        }
+    }
+    
+    /**
+     * Calculate the next generation based on Conway's rules
+     */
+    stepGeneration() {
+        // Initialize next grid to zeros
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                this.nextGrid[row][col] = 0;
+            }
+        }
+        
+        // Apply Game of Life rules
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                const neighbors = this.countNeighbors(row, col);
+                const isAlive = this.grid[row][col] === 1;
+                
+                // Conway's Game of Life rules (B3/S23)
+                if (isAlive) {
+                    // Survival: 2 or 3 neighbors
+                    this.nextGrid[row][col] = (neighbors === 2 || neighbors === 3) ? 1 : 0;
+                    
+                    // Update age for surviving cells
+                    if (this.nextGrid[row][col] === 1) {
+                        this.cellAge[row][col] += 1;
+                    } else {
+                        // Record cell death in heatmap
+                        this.cellHeat[row][col] = Math.min(255, this.cellHeat[row][col] + 50);
+                    }
+                } else {
+                    // Birth: exactly 3 neighbors
+                    this.nextGrid[row][col] = (neighbors === 3) ? 1 : 0;
+                    
+                    // Reset age for newly born cells
+                    if (this.nextGrid[row][col] === 1) {
+                        this.cellAge[row][col] = 0;
+                    }
+                }
+            }
+        }
+        
+        // Swap grids
+        [this.grid, this.nextGrid] = [this.nextGrid, this.grid];
+        
+        // Update generation count and population
+        this.generation++;
+        this.countPopulation();
+    }
+    
+    /**
+     * Count live neighbors for a cell
+     * @param {number} row - Cell row
+     * @param {number} col - Cell column
+     * @returns {number} Number of live neighbors (0-8)
+     */
+    countNeighbors(row, col) {
+        let count = 0;
+        
+        // Check all 8 neighboring cells
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                // Skip the cell itself
+                if (i === 0 && j === 0) continue;
+                
+                // Get neighbor coordinates with wraparound
+                const r = (row + i + this.rows) % this.rows;
+                const c = (col + j + this.cols) % this.cols;
+                
+                // Count live neighbors
+                count += this.grid[r][c];
+            }
+        }
+        
+        return count;
+    }
+    
     /**
      * Main animation loop - called by the framework on each frame
      * @param {number} timestamp - The current timestamp from requestAnimationFrame
@@ -497,171 +445,110 @@ export default class Scene10 {
     animate(timestamp) {
         // Calculate delta time
         if (!this.lastTime) this.lastTime = timestamp;
-        const deltaTime = (timestamp - this.lastTime) / 1000; // in seconds
+        const deltaTime = timestamp - this.lastTime; // in ms
         this.lastTime = timestamp;
-        this.time += deltaTime;
         
-        // Update scene state
-        this.update(deltaTime);
+        // Update simulation based on settings speed
+        this.animationSpeed = this.settings.speed;
+        
+        // Process a step at regular intervals if running
+        if (this.isRunning) {
+            const adjustedInterval = this.stepInterval / this.animationSpeed;
+            if (timestamp - this.lastStepTime > adjustedInterval) {
+                this.stepGeneration();
+                this.lastStepTime = timestamp;
+            }
+        }
+        
+        // Fade out the heatmap over time
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                if (this.cellHeat[row][col] > 0) {
+                    this.cellHeat[row][col] = Math.max(0, this.cellHeat[row][col] - 0.5);
+                }
+            }
+        }
         
         // Render the scene
         this.draw();
     }
     
     /**
-     * Update scene state - separated from animation for clarity
-     * @param {number} dt - Delta time in seconds
-     */
-    update(dt) {
-        // Update network state
-        this.updateNetwork();
-        
-        // Calculate energy every few frames for efficiency
-        if (Math.floor(this.time * 10) % 2 === 0) {
-            this.calculateEnergy();
-            this.calculatePatternOverlap();
-        }
-        
-        // Update cell change indicators
-        for (let i = 0; i < this.numNeurons; i++) {
-            if (this.cellChanges[i] > 0) {
-                this.cellChanges[i] -= dt * 20;
-            }
-        }
-        
-        // Decay neuron activity for visualization
-        for (let i = 0; i < this.numNeurons; i++) {
-            if (this.neuronActivities[i] > 0) {
-                this.neuronActivities[i] -= dt * 2;
-                if (this.neuronActivities[i] < 0) this.neuronActivities[i] = 0;
-            }
-        }
-    }
-
-    /**
      * Draw the scene - handles both normal and video modes
      */
     draw() {
         const { ctx, canvas } = this;
         
-        // Clear canvas with fade effect
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.8)';
+        // Clear canvas
+        ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw network elements
-        this.drawGrid();
+        // Draw cells
+        this.drawCells();
         
-        // Draw pattern overlay if enabled
-        if (this.showPatternOverlay && this.overlayPattern < this.memories.length) {
-            this.drawPatternOverlay(this.overlayPattern);
+        // Draw grid lines if enabled
+        if (this.showGrid) {
+            this.drawGridLines();
         }
         
-        // Draw brush preview at mouse position if drawing
-        if (this.isDrawing) {
-            this.drawBrushPreview();
-        }
+        // Draw mouse hover indicator
+        this.drawMouseIndicator();
         
-        // Draw info panel or video info
-        if (!this.settings.videoMode) {
+        // Draw HUD info if enabled
+        if (this.showHud && !this.settings.videoMode) {
             this.drawInfo();
-        } else {
+        } else if (this.settings.videoMode) {
             this.drawVideoInfo();
         }
     }
     
     /**
-     * Draw the neural network grid
+     * Draw the cells based on the current grid state
      */
-    drawGrid() {
-        for (let r = 0; r < this.rows; r++) {
-            for (let c = 0; c < this.cols; c++) {
-                const index = r * this.cols + c;
-                const value = this.neurons[index];
-                const activation = this.activations[index];
+    drawCells() {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                const cellState = this.grid[row][col];
                 
-                // Determine cell color based on state and settings
-                let fillColor;
-                
-                if (this.activationHeatmap) {
-                    // Heatmap mode - color based on activation strength
-                    const normActivation = Math.tanh(activation * 0.5); // Normalize to [-1, 1]
-                    if (normActivation >= 0) {
-                        // Positive activation - blue to cyan
-                        const intensity = Math.floor(normActivation * 255);
-                        fillColor = `rgb(${intensity}, ${intensity}, 255)`;
-                    } else {
-                        // Negative activation - red to yellow
-                        const intensity = Math.floor(-normActivation * 255);
-                        fillColor = `rgb(255, ${intensity}, ${intensity})`;
+                if (cellState === 1) {
+                    // Determine cell color based on color mode
+                    let fillColor;
+                    switch (this.colorMode) {
+                        case 'binary':
+                            fillColor = '#00ff88'; // Green for all live cells
+                            break;
+                        case 'age':
+                            // Color based on cell age (younger: green -> older: blue)
+                            const age = Math.min(100, this.cellAge[row][col]);
+                            const ageRatio = age / 100;
+                            const r = Math.floor(0 * (1 - ageRatio) + 0 * ageRatio);
+                            const g = Math.floor(255 * (1 - ageRatio) + 100 * ageRatio);
+                            const b = Math.floor(136 * (1 - ageRatio) + 255 * ageRatio);
+                            fillColor = `rgb(${r}, ${g}, ${b})`;
+                            break;
+                        case 'heatmap':
+                            // All live cells are white
+                            fillColor = '#ffffff';
+                            break;
                     }
-                } else if (this.useActivationColor && value === 1) {
-                    // Color active neurons based on activation strength
-                    const normActivation = Math.min(1, Math.abs(activation) / 5);
-                    const intensity = 127 + Math.floor(normActivation * 128);
-                    fillColor = `rgb(0, ${intensity}, 255)`;
-                } else {
-                    // Simple binary mode
-                    fillColor = value === 1 ? '#00d4ff' : 'rgba(255, 255, 255, 0.1)';
-                }
-                
-                // Draw the cell
-                this.ctx.fillStyle = fillColor;
-                this.ctx.fillRect(
-                    c * this.gridSize + 1,
-                    r * this.gridSize + 1,
-                    this.gridSize - 2,
-                    this.gridSize - 2
-                );
-                
-                // Draw change indicator
-                if (this.cellChanges[index] > 0) {
-                    const alpha = this.cellChanges[index] / 10;
-                    this.ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+                    
+                    // Draw the cell
+                    this.ctx.fillStyle = fillColor;
                     this.ctx.fillRect(
-                        c * this.gridSize + 1,
-                        r * this.gridSize + 1,
-                        this.gridSize - 2,
-                        this.gridSize - 2
+                        col * this.cellSize + 1,
+                        row * this.cellSize + 1,
+                        this.cellSize - 2,
+                        this.cellSize - 2
                     );
-                }
-                
-                // Draw activity indicator
-                if (this.neuronActivities[index] > 0) {
-                    const size = this.gridSize * 0.3 * this.neuronActivities[index];
-                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                    this.ctx.beginPath();
-                    this.ctx.arc(
-                        c * this.gridSize + this.gridSize/2,
-                        r * this.gridSize + this.gridSize/2,
-                        size, 0, Math.PI * 2
-                    );
-                    this.ctx.fill();
-                }
-            }
-        }
-    }
-    
-    /**
-     * Draw a pattern overlay to show target patterns
-     * @param {number} patternIndex - Index of the pattern to overlay
-     */
-    drawPatternOverlay(patternIndex) {
-        if (patternIndex >= this.memories.length) return;
-        
-        const pattern = this.memories[patternIndex];
-        
-        for (let r = 0; r < this.rows; r++) {
-            for (let c = 0; c < this.cols; c++) {
-                const index = r * this.cols + c;
-                
-                if (pattern[index] === 1) {
-                    this.ctx.strokeStyle = 'rgba(255, 170, 0, 0.5)';
-                    this.ctx.lineWidth = 1;
-                    this.ctx.strokeRect(
-                        c * this.gridSize,
-                        r * this.gridSize,
-                        this.gridSize,
-                        this.gridSize
+                } else if (this.colorMode === 'heatmap' && this.cellHeat[row][col] > 0) {
+                    // Draw heat for dead cells in heatmap mode
+                    const heat = this.cellHeat[row][col];
+                    this.ctx.fillStyle = `rgba(255, 50, 50, ${heat / 255})`;
+                    this.ctx.fillRect(
+                        col * this.cellSize + 1,
+                        row * this.cellSize + 1,
+                        this.cellSize - 2,
+                        this.cellSize - 2
                     );
                 }
             }
@@ -669,119 +556,123 @@ export default class Scene10 {
     }
     
     /**
-     * Draw the brush preview at mouse position
+     * Draw grid lines
      */
-    drawBrushPreview() {
-        const centerC = Math.floor(this.mouseX / this.gridSize);
-        const centerR = Math.floor(this.mouseY / this.gridSize);
+    drawGridLines() {
+        this.ctx.strokeStyle = 'rgba(80, 80, 80, 0.3)';
+        this.ctx.lineWidth = 1;
         
-        this.ctx.fillStyle = this.drawMode === 1 ?
-            'rgba(0, 212, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+        // Draw vertical grid lines
+        for (let col = 0; col <= this.cols; col++) {
+            const x = col * this.cellSize;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.rows * this.cellSize);
+            this.ctx.stroke();
+        }
+        
+        // Draw horizontal grid lines
+        for (let row = 0; row <= this.rows; row++) {
+            const y = row * this.cellSize;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.cols * this.cellSize, y);
+            this.ctx.stroke();
+        }
+    }
+    
+    /**
+     * Draw indicator for mouse position
+     */
+    drawMouseIndicator() {
+        const { x, y } = this.mouseCell;
+        
+        if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
+            // Draw brush outline
+            this.ctx.strokeStyle = this.drawMode === 1 ? '#00ff88' : '#ff3333';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
             
-        this.ctx.beginPath();
-        this.ctx.arc(
-            centerC * this.gridSize + this.gridSize/2,
-            centerR * this.gridSize + this.gridSize/2,
-            this.brushSize * this.gridSize,
-            0, Math.PI * 2
-        );
-        this.ctx.fill();
+            const centerX = (x + 0.5) * this.cellSize;
+            const centerY = (y + 0.5) * this.cellSize;
+            const radius = this.brushSize * this.cellSize * 0.8;
+            
+            this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
     }
-
+    
     /**
-     * Draw the information panel for normal mode
+     * Draw information panel
      */
     drawInfo() {
-        const { ctx } = this;
+        // Background for info panel
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(20, 20, 270, 180);
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(20, 20, 350, 180);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText('Neural Memory - Hopfield Network', 30, 45);
-
-        ctx.font = '14px Arial';
+        // Title
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 16px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText("Conway's Game of Life", 30, 45);
         
-        // Show network stats
-        ctx.fillStyle = '#aaaaaa';
-        ctx.fillText(`Stored Patterns: ${this.storedPatternCount}`, 30, 70);
-        ctx.fillText(`Network Energy: ${this.energy.toFixed(4)}`, 30, 90);
-        ctx.fillText(`Stability: ${(this.stabilityMetric * 100).toFixed(1)}% (${this.stableCount}/${this.numNeurons})`, 30, 110);
+        // Game stats
+        this.ctx.font = '14px monospace';
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText(`Generation: ${this.generation}`, 30, 70);
+        this.ctx.fillText(`Population: ${this.populationCount}`, 30, 90);
+        this.ctx.fillText(`Mode: ${this.colorMode}`, 30, 110);
+        this.ctx.fillText(`Brush Size: ${this.brushSize}`, 30, 130);
+        this.ctx.fillText(`Status: ${this.isRunning ? 'Running' : 'Paused'}`, 30, 150);
         
-        // Show pattern recognition status
-        if (this.currentPattern >= 0 && this.retrievalAccuracy > 0.7) {
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText(`Recognized: ${this.patternNames[this.currentPattern]} (${(this.retrievalAccuracy * 100).toFixed(1)}%)`, 30, 130);
-        } else {
-            ctx.fillStyle = '#ff6b6b';
-            ctx.fillText('No pattern recognized', 30, 130);
-        }
-        
-        // Show controls
-        ctx.fillStyle = '#aaaaaa';
-        ctx.fillText(`Mode: ${this.convergenceMode.toUpperCase()} | Brush: ${this.brushSize}`, 30, 150);
-        ctx.fillText('Press 1-6 for patterns, C to clear, H for heatmap', 30, 170);
+        // Controls help
+        this.ctx.fillText('Space: Play/Pause | C: Clear | R: Random', 30, 180);
+        this.ctx.fillText('N: Step | 1-5: Patterns | M: Color Mode', 30, 200);
     }
-
+    
     /**
      * Draw minimal information for video recording mode
      */
     drawVideoInfo() {
-        const { ctx, canvas } = this;
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '18px monospace';
+        this.ctx.textAlign = 'right';
         
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'right';
+        // Show generation and population
+        this.ctx.fillText(`Gen: ${this.generation}`, this.canvas.width - 20, 30);
+        this.ctx.fillText(`Pop: ${this.populationCount}`, this.canvas.width - 20, 60);
         
-        // Show convergence info
-        ctx.fillText(`${this.convergenceMode.toUpperCase()} Updates`, canvas.width - 20, 30);
-        
-        // Show pattern recognition status
-        if (this.currentPattern >= 0 && this.retrievalAccuracy > 0.7) {
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText(`Pattern: ${this.patternNames[this.currentPattern]}`, canvas.width - 20, 60);
-        }
-        
-        // Show energy level
-        const energyText = `Energy: ${this.energy.toFixed(4)}`;
-        ctx.fillStyle = this.stabilityMetric > 0.95 ? '#00ff88' : '#ffffff';
-        ctx.fillText(energyText, canvas.width - 20, 90);
-        
-        ctx.textAlign = 'left'; // Reset alignment
+        this.ctx.textAlign = 'left'; // Reset alignment
     }
-
+    
     /**
      * Update scene settings when changed from the framework
      * @param {Object} newSettings - The new settings object
      */
     updateSettings(newSettings) {
-        // Intensity controls noise level during reset
-        if (newSettings.intensity !== undefined &&
-            newSettings.intensity !== this.settings.intensity) {
-            const noiseLevel = 1 - (newSettings.intensity / 100);
-            this.scrambleNetwork(noiseLevel);
-        }
+        this.settings = { ...this.settings, ...newSettings };
         
-        Object.assign(this.settings, newSettings);
+        // Adjust simulation speed based on settings
+        if (newSettings.speed !== undefined) {
+            this.animationSpeed = newSettings.speed;
+        }
     }
     
     /**
      * Clean up resources when scene is unloaded
      */
     cleanup() {
+        // Remove event listeners
         this.canvas.removeEventListener('mousedown', this.handleMouseDown);
         this.canvas.removeEventListener('mousemove', this.handleMouseMove);
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);
         document.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('keydown', this.handleKeyDown);
         
-        // Clear arrays to free memory
-        this.neurons = [];
-        this.weights = [];
-        this.memories = [];
-        this.activations = [];
-        this.cellChanges = [];
-        this.neuronActivities = [];
+        // Clear data structures
+        this.grid = [];
+        this.nextGrid = [];
+        this.cellAge = [];
+        this.cellHeat = [];
     }
 }

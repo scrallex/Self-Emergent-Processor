@@ -1,7 +1,5 @@
 import { SCENES } from './config/scene-registry.js';
 
-import { SCENES } from './config/scene-registry.js';
-
 // SEP Demo Framework - Modular Loading System
 class SEPDemoFramework {
     constructor() {
@@ -51,6 +49,79 @@ class SEPDemoFramework {
         }
     }
     
+    // Initialize required dependencies
+    _initDependencies() {
+        // These would typically be loaded from separate modules
+        if (!this._dependencies) {
+            this._dependencies = {
+                physics: {
+                    // Basic physics engine functionality
+                    applyGravity: (obj, dt) => { obj.vy += 9.8 * dt; },
+                    applyForce: (obj, fx, fy) => { obj.vx += fx; obj.vy += fy; },
+                    detectCollision: (obj1, obj2) => {
+                        const dx = obj1.x - obj2.x;
+                        const dy = obj1.y - obj2.y;
+                        return Math.sqrt(dx*dx + dy*dy) < (obj1.radius + obj2.radius);
+                    }
+                },
+                math: {
+                    // Math utility functions
+                    lerp: (a, b, t) => a + (b - a) * t,
+                    clamp: (val, min, max) => Math.min(Math.max(val, min), max),
+                    randomRange: (min, max) => min + Math.random() * (max - min),
+                    distance: (x1, y1, x2, y2) => Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1)),
+                    degToRad: (deg) => deg * Math.PI / 180,
+                    radToDeg: (rad) => rad * 180 / Math.PI
+                },
+                eventManager: {
+                    // Basic event management
+                    listeners: {},
+                    on: function(event, callback) {
+                        if (!this.listeners[event]) this.listeners[event] = [];
+                        this.listeners[event].push(callback);
+                    },
+                    emit: function(event, data) {
+                        if (this.listeners[event]) {
+                            this.listeners[event].forEach(callback => callback(data));
+                        }
+                    },
+                    mouse: { x: 0, y: 0, down: false }
+                },
+                stateManager: {
+                    // Simple state management
+                    state: {},
+                    get: function(key) { return this.state[key]; },
+                    set: function(key, value) { this.state[key] = value; }
+                },
+                renderPipeline: {
+                    // Basic render effects
+                    effects: [],
+                    addEffect: function(effect) { this.effects.push(effect); },
+                    applyEffects: function(ctx) {
+                        this.effects.forEach(effect => effect(ctx));
+                    }
+                }
+            };
+            
+            // Set up mouse tracking
+            this.canvas.addEventListener('mousemove', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                this._dependencies.eventManager.mouse.x = e.clientX - rect.left;
+                this._dependencies.eventManager.mouse.y = e.clientY - rect.top;
+            });
+            
+            this.canvas.addEventListener('mousedown', () => {
+                this._dependencies.eventManager.mouse.down = true;
+            });
+            
+            this.canvas.addEventListener('mouseup', () => {
+                this._dependencies.eventManager.mouse.down = false;
+            });
+        }
+        
+        return this._dependencies;
+    }
+    
     async loadScene(sceneId) {
         // Clean up current scene
         await this.unloadCurrentScene();
@@ -64,8 +135,32 @@ class SEPDemoFramework {
         this.currentScene = sceneId;
         
         try {
+            // Initialize dependencies if not already initialized
+            const dependencies = this._initDependencies();
+            
             const module = await scene.module();
-            this.currentModule = new module.default(this.canvas, this.ctx, this.settings);
+            
+            // Handle different constructor parameter patterns for backwards compatibility
+            const sceneConstructor = module.default;
+            const paramCount = sceneConstructor.length;
+            
+            if (paramCount > 3) {
+                // Full parameter set (for scenes 1, 12 and future scenes)
+                const { physics, math, eventManager, stateManager, renderPipeline } = dependencies;
+                this.currentModule = new sceneConstructor(
+                    this.canvas,
+                    this.ctx,
+                    this.settings,
+                    physics,
+                    math,
+                    eventManager,
+                    stateManager,
+                    renderPipeline
+                );
+            } else {
+                // Basic parameter set (for simpler scenes)
+                this.currentModule = new sceneConstructor(this.canvas, this.ctx, this.settings);
+            }
             
             // Initialize the scene
             if (this.currentModule.init) {
@@ -78,6 +173,7 @@ class SEPDemoFramework {
             return true;
         } catch (error) {
             console.error(`Failed to load scene ${sceneId}:`, error);
+            console.error(error.stack);  // Log the stack trace for better debugging
             // For pending scenes, show placeholder
             this.showPlaceholder(scene.name);
             return false;
@@ -125,6 +221,10 @@ class SEPDemoFramework {
             this.animationId = null;
         }
     
+        // Find the scene object from the registry using sceneName or scene ID
+        const sceneId = parseInt(sceneName) || null;
+        const sceneObj = sceneId && this.scenes[sceneId] ? this.scenes[sceneId] : null;
+        
         const animate = (timestamp) => {
             this.ctx.fillStyle = '#0a0a0a';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -136,14 +236,18 @@ class SEPDemoFramework {
             this.ctx.fillText(sceneName, this.canvas.width / 2, this.canvas.height / 2 - 50);
             
             // Draw status based on scene status if available
-            // Draw status based on scene status if available and not 'ready'
-            if (scene && scene.status && scene.status !== 'ready') {
+            if (sceneObj && sceneObj.status && sceneObj.status !== 'ready') {
                 this.ctx.fillStyle = '#ffaa00';
                 this.ctx.font = '24px Arial';
-                this.ctx.fillText(scene.status, this.canvas.width / 2, this.canvas.height / 2 + 20);
-            } else if (scene && scene.status) {
+                this.ctx.fillText(sceneObj.status, this.canvas.width / 2, this.canvas.height / 2 + 20);
+            } else if (sceneObj && sceneObj.status === 'ready') {
                 // For 'ready' status, do not draw anything or draw a different message if needed
                 // Currently, no action for 'ready'
+            } else {
+                // If no scene object or status, show "Coming Soon"
+                this.ctx.fillStyle = '#ffaa00';
+                this.ctx.font = '24px Arial';
+                this.ctx.fillText("Coming Soon", this.canvas.width / 2, this.canvas.height / 2 + 20);
             }
             
             // Draw animated circles for visual effect

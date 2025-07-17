@@ -68,20 +68,22 @@ export default class Scene6 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        // Register with interactive controller if available
-        if (this.interactiveController) {
-            this.interactiveController.registerControls(this.controls, (control, value) => {
-                if (control === 'massRatio') {
-                    this.massRatio = value;
-                    this.reset();
-                } else if (control === 'velocity') {
-                    this.initialVelocity = -value;
-                    this.reset();
-                }
-            });
-        } else {
-            console.warn('InteractiveController not available - controls disabled');
-        }
+        // Add event listeners for interactivity
+        this.handleMouseClick = this.handleMouseClick.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        
+        this.canvas.addEventListener('click', this.handleMouseClick);
+        window.addEventListener('keydown', this.handleKeyDown);
+        this.canvas.addEventListener('mousemove', this.handleMouseMove);
+        
+        // Create interactive control points
+        this.controlPoints = {
+            smallBlock: { dragging: false, hovered: false },
+            largeBlock: { dragging: false, hovered: false },
+            massSlider: { x: 50, y: 50, width: 150, height: 30, dragging: false, hovered: false },
+            speedSlider: { x: 50, y: 100, width: 150, height: 30, dragging: false, hovered: false }
+        };
         
         this.reset();
         return Promise.resolve();
@@ -160,33 +162,149 @@ export default class Scene6 {
     }
 
     /**
-     * Handle mouse click event
-     * @param {MouseEvent} e - The mouse event
+     * Handle keyboard input
+     * @param {KeyboardEvent} e - The keyboard event
      */
-    handleMouseClick(e) {
-        if (this.isComplete) {
-            this.reset();
-        } else {
-            this.isRunning = !this.isRunning;
+    handleKeyDown(e) {
+        switch (e.key) {
+            case ' ':
+                // Space to toggle simulation
+                if (this.isComplete) {
+                    this.reset();
+                } else {
+                    this.isRunning = !this.isRunning;
+                }
+                break;
+            case 'r':
+                // R to reset simulation
+                this.reset();
+                break;
+            case '1': case '2': case '3': case '4': case '5':
+                // Number keys to set mass ratio
+                const ratio = parseInt(e.key);
+                this.massRatio = ratio;
+                this.reset();
+                break;
+            case 'ArrowUp':
+                // Increase velocity
+                this.initialVelocity = Math.min(-50, this.initialVelocity - 10);
+                this.reset();
+                break;
+            case 'ArrowDown':
+                // Decrease velocity
+                this.initialVelocity = Math.max(-200, this.initialVelocity + 10);
+                this.reset();
+                break;
         }
     }
 
     /**
-     * Handle mouse down event
+     * Handle mouse move event
      * @param {MouseEvent} e - The mouse event
      */
-    /**
-     * Handle user interaction through the interactive controller
-     * @param {string} action - The action type
-     * @param {Object} data - Action data
-     */
-    handleInteraction(action, data) {
-        if (action === 'click') {
-            if (this.isComplete) {
-                this.reset();
-            } else {
-                this.isRunning = !this.isRunning;
+    handleMouseMove(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Reset hover states
+        this.controlPoints.smallBlock.hovered = false;
+        this.controlPoints.largeBlock.hovered = false;
+        this.controlPoints.massSlider.hovered = false;
+        this.controlPoints.speedSlider.hovered = false;
+        
+        // Check if mouse is over blocks
+        for (let i = 0; i < this.blocks.length; i++) {
+            const block = this.blocks[i];
+            if (mouseX >= block.x && mouseX <= block.x + block.width &&
+                mouseY >= block.y && mouseY <= block.y + block.height) {
+                if (i === 0) {
+                    this.controlPoints.smallBlock.hovered = true;
+                } else {
+                    this.controlPoints.largeBlock.hovered = true;
+                }
             }
+        }
+        
+        // Check if mouse is over mass slider
+        const ms = this.controlPoints.massSlider;
+        if (mouseX >= ms.x && mouseX <= ms.x + ms.width &&
+            mouseY >= ms.y && mouseY <= ms.y + ms.height) {
+            ms.hovered = true;
+            
+            // If dragging, update mass ratio
+            if (ms.dragging) {
+                const relativeX = mouseX - ms.x;
+                const ratio = Math.max(1, Math.min(5, Math.round(relativeX / ms.width * 5) + 1));
+                if (ratio !== this.massRatio) {
+                    this.massRatio = ratio;
+                    this.reset();
+                }
+            }
+        }
+        
+        // Check if mouse is over speed slider
+        const ss = this.controlPoints.speedSlider;
+        if (mouseX >= ss.x && mouseX <= ss.x + ss.width &&
+            mouseY >= ss.y && mouseY <= ss.y + ss.height) {
+            ss.hovered = true;
+            
+            // If dragging, update velocity
+            if (ss.dragging) {
+                const relativeX = mouseX - ss.x;
+                const percentage = relativeX / ss.width;
+                const velocity = -50 - percentage * 150;
+                if (Math.abs(velocity - this.initialVelocity) > 5) {
+                    this.initialVelocity = velocity;
+                    this.reset();
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle mouse click event
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Check if clicked on a control element
+        if (this.controlPoints.massSlider.hovered) {
+            this.controlPoints.massSlider.dragging = true;
+            // Handle the click immediately to update
+            this.handleMouseMove(e);
+            
+            // Add mouse up listener to end dragging
+            const endDrag = () => {
+                this.controlPoints.massSlider.dragging = false;
+                window.removeEventListener('mouseup', endDrag);
+            };
+            window.addEventListener('mouseup', endDrag);
+            return;
+        }
+        
+        if (this.controlPoints.speedSlider.hovered) {
+            this.controlPoints.speedSlider.dragging = true;
+            // Handle the click immediately to update
+            this.handleMouseMove(e);
+            
+            // Add mouse up listener to end dragging
+            const endDrag = () => {
+                this.controlPoints.speedSlider.dragging = false;
+                window.removeEventListener('mouseup', endDrag);
+            };
+            window.addEventListener('mouseup', endDrag);
+            return;
+        }
+        
+        // If not a control, toggle simulation
+        if (this.isComplete) {
+            this.reset();
+        } else {
+            this.isRunning = !this.isRunning;
         }
     }
 
@@ -792,7 +910,7 @@ export default class Scene6 {
         
         // Draw info panel background
         ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-        ctx.fillRect(10, 130, 350, 180);
+        ctx.fillRect(10, 130, 350, 280);
         
         // Title
         ctx.fillStyle = '#ffffff';
@@ -855,6 +973,75 @@ export default class Scene6 {
                 20, 315
             );
         }
+        
+        // Draw interactive controls
+        this.drawSlider(
+            this.controlPoints.massSlider.x,
+            this.controlPoints.massSlider.y,
+            this.controlPoints.massSlider.width,
+            this.controlPoints.massSlider.height,
+            'Mass Ratio',
+            this.massRatio,
+            1,
+            5,
+            this.controlPoints.massSlider.hovered || this.controlPoints.massSlider.dragging
+        );
+        
+        this.drawSlider(
+            this.controlPoints.speedSlider.x,
+            this.controlPoints.speedSlider.y,
+            this.controlPoints.speedSlider.width,
+            this.controlPoints.speedSlider.height,
+            'Initial Speed',
+            Math.abs(this.initialVelocity),
+            50,
+            200,
+            this.controlPoints.speedSlider.hovered || this.controlPoints.speedSlider.dragging
+        );
+        
+        // Instructions
+        ctx.fillStyle = '#aaaaaa';
+        ctx.font = '12px Arial';
+        ctx.fillText('Space: Play/Pause | R: Reset | 1-5: Set Mass Ratio', 20, 350);
+        ctx.fillText('↑↓: Change Speed | Drag sliders to adjust parameters', 20, 370);
+    }
+
+    /**
+     * Draw a slider control
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {number} width - Slider width
+     * @param {number} height - Slider height
+     * @param {string} label - Label text for the slider
+     * @param {number} value - Current value
+     * @param {number} min - Minimum value
+     * @param {number} max - Maximum value
+     * @param {boolean} highlight - Whether to highlight the slider
+     */
+    drawSlider(x, y, width, height, label, value, min, max, highlight) {
+        const { ctx } = this;
+        const percentage = (value - min) / (max - min);
+        
+        // Draw slider track
+        ctx.fillStyle = 'rgba(80, 80, 80, 0.5)';
+        ctx.fillRect(x, y, width, height);
+        
+        // Draw filled portion
+        ctx.fillStyle = highlight ? '#00ff88' : '#00d4ff';
+        ctx.fillRect(x, y, width * percentage, height);
+        
+        // Draw slider handle
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x + width * percentage, y + height/2, height/2 + 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw label
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.font = '12px Arial';
+        ctx.fillText(`${label}: ${value.toFixed(0)}`, x, y - 5);
+        ctx.textAlign = 'left';
     }
 
     /**

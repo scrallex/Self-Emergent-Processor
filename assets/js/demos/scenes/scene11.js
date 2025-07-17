@@ -23,6 +23,9 @@ export default class Scene11 {
         this.lastTime = 0;
         this.animationPhase = 0;
         this.marketState = 0; // 0: stable, 1: bull, 2: bear, 3: volatile
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
         
         // Financial model parameters
         this.volatility = 30; // Initial volatility in percent
@@ -67,9 +70,27 @@ export default class Scene11 {
             this.priceHistory.push(this.currentPrice);
         }
         
+        // UI controls
+        this.controls = {
+            buttons: [
+                { id: 'viewToggle', label: 'Toggle View (2D/3D)', x: 400, y: 30, width: 200, height: 30, action: () => this.toggleView() },
+                { id: 'optionToggle', label: 'Toggle Option Type', x: 400, y: 70, width: 200, height: 30, action: () => this.toggleOptionType() },
+                { id: 'greeksToggle', label: 'Show Greeks', x: 400, y: 110, width: 200, height: 30, action: () => this.toggleGreeks() },
+                { id: 'surfaceToggle', label: 'Surface/Comparison', x: 400, y: 150, width: 200, height: 30, action: () => this.toggleSurface() }
+            ],
+            sliders: [
+                { id: 'volatility', label: 'Volatility', x: 400, y: 200, width: 200, height: 20, min: 10, max: 100, value: this.volatility, action: (val) => this.updateVolatility(val) },
+                { id: 'strikePrice', label: 'Strike Price', x: 400, y: 250, width: 200, height: 20, min: 50, max: 150, value: this.strikePrice, action: (val) => this.updateStrikePrice(val) }
+            ],
+            activeControl: null
+        };
+        
         // Bind event handlers
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleMouseWheel = this.handleMouseWheel.bind(this);
         
         // Mouse position for highlighting
         this.mouseX = 0;
@@ -87,6 +108,9 @@ export default class Scene11 {
         // Add event listeners
         window.addEventListener('keydown', this.handleKeyDown);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
+        this.canvas.addEventListener('mousedown', this.handleMouseDown);
+        this.canvas.addEventListener('mouseup', this.handleMouseUp);
+        this.canvas.addEventListener('wheel', this.handleMouseWheel);
         
         return Promise.resolve();
     }
@@ -129,13 +153,152 @@ export default class Scene11 {
     }
     
     /**
-     * Handle mouse move for interactive highlighting
+     * Toggle view mode between 2D and 3D
+     */
+    toggleView() {
+        this.viewMode = this.viewMode === '2d' ? '3d' : '2d';
+    }
+    
+    /**
+     * Toggle option type between call and put
+     */
+    toggleOptionType() {
+        this.selectedOption = 1 - this.selectedOption;
+        this.calculatePriceSurface();
+    }
+    
+    /**
+     * Toggle Greeks display
+     */
+    toggleGreeks() {
+        this.showGreeks = !this.showGreeks;
+    }
+    
+    /**
+     * Toggle between surface and comparison views
+     */
+    toggleSurface() {
+        this.showOptionSurface = !this.showOptionSurface;
+    }
+    
+    /**
+     * Update volatility value
+     * @param {number} value - New volatility value
+     */
+    updateVolatility(value) {
+        this.volatility = value;
+        this.calculatePriceSurface();
+    }
+    
+    /**
+     * Update strike price value
+     * @param {number} value - New strike price value
+     */
+    updateStrikePrice(value) {
+        this.strikePrice = value;
+        this.calculatePriceSurface();
+    }
+    
+    /**
+     * Handle mouse move for interactive highlighting and dragging
      * @param {MouseEvent} e - The mouse event
      */
     handleMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
+        
+        // Handle 3D rotation if dragging
+        if (this.isDragging && this.viewMode === '3d') {
+            const deltaX = this.mouseX - this.dragStartX;
+            this.rotation += deltaX * 0.01;
+            this.dragStartX = this.mouseX;
+        }
+        
+        // Check for hover over UI controls
+        this.controls.activeControl = null;
+        
+        // Check buttons
+        for (const button of this.controls.buttons) {
+            if (this.mouseX >= button.x && this.mouseX <= button.x + button.width &&
+                this.mouseY >= button.y && this.mouseY <= button.y + button.height) {
+                this.controls.activeControl = button;
+                break;
+            }
+        }
+        
+        // Check sliders
+        if (!this.controls.activeControl) {
+            for (const slider of this.controls.sliders) {
+                if (this.mouseX >= slider.x && this.mouseX <= slider.x + slider.width &&
+                    this.mouseY >= slider.y - 10 && this.mouseY <= slider.y + slider.height + 10) {
+                    this.controls.activeControl = slider;
+                    break;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Handle mouse down events for UI interaction
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseDown(e) {
+        if (this.controls.activeControl) {
+            const control = this.controls.activeControl;
+            
+            if (control.id.includes('Toggle') || control.id.includes('button')) {
+                // Handle button click
+                control.action();
+            } else if (control.id.includes('slider') || control.min !== undefined) {
+                // Handle slider adjustment
+                const value = this.getSliderValueFromMousePosition(control);
+                control.value = value;
+                control.action(value);
+            }
+        } else if (this.viewMode === '3d') {
+            // Start rotation
+            this.isDragging = true;
+            this.dragStartX = this.mouseX;
+        }
+    }
+    
+    /**
+     * Handle mouse up events
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseUp(e) {
+        this.isDragging = false;
+    }
+    
+    /**
+     * Handle mouse wheel events for zooming
+     * @param {WheelEvent} e - The wheel event
+     */
+    handleMouseWheel(e) {
+        e.preventDefault();
+        
+        // Adjust grid resolution for detail level
+        if (e.deltaY < 0) {
+            // Zoom in (increase detail)
+            this.gridResolution = Math.min(40, this.gridResolution + 5);
+        } else {
+            // Zoom out (decrease detail)
+            this.gridResolution = Math.max(10, this.gridResolution - 5);
+        }
+        
+        this.calculatePriceSurface();
+    }
+    
+    /**
+     * Calculate slider value based on mouse position
+     * @param {Object} slider - The slider control object
+     * @returns {number} - The calculated value
+     */
+    getSliderValueFromMousePosition(slider) {
+        const ratio = (this.mouseX - slider.x) / slider.width;
+        const clampedRatio = Math.max(0, Math.min(1, ratio));
+        return slider.min + clampedRatio * (slider.max - slider.min);
     }
     
     /**
@@ -384,8 +547,9 @@ export default class Scene11 {
         // Draw market data chart
         this.drawMarketChart();
         
-        // Draw info panel or video info
+        // Draw UI controls and info panel
         if (!this.settings.videoMode) {
+            this.drawControls();
             this.drawInfo();
         } else {
             this.drawVideoInfo();
@@ -896,13 +1060,70 @@ export default class Scene11 {
     }
 
     /**
+     * Draw UI controls
+     */
+    drawControls() {
+        const { ctx } = this;
+        
+        // Draw buttons
+        for (const button of this.controls.buttons) {
+            // Draw button background
+            ctx.fillStyle = this.controls.activeControl === button ? 'rgba(80, 150, 255, 0.8)' : 'rgba(40, 80, 150, 0.7)';
+            ctx.fillRect(button.x, button.y, button.width, button.height);
+            
+            // Draw button border
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(button.x, button.y, button.width, button.height);
+            
+            // Draw button label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(button.label, button.x + button.width / 2, button.y + button.height / 2);
+        }
+        
+        // Draw sliders
+        for (const slider of this.controls.sliders) {
+            // Draw slider label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(`${slider.label}: ${slider.value.toFixed(1)}`, slider.x, slider.y - 5);
+            
+            // Draw slider track
+            ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
+            ctx.fillRect(slider.x, slider.y, slider.width, slider.height);
+            
+            // Draw slider fill
+            const fillWidth = ((slider.value - slider.min) / (slider.max - slider.min)) * slider.width;
+            ctx.fillStyle = this.controls.activeControl === slider ? 'rgba(80, 200, 255, 0.8)' : 'rgba(50, 150, 255, 0.7)';
+            ctx.fillRect(slider.x, slider.y, fillWidth, slider.height);
+            
+            // Draw slider handle
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            const handleX = slider.x + fillWidth;
+            ctx.arc(handleX, slider.y + slider.height / 2, slider.height / 2 + 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw slider border
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(slider.x, slider.y, slider.width, slider.height);
+        }
+    }
+
+    /**
      * Draw the information panel for normal mode
      */
     drawInfo() {
         const { ctx } = this;
         
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(20, 20, 350, 180);
+        ctx.fillRect(20, 20, 350, 230);
         
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Arial';
@@ -920,11 +1141,13 @@ export default class Scene11 {
         ctx.fillText(`Volatility: ${this.volatility.toFixed(0)}%`, 30, 95);
         ctx.fillText(`Current Price: $${this.currentPrice.toFixed(2)}`, 30, 120);
         ctx.fillText(`Strike Price: $${this.strikePrice.toFixed(2)}`, 30, 145);
+        ctx.fillText(`Grid Resolution: ${this.gridResolution}`, 30, 170);
         
-        // Controls
+        // Instructions
         ctx.fillStyle = '#00d4ff';
-        ctx.fillText('1-4: Market Scenarios | V: Toggle View | G: Greeks', 30, 170);
-        ctx.fillText('O: Option Type | S: Switch View | M: Animate', 30, 195);
+        ctx.fillText('Keyboard Controls:', 30, 195);
+        ctx.fillText('1-4: Market Scenarios | V: View | G: Greeks | O: Option Type', 30, 220);
+        ctx.fillText('Mouse: Rotate 3D View | Scroll: Zoom In/Out', 30, 245);
     }
     
     /**
@@ -983,5 +1206,8 @@ export default class Scene11 {
     cleanup() {
         window.removeEventListener('keydown', this.handleKeyDown);
         this.canvas.removeEventListener('mousemove', this.handleMouseMove);
+        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
+        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
+        this.canvas.removeEventListener('wheel', this.handleMouseWheel);
     }
 }

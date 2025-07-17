@@ -246,39 +246,4 @@
             main().catch(console.error);
         </script>
     </body>
-    
     </html>
-        function animate() {
-            updateFPS();
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        // Window Resize
-        window.addEventListener('resize', () => {
-            if (framework && framework.canvas) {
-                framework.resizeCanvas();
-            }
-        });
-
-        // Keyboard Shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                backToHub();
-            } else if (e.key === 'f' && framework && framework.currentScene) {
-                document.documentElement.requestFullscreen();
-            } else if (e.key === 'v') {
-                toggleVideoMode();
-            } else if (e.key === 'c') {
-                toggleControls();
-            }
-        });
-        
-        // Initialize on load
-        window.addEventListener('load', () => {
-            initFramework().catch(console.error);
-        });
-
-    </script>
-</body>
-</html>
