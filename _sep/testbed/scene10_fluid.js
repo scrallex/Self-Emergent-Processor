@@ -17,7 +17,7 @@ export default class Scene10 {
         this.mouse = { x: 0, y: 0, down: false };
         this.animation = true;
 
-        // Timing values for update loop
+        // Timing values for animation control
         this.time = 0;
         this.lastTime = 0;
 
