@@ -6,6 +6,8 @@
  * forming stable orbits and obtuse angles creating escape trajectories.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene5 {
     /**
      * Constructor for the scene
@@ -13,11 +15,16 @@ export default class Scene5 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.bodies = [];
@@ -40,11 +47,11 @@ export default class Scene5 {
         this.selectedBody = null;
         this.lastClickTime = 0;
         
-        // Bind event handlers to maintain 'this' context
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseClick = this.handleMouseClick.bind(this);
+        // Interactive controller (initialized in init)
+        this.controller = null;
+        
+        // Interactive elements (defined in createInteractiveElements)
+        this.interactiveElements = [];
     }
 
     /**
@@ -52,13 +59,102 @@ export default class Scene5 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
         
         this.reset();
         return Promise.resolve();
+    }
+
+    /**
+     * Create interactive elements specific to this scene
+     * @param {InteractiveUtils} utils - Interactive utilities instance
+     * @returns {Array} - Array of interactive elements
+     */
+    createInteractiveElements(utils) {
+        const elements = [];
+        
+        // Create draggable bodies
+        this.bodies.forEach((body, index) => {
+            const draggable = utils.createDraggable({
+                id: `body_${index}`,
+                x: body.x,
+                y: body.y,
+                width: body.m * 2,
+                height: body.m * 2,
+                shape: 'circle',
+                color: body.color,
+                tooltip: `Body ${index + 1}`,
+                
+                onDragStart: () => {
+                    body.isDragging = true;
+                    body.vx = 0;
+                    body.vy = 0;
+                },
+                
+                onDrag: (dx, dy, x, y) => {
+                    body.x = x;
+                    body.y = y;
+                    this.updateAngles();
+                    this.calculateSystemEnergy();
+                    this.analyzeSystemStability();
+                },
+                
+                onDragEnd: () => {
+                    body.isDragging = false;
+                }
+            });
+            
+            elements.push(draggable);
+        });
+        
+        return elements;
+    }
+
+    /**
+     * Get custom controls for the control panel
+     * @returns {Array} Array of control configurations
+     */
+    getCustomControls() {
+        return [
+            {
+                id: 'g_constant',
+                type: 'slider',
+                label: 'Gravitational Constant (G)',
+                min: 0,
+                max: 2,
+                value: this.G,
+                step: 0.1,
+                onChange: (value) => {
+                    this.G = value;
+                }
+            },
+            {
+                id: 'show_trails',
+                type: 'toggle',
+                label: 'Show Trails',
+                value: this.showTrails,
+                onChange: (value) => {
+                    this.showTrails = value;
+                    if (!value) {
+                        this.bodies.forEach(b => b.trail = []);
+                    }
+                }
+            },
+            {
+                id: 'reset_btn',
+                type: 'button',
+                label: 'Reset System',
+                onClick: () => this.reset()
+            }
+        ];
     }
 
     /**
@@ -236,89 +332,7 @@ export default class Scene5 {
         }
     }
 
-    /**
-     * Handle mouse down event - for dragging bodies
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Check if clicking on a body
-        for (const body of this.bodies) {
-            const dx = mouseX - body.x;
-            const dy = mouseY - body.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance <= body.m) {
-                body.isDragging = true;
-                this.selectedBody = body;
-                
-                // Pause body movement while dragging
-                body.vx = 0;
-                body.vy = 0;
-                break;
-            }
-        }
-    }
-
-    /**
-     * Handle mouse move event - update body position while dragging
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseMove(e) {
-        if (!this.selectedBody) return;
-        
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Update selected body position
-        this.selectedBody.x = mouseX;
-        this.selectedBody.y = mouseY;
-        
-        // Update angles as body is moved
-        this.updateAngles();
-        this.calculateSystemEnergy();
-        this.analyzeSystemStability();
-    }
-
-    /**
-     * Handle mouse up event - release dragged body
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseUp(e) {
-        if (this.selectedBody) {
-            this.selectedBody.isDragging = false;
-            this.selectedBody = null;
-        }
-    }
-
-    /**
-     * Handle mouse click event - toggle trails or reset
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseClick(e) {
-        const now = performance.now();
-        
-        // Don't treat drag operations as clicks
-        if (this.selectedBody) return;
-        
-        if (now - this.lastClickTime < 300) {
-            // Double click - reset simulation
-            this.reset();
-        } else {
-            // Single click - toggle trails
-            this.showTrails = !this.showTrails;
-            if (!this.showTrails) {
-                // Clear trails when toggling off
-                this.bodies.forEach(b => b.trail = []);
-            }
-        }
-        
-        this.lastClickTime = now;
-    }
+    // Mouse handlers removed as they're replaced by InteractiveController
 
     /**
      * Main animation loop - called by the framework on each frame
@@ -435,7 +449,19 @@ export default class Scene5 {
         
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
-            this.drawInfo();
+            if (this.controller) {
+                // Update info panel with real-time metrics
+                this.controller.updateInfoPanel({
+                    'System Status': this.systemStability,
+                    'System Energy': this.systemEnergy.toFixed(1),
+                    'G Constant': this.G.toFixed(2),
+                    'Angles': this.angles.map(a =>
+                        `Body ${a.bodies[0] + 1}: ${a.type} (${a.angle.toFixed(1)}°)`
+                    ).join('\n'),
+                    'Trails': this.showTrails ? 'Enabled' : 'Disabled'
+                });
+                this.controller.render(timestamp);
+            }
         } else {
             this.drawVideoInfo();
         }
@@ -699,11 +725,16 @@ export default class Scene5 {
      * Clean up resources when scene is unloaded
      */
     cleanup() {
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('click', this.handleMouseClick);
+        // Clean up the interactive controller
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
         
+        // Clear interactive elements
+        this.interactiveElements = [];
+        
+        // Clear bodies
         this.bodies = [];
     }
 }

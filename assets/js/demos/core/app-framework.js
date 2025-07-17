@@ -162,8 +162,17 @@ class AppFramework {
             const module = await import(modulePath);
             const SceneClass = module.default;
             
-            // Instantiate the scene
-            const scene = new SceneClass(this);
+            // Instantiate the scene with all required dependencies
+            const scene = new SceneClass(
+                this.canvas,
+                this.ctx,
+                this.options,
+                this.physics,
+                this.math,
+                this.events,
+                this.state,
+                this.renderer
+            );
             scene.id = sceneId;
             
             // Initialize the scene

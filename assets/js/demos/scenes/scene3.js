@@ -5,6 +5,8 @@
  * the cosine of the impact angle affects energy transfer between objects.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene3 {
     /**
      * Constructor for the scene
@@ -12,11 +14,16 @@ export default class Scene3 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.balls = [];
@@ -24,11 +31,15 @@ export default class Scene3 {
         this.time = 0;
         this.impactInfo = { cosine: 0, transfer: 0, time: 0 };
         
-        // Bind event handlers to maintain 'this' context
-        this.handleMouseClick = this.handleMouseClick.bind(this);
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
+        // Interactive controller (initialized in init)
+        this.controller = null;
+        
+        // Interactive elements (defined in createInteractiveElements)
+        this.interactiveElements = [];
+        
+        // Dragging state
+        this.draggedBall = null;
+        this.isDragging = false;
     }
 
     /**
@@ -36,13 +47,64 @@ export default class Scene3 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('click', this.handleMouseClick);
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
         
         this.reset();
         return Promise.resolve();
+    }
+
+    /**
+     * Create interactive elements specific to this scene
+     * @param {InteractiveUtils} utils - Interactive utilities instance
+     * @returns {Array} - Array of interactive elements
+     */
+    createInteractiveElements(utils) {
+        const elements = [];
+        
+        // Create draggable elements for each ball
+        this.balls.forEach((ball, index) => {
+            const draggable = utils.createDraggable({
+                id: `ball_${index}`,
+                x: ball.x,
+                y: ball.y,
+                width: ball.r * 2,
+                height: ball.r * 2,
+                shape: 'circle',
+                color: ball.color,
+                tooltip: `Ball ${index + 1}`,
+                
+                onDragStart: (x, y) => {
+                    this.draggedBall = ball;
+                    this.isDragging = true;
+                    ball.vx = 0;
+                    ball.vy = 0;
+                },
+                
+                onDrag: (dx, dy, x, y) => {
+                    if (this.draggedBall) {
+                        this.draggedBall.x = x;
+                        this.draggedBall.y = y;
+                    }
+                },
+                
+                onDragEnd: () => {
+                    this.draggedBall = null;
+                    this.isDragging = false;
+                }
+            });
+            
+            elements.push(draggable);
+        });
+        
+        return elements;
     }
 
     /**
@@ -75,35 +137,31 @@ export default class Scene3 {
     }
 
     /**
-     * Handle mouse click event - resets the simulation
-     * @param {MouseEvent} e - The mouse event
+     * Get custom controls for the control panel
+     * @returns {Array} Array of control configurations
      */
-    handleMouseClick(e) {
-        this.reset();
-    }
-
-    /**
-     * Handle mouse down event
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseDown(e) {
-        // Not used in this scene but kept for template consistency
-    }
-
-    /**
-     * Handle mouse move event
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseMove(e) {
-        // Not used in this scene but kept for template consistency
-    }
-
-    /**
-     * Handle mouse up event
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseUp(e) {
-        // Not used in this scene but kept for template consistency
+    getCustomControls() {
+        return [
+            {
+                id: 'reset_btn',
+                type: 'button',
+                label: 'Reset Simulation',
+                onClick: () => this.reset()
+            },
+            {
+                id: 'angle_slider',
+                type: 'slider',
+                label: 'Initial Angle',
+                min: 0,
+                max: 180,
+                value: this.settings.intensity * 1.8,
+                step: 1,
+                onChange: (value) => {
+                    this.settings.intensity = value / 1.8;
+                    this.reset();
+                }
+            }
+        ];
     }
 
     /**
@@ -208,7 +266,14 @@ export default class Scene3 {
 
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
-            this.drawInfo();
+            if (this.controller) {
+                this.controller.updateInfoPanel({
+                    'Impact Cosine': this.impactInfo.cosine.toFixed(3),
+                    'Energy Transfer': `${this.impactInfo.transfer.toFixed(1)}%`,
+                    'Status': this.isDragging ? 'Dragging' : 'Simulating'
+                });
+                this.controller.render(timestamp);
+            }
         } else {
             this.drawVideoInfo();
         }
@@ -264,9 +329,13 @@ export default class Scene3 {
      * Clean up resources when scene is unloaded
      */
     cleanup() {
-        this.canvas.removeEventListener('click', this.handleMouseClick);
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
+        // Clean up the interactive controller
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+        
+        // Clear interactive elements
+        this.interactiveElements = [];
     }
 }

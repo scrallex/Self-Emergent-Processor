@@ -1,3 +1,7 @@
+import { SCENES } from './config/scene-registry.js';
+
+import { SCENES } from './config/scene-registry.js';
+
 // SEP Demo Framework - Modular Loading System
 class SEPDemoFramework {
     constructor() {
@@ -25,80 +29,7 @@ class SEPDemoFramework {
         };
         
         // Scene registry
-        this.scenes = {
-            1: { 
-                name: "SEP Introduction - Wave Interference", 
-            description: "Interactive overview of Self-Emergent Processing concepts.",
-                status: "ready",
-                module: () => import('./scenes/scene1.js')
-            },
-            2: { 
-              name: "Coherence Wave Patterns",
-              description: "Explore quantum coherence patterns and wave interactions.",
-                status: "ready",
-              module: () => import('./scenes/scene2.js') // Assumed fixable
-            },
-            3: { 
-              name: "Complex Boundaries",
-              description: "Visualize the emergence of complex boundaries.",
-                status: "ready",
-              module: () => import('./scenes/scene3.js') // Assumed fixable
-            },
-            4: { 
-              name: "Conscious Touch Interaction",
-              description: "Interactive demonstration of consciousness through touch.",
-              status: "ready",
-              module: () => import('./scenes/scene4.js') // Assumed fixable
-            },
-            5: { 
-              name: "Information Pressure Dynamics",
-              description: "See how information pressure creates emergent behaviors.",
-              status: "ready",
-                module: () => import('./scenes/scene5.js')
-            },
-            6: { 
-              name: "System Learning Evolution",
-              description: "Watch the system evolve and learn through recursion.",
-                status: "ready",
-                module: () => import('./scenes/scene6.js')
-            },
-            7: { 
-                name: "Quantum Effects", 
-              description: "Experience quantum-inspired effects and visualizations.",
-              status: "ready",
-              module: () => import('./scenes/scene7.js') // Assumed fixable
-            },
-            8: { 
-                name: "Pattern Recognition", 
-              description: "Observe how patterns emerge and are recognized.",
-              status: "ready",
-                module: () => import('./scenes/scene8.js')
-            },
-            9: { 
-                name: "Self-Reference Loops", 
-              description: "Explore recursive self-reference and strange loops.",
-              status: "ready",
-                module: () => import('./scenes/scene9.js')
-            },
-            10: { 
-              name: "Memory Formation",
-              description: "See how memories form through pattern consolidation.",
-              status: "ready",
-                module: () => import('./scenes/scene10.js')
-            },
-            11: { 
-              name: "Meta-System Interface",
-              description: "Interact with the meta-level system orchestration.",
-                status: "ready",
-              module: () => import('./scenes/scene11.js') // This file won't exist, will show placeholder
-            },
-            12: { 
-              name: "Full System Visualization",
-              description: "Complete visualization of all components working together.",
-                status: "ready",
-              module: () => import('./scenes/scene12.js') // This file won't exist, will show placeholder
-            }
-        };
+        this.scenes = SCENES;
     }
     
     async init(canvasId) {
@@ -188,13 +119,12 @@ class SEPDemoFramework {
     }
     
     showPlaceholder(sceneName) {
-        let time = 0;
-        
-      if (this.animationId) {
-        cancelAnimationFrame(this.animationId);
-        this.animationId = null;
-      }
-
+        // Placeholder for scenes not yet implemented or in "coming soon" state
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+    
         const animate = (timestamp) => {
             this.ctx.fillStyle = '#0a0a0a';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -205,17 +135,23 @@ class SEPDemoFramework {
             this.ctx.textAlign = 'center';
             this.ctx.fillText(sceneName, this.canvas.width / 2, this.canvas.height / 2 - 50);
             
-            // Draw status
-            this.ctx.fillStyle = '#ffaa00';
-            this.ctx.font = '24px Arial';
-            this.ctx.fillText('Coming Soon', this.canvas.width / 2, this.canvas.height / 2 + 20);
+            // Draw status based on scene status if available
+            // Draw status based on scene status if available and not 'ready'
+            if (scene && scene.status && scene.status !== 'ready') {
+                this.ctx.fillStyle = '#ffaa00';
+                this.ctx.font = '24px Arial';
+                this.ctx.fillText(scene.status, this.canvas.width / 2, this.canvas.height / 2 + 20);
+            } else if (scene && scene.status) {
+                // For 'ready' status, do not draw anything or draw a different message if needed
+                // Currently, no action for 'ready'
+            }
             
-            // Draw animated circles
+            // Draw animated circles for visual effect
             const centerX = this.canvas.width / 2;
             const centerY = this.canvas.height / 2;
             
             for (let i = 0; i < 5; i++) {
-                const radius = 50 + i * 30 + Math.sin(time * 0.001 + i) * 10;
+                const radius = 50 + i * 30 + Math.sin(timestamp * 0.001 + i) * 10; // Use timestamp for animation
                 this.ctx.strokeStyle = `rgba(0, 212, 255, ${0.5 - i * 0.1})`;
                 this.ctx.lineWidth = 2;
                 this.ctx.beginPath();
@@ -223,7 +159,6 @@ class SEPDemoFramework {
                 this.ctx.stroke();
             }
             
-            time += 16 * this.settings.speed;
             this.animationId = requestAnimationFrame(animate);
         };
         

@@ -7,6 +7,8 @@
  * the restoring force with real-time boundary limits.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene4 {
     /**
      * Constructor for the scene
@@ -14,11 +16,16 @@ export default class Scene4 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.angle = 45; // in degrees
@@ -31,30 +38,23 @@ export default class Scene4 {
         this.cosine = Math.cos(this.angle * Math.PI / 180);
         this.tangent = Math.tan(this.angle * Math.PI / 180);
         
-        // Spring animation properties
+        // Spring animation properties with improved physics
         this.spring = {
             position: 0,
             velocity: 0,
             target: 0,
-            stiffness: 0.1,
-            damping: 0.8
+            stiffness: 0.3,  // Increased for better response
+            damping: 0.7     // Adjusted for smoother motion
         };
         
-        // Interactive slider
-        this.slider = {
-            x: 0,
-            y: 0,
-            width: 200,
-            height: 20,
-            handleRadius: 10,
-            isDragging: false
-        };
+        // Interactive controller (initialized in init)
+        this.controller = null;
         
-        // Bind event handlers to maintain 'this' context
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseClick = this.handleMouseClick.bind(this);
+        // Interactive elements (defined in createInteractiveElements)
+        this.interactiveElements = [];
+        
+        // Animation state
+        this.isAnimating = false;
     }
 
     /**
@@ -62,13 +62,64 @@ export default class Scene4 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
         
         this.reset();
         return Promise.resolve();
+    }
+
+    /**
+     * Create interactive elements specific to this scene
+     * @param {InteractiveUtils} utils - Interactive utilities instance
+     * @returns {Array} - Array of interactive elements
+     */
+    createInteractiveElements(utils) {
+        const elements = [];
+        
+        // Create angle slider
+        const slider = utils.createDraggable({
+            id: 'angle_slider',
+            x: this.canvas.width * 0.5,
+            y: this.canvas.height - 50,
+            width: 200,
+            height: 20,
+            shape: 'rectangle',
+            constrainToCanvas: true,
+            
+            onDrag: (dx, dy, x, y) => {
+                // Calculate angle from slider position
+                let ratio = (x - (this.canvas.width * 0.5 - 100)) / 200;
+                ratio = Math.max(0, Math.min(1, ratio));
+                this.updateAngle(ratio * 89.9);
+            }
+        });
+        
+        elements.push(slider);
+        
+        // Create animation toggle button
+        const toggleBtn = utils.createButton({
+            id: 'toggle_animation',
+            x: this.canvas.width * 0.5 - 150,
+            y: this.canvas.height - 50,
+            width: 100,
+            height: 30,
+            label: 'Toggle Animation',
+            onClick: () => {
+                this.isAnimating = !this.isAnimating;
+            }
+        });
+        
+        elements.push(toggleBtn);
+        
+        return elements;
     }
 
     /**
@@ -107,68 +158,44 @@ export default class Scene4 {
     }
 
     /**
-     * Handle mouse down event - for dragging the slider
-     * @param {MouseEvent} e - The mouse event
+     * Get custom controls for the control panel
+     * @returns {Array} Array of control configurations
      */
-    handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Check if click is on slider handle
-        const handleX = this.slider.x + (this.angle / 89.9) * this.slider.width;
-        const handleY = this.slider.y;
-        const dist = Math.hypot(mouseX - handleX, mouseY - handleY);
-        
-        if (dist < this.slider.handleRadius * 1.5) {
-            this.slider.isDragging = true;
-        }
-    }
-
-    /**
-     * Handle mouse move event - update angle while dragging slider
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseMove(e) {
-        if (!this.slider.isDragging) return;
-        
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        
-        // Calculate angle from slider position
-        let ratio = (mouseX - this.slider.x) / this.slider.width;
-        ratio = Math.max(0, Math.min(1, ratio));
-        
-        this.updateAngle(ratio * 89.9); // Map 0-1 to 0-89.9 degrees
-    }
-
-    /**
-     * Handle mouse up event - end dragging
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseUp(e) {
-        this.slider.isDragging = false;
-    }
-
-    /**
-     * Handle mouse click event - toggle animation
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseClick(e) {
-        // Only toggle animation if not on slider
-        if (!this.slider.isDragging) {
-            const rect = this.canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            const handleX = this.slider.x + (this.angle / 89.9) * this.slider.width;
-            const handleY = this.slider.y;
-            const dist = Math.hypot(mouseX - handleX, mouseY - handleY);
-            
-            if (dist >= this.slider.handleRadius * 1.5) {
-                this.isAnimating = !this.isAnimating;
+    getCustomControls() {
+        return [
+            {
+                id: 'angle_slider',
+                type: 'slider',
+                label: 'Angle',
+                min: 0,
+                max: 89.9,
+                value: this.angle,
+                step: 0.1,
+                onChange: (value) => {
+                    this.updateAngle(value);
+                }
+            },
+            {
+                id: 'spring_stiffness',
+                type: 'slider',
+                label: 'Spring Stiffness',
+                min: 0.1,
+                max: 1.0,
+                value: this.spring.stiffness,
+                step: 0.1,
+                onChange: (value) => {
+                    this.spring.stiffness = value;
+                }
+            },
+            {
+                id: 'toggle_animation',
+                type: 'button',
+                label: this.isAnimating ? 'Stop Animation' : 'Start Animation',
+                onClick: () => {
+                    this.isAnimating = !this.isAnimating;
+                }
             }
-        }
+        ];
     }
 
     /**
@@ -211,11 +238,11 @@ export default class Scene4 {
             this.updateAngle(this.angle + (targetAngle - this.angle) * easing);
         }
         
-        // Update spring physics
+        // Update spring physics with improved response
         const springForce = (this.spring.target - this.spring.position) * this.spring.stiffness;
-        this.spring.velocity += springForce;
-        this.spring.velocity *= this.spring.damping;
-        this.spring.position += this.spring.velocity;
+        this.spring.velocity += springForce * dt * 60; // Scale with deltaTime for consistent behavior
+        this.spring.velocity *= Math.pow(this.spring.damping, dt * 60); // Time-scaled damping
+        this.spring.position += this.spring.velocity * dt * 60;
     }
 
     /**
@@ -253,7 +280,17 @@ export default class Scene4 {
         
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
-            this.drawInfo();
+            if (this.controller) {
+                this.controller.updateInfoPanel({
+                    'Angle': `${this.angle.toFixed(1)}°`,
+                    'Sine': this.sine.toFixed(3),
+                    'Cosine': this.cosine.toFixed(3),
+                    'Tangent': this.angle >= 89.5 ? '∞' : this.tangent.toFixed(3),
+                    'Spring Force': (this.spring.target * 10).toFixed(2),
+                    'Status': this.isAnimating ? 'Animating' : 'Static'
+                });
+                this.controller.render(timestamp);
+            }
         } else {
             this.drawVideoInfo();
         }
@@ -826,9 +863,13 @@ export default class Scene4 {
      * Clean up resources when scene is unloaded
      */
     cleanup() {
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('click', this.handleMouseClick);
+        // Clean up the interactive controller
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+        
+        // Clear interactive elements
+        this.interactiveElements = [];
     }
 }

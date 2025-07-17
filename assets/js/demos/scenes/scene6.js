@@ -13,11 +13,12 @@ export default class Scene6 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, interactiveController) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.interactiveController = interactiveController;
         
         // Scene-specific state
         this.time = 0;
@@ -25,7 +26,7 @@ export default class Scene6 {
         this.blocks = [];
         this.collisionCount = 0;
         this.piApproximation = 0;
-        this.initialVelocity = -80;
+        this.initialVelocity = -100;
         
         // Physics
         this.elasticity = 1.0; // Perfect elastic collisions
@@ -43,11 +44,23 @@ export default class Scene6 {
         this.massRatio = 1; // Power of 10
         this.digits = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]; // First digits of π
         
-        // Bind event handlers to maintain 'this' context
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseClick = this.handleMouseClick.bind(this);
+        // Initialize controls
+        this.controls = {
+            massRatio: {
+                value: this.massRatio,
+                min: 1,
+                max: 5,
+                step: 1,
+                label: 'Mass Ratio (10^x)'
+            },
+            velocity: {
+                value: Math.abs(this.initialVelocity),
+                min: 50,
+                max: 200,
+                step: 10,
+                label: 'Initial Velocity'
+            }
+        };
     }
 
     /**
@@ -55,10 +68,18 @@ export default class Scene6 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
+        // Register with interactive controller
+        if (this.interactiveController) {
+            this.interactiveController.registerControls(this.controls, (control, value) => {
+                if (control === 'massRatio') {
+                    this.massRatio = value;
+                    this.reset();
+                } else if (control === 'velocity') {
+                    this.initialVelocity = -value;
+                    this.reset();
+                }
+            });
+        }
         
         this.reset();
         return Promise.resolve();
@@ -152,33 +173,19 @@ export default class Scene6 {
      * Handle mouse down event
      * @param {MouseEvent} e - The mouse event
      */
-    handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Check for slider control
-        // Add any mouse down logic here
-    }
-
     /**
-     * Handle mouse move event
-     * @param {MouseEvent} e - The mouse event
+     * Handle user interaction through the interactive controller
+     * @param {string} action - The action type
+     * @param {Object} data - Action data
      */
-    handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Add any mouse move logic here
-    }
-
-    /**
-     * Handle mouse up event
-     * @param {MouseEvent} e - The mouse event
-     */
-    handleMouseUp(e) {
-        // Add any mouse up logic here
+    handleInteraction(action, data) {
+        if (action === 'click') {
+            if (this.isComplete) {
+                this.reset();
+            } else {
+                this.isRunning = !this.isRunning;
+            }
+        }
     }
 
     /**
@@ -219,20 +226,90 @@ export default class Scene6 {
      */
     update(dt) {
         const blocks = this.blocks;
-        const collisionPairs = [];
         
-        // Update positions
-        for (const block of blocks) {
-            block.x += block.vx * dt;
-            block.vy += this.gravity * dt;
-            block.y += block.vy * dt;
-        }
+        // Continuous collision detection
+        let timeLeft = dt;
+        const maxIterations = 10;
+        let iterations = 0;
         
-        // Handle wall collisions
-        for (const block of blocks) {
-            // Left wall
-            if (block.x < 0) {
-                block.x = 0;
+        while (timeLeft > 0.0001 && iterations < maxIterations) {
+            // Find earliest collision time
+            let earliestCollision = {
+                time: timeLeft,
+                type: null,
+                block1: null,
+                block2: null
+            };
+            
+            // Check block-wall collisions
+            for (const block of blocks) {
+                // Left wall
+                if (block.vx < 0) {
+                    const timeToWall = -block.x / block.vx;
+                    if (timeToWall >= 0 && timeToWall < earliestCollision.time) {
+                        earliestCollision = {
+                            time: timeToWall,
+                            type: 'wall',
+                            block1: block,
+                            block2: 'left'
+                        };
+                    }
+                }
+                
+                // Right wall
+                if (block.vx > 0) {
+                    const timeToWall = (this.canvas.width - block.width - block.x) / block.vx;
+                    if (timeToWall >= 0 && timeToWall < earliestCollision.time) {
+                        earliestCollision = {
+                            time: timeToWall,
+                            type: 'wall',
+                            block1: block,
+                            block2: 'right'
+                        };
+                    }
+                }
+            }
+            
+            // Check block-block collisions
+            for (let i = 0; i < blocks.length; i++) {
+                for (let j = i + 1; j < blocks.length; j++) {
+                    const b1 = blocks[i];
+                    const b2 = blocks[j];
+                    const relativeVel = b1.vx - b2.vx;
+                    
+                    if (relativeVel > 0 && b2.x > b1.x) {
+                        const timeToCollision = (b2.x - (b1.x + b1.width)) / relativeVel;
+                        if (timeToCollision >= 0 && timeToCollision < earliestCollision.time) {
+                            earliestCollision = {
+                                time: timeToCollision,
+                                type: 'block',
+                                block1: b1,
+                                block2: b2
+                            };
+                        }
+                    } else if (relativeVel < 0 && b1.x > b2.x) {
+                        const timeToCollision = (b1.x - (b2.x + b2.width)) / -relativeVel;
+                        if (timeToCollision >= 0 && timeToCollision < earliestCollision.time) {
+                            earliestCollision = {
+                                time: timeToCollision,
+                                type: 'block',
+                                block1: b1,
+                                block2: b2
+                            };
+                        }
+                    }
+                }
+            }
+            
+            // Move blocks forward to collision time
+            const dt = Math.min(timeLeft, earliestCollision.time);
+            for (const block of blocks) {
+                block.x += block.vx * dt;
+            }
+            
+            // Handle collision if one occurred
+            if (earliestCollision.type === 'wall') {
+                const block = earliestCollision.block1;
                 block.vx = -block.vx * this.elasticity;
                 this.collisionCount++;
                 block.collisions++;
@@ -240,50 +317,24 @@ export default class Scene6 {
                     time: this.time,
                     type: 'wall',
                     block: blocks.indexOf(block)
+                });
+            } else if (earliestCollision.type === 'block') {
+                this.resolveCollision(earliestCollision.block1, earliestCollision.block2);
+                this.collisionCount++;
+                earliestCollision.block1.collisions++;
+                earliestCollision.block2.collisions++;
+                this.collisionHistory.push({
+                    time: this.time,
+                    type: 'block',
+                    blocks: [
+                        blocks.indexOf(earliestCollision.block1),
+                        blocks.indexOf(earliestCollision.block2)
+                    ]
                 });
             }
             
-            // Right wall
-            if (block.x + block.width > this.canvas.width) {
-                block.x = this.canvas.width - block.width;
-                block.vx = -block.vx * this.elasticity;
-                this.collisionCount++;
-                block.collisions++;
-                this.collisionHistory.push({
-                    time: this.time,
-                    type: 'wall',
-                    block: blocks.indexOf(block)
-                });
-            }
-        }
-        
-        // Check for block-block collisions
-        for (let i = 0; i < blocks.length; i++) {
-            for (let j = i + 1; j < blocks.length; j++) {
-                const b1 = blocks[i];
-                const b2 = blocks[j];
-                
-                // Simple AABB collision check
-                if (b1.x < b2.x + b2.width &&
-                    b1.x + b1.width > b2.x &&
-                    b1.y < b2.y + b2.height &&
-                    b1.y + b1.height > b2.y) {
-                    
-                    // Resolve collision
-                    this.resolveCollision(b1, b2);
-                    
-                    // Count collision
-                    this.collisionCount++;
-                    b1.collisions++;
-                    b2.collisions++;
-                    
-                    this.collisionHistory.push({
-                        time: this.time,
-                        type: 'block',
-                        blocks: [i, j]
-                    });
-                }
-            }
+            timeLeft -= dt;
+            iterations++;
         }
         
         // Update π approximation
@@ -333,8 +384,90 @@ export default class Scene6 {
     calculatePi() {
         if (this.collisionCount === 0) return 0;
         
-        // The number of collisions approaches π × (mass ratio)^(1/4) as mass ratio increases
-        return this.collisionCount / Math.pow(Math.pow(100, this.massRatio), 0.25);
+        // Galperin's theorem: As mass ratio approaches infinity,
+        // π = lim(n→∞) N(n)/(n^(1/4))
+        // where N(n) is number of collisions and n is mass ratio
+        const massRatioPower = Math.pow(100, this.massRatio);
+        const collisionScaling = Math.pow(massRatioPower, 0.25);
+        
+        // Apply correction factor for finite mass ratio
+        const correction = 1 + 1 / (2 * massRatioPower); // First-order correction
+        return (this.collisionCount / collisionScaling) * correction;
+    }
+
+    /**
+     * Predict future collision points for visualization
+     * @returns {Array} Array of predicted collision points
+     */
+    predictCollisions() {
+        const predictions = [];
+        const maxPredictions = 5;
+        
+        // Clone current state
+        const blocks = this.blocks.map(b => ({
+            x: b.x,
+            vx: b.vx,
+            width: b.width,
+            mass: b.mass
+        }));
+        
+        let time = 0;
+        for (let i = 0; i < maxPredictions; i++) {
+            // Find next collision
+            let nextCollision = null;
+            let minTime = Infinity;
+            
+            // Check wall collisions
+            for (const block of blocks) {
+                if (block.vx < 0) {
+                    const t = -block.x / block.vx;
+                    if (t > 0 && t < minTime) {
+                        minTime = t;
+                        nextCollision = { type: 'wall', block, time: time + t };
+                    }
+                } else if (block.vx > 0) {
+                    const t = (this.canvas.width - block.width - block.x) / block.vx;
+                    if (t > 0 && t < minTime) {
+                        minTime = t;
+                        nextCollision = { type: 'wall', block, time: time + t };
+                    }
+                }
+            }
+            
+            // Check block collisions
+            if (blocks[0].vx > blocks[1].vx) {
+                const t = (blocks[1].x - blocks[0].x - blocks[0].width) / (blocks[0].vx - blocks[1].vx);
+                if (t > 0 && t < minTime) {
+                    minTime = t;
+                    nextCollision = { type: 'block', time: time + t };
+                }
+            }
+            
+            if (!nextCollision) break;
+            
+            // Add prediction
+            predictions.push(nextCollision);
+            
+            // Update state
+            time = nextCollision.time;
+            for (const block of blocks) {
+                block.x += block.vx * minTime;
+            }
+            
+            // Update velocities
+            if (nextCollision.type === 'wall') {
+                nextCollision.block.vx *= -this.elasticity;
+            } else {
+                const totalMass = blocks[0].mass + blocks[1].mass;
+                const massDiff = blocks[0].mass - blocks[1].mass;
+                const v1 = ((massDiff) * blocks[0].vx + 2 * blocks[1].mass * blocks[1].vx) / totalMass;
+                const v2 = ((2 * blocks[0].mass * blocks[0].vx) - (massDiff) * blocks[1].vx) / totalMass;
+                blocks[0].vx = v1 * this.elasticity;
+                blocks[1].vx = v2 * this.elasticity;
+            }
+        }
+        
+        return predictions;
     }
 
     /**
@@ -408,6 +541,24 @@ export default class Scene6 {
     drawBlocks() {
         const { ctx } = this;
         
+        // Draw predicted collision points
+        const predictions = this.predictCollisions();
+        for (const pred of predictions) {
+            ctx.beginPath();
+            ctx.arc(
+                pred.type === 'wall' ?
+                    (pred.block === this.blocks[0] ? 0 : this.canvas.width) :
+                    this.blocks[1].x,
+                this.canvas.height / 2,
+                5,
+                0,
+                Math.PI * 2
+            );
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fill();
+        }
+        
+        // Draw blocks
         for (const block of this.blocks) {
             // Create gradient fill based on velocity
             const speed = Math.abs(block.vx);
@@ -637,31 +788,69 @@ export default class Scene6 {
     drawInfo() {
         const { ctx, canvas } = this;
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(10, 130, 300, 120);
-
+        // Draw info panel background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(10, 130, 350, 180);
+        
+        // Title
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText('Boundary Enforcement', 20, 155);
+        ctx.fillText('π Through Elastic Collisions', 20, 155);
         
+        // Theoretical background
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillText("Galperin's Theorem: π emerges from the collision count", 20, 175);
+        ctx.fillText("scaled by the fourth root of the mass ratio", 20, 190);
+        
+        // Statistics
         ctx.font = '14px Arial';
         ctx.fillStyle = '#cccccc';
-        ctx.fillText(`Mass Ratio: 1:${Math.pow(100, this.massRatio)}`, 20, 180);
-        ctx.fillText(`Collisions: ${this.collisionCount}`, 20, 200);
-        ctx.fillText(`π Approximation: ${this.piApproximation.toFixed(6)}`, 20, 220);
         
+        // Mass ratio with scientific notation
+        const massRatioExp = 2 * this.massRatio;
+        ctx.fillText(`Mass Ratio: 1:10^${massRatioExp}`, 20, 215);
+        
+        // Collision count with thousands separator
+        ctx.fillText(
+            `Collisions: ${this.collisionCount.toLocaleString()}`,
+            20, 235
+        );
+        
+        // π approximation with color-coded accuracy
         const error = Math.abs(this.piApproximation - Math.PI) / Math.PI * 100;
-        ctx.fillText(`Error: ${error.toFixed(4)}%`, 20, 240);
+        ctx.fillStyle = error < 1 ? '#00ff88' : error < 5 ? '#ffaa00' : '#ff4444';
+        ctx.fillText(
+            `π ≈ ${this.piApproximation.toFixed(8)}`,
+            20, 255
+        );
         
-        // Status message
+        // Error percentage
+        ctx.fillText(
+            `Error: ${error.toFixed(6)}%`,
+            20, 275
+        );
+        
+        // Convergence rate
+        if (this.collisionCount > 0) {
+            const convergenceRate = Math.log(error) / Math.log(this.collisionCount);
+            ctx.fillStyle = '#aaaaaa';
+            ctx.fillText(
+                `Convergence Rate: ~1/n^${Math.abs(convergenceRate).toFixed(3)}`,
+                20, 295
+            );
+        }
+        
+        // Status message with enhanced visibility
         if (this.isComplete) {
             ctx.fillStyle = '#00ff88';
-            ctx.fillText('Simulation complete! Click to reset.', 20, 270);
+            ctx.fillText('✓ Simulation complete! Click to reset.', 20, 315);
         } else {
             ctx.fillStyle = this.isRunning ? '#00ff88' : '#ffaa00';
+            const statusIcon = this.isRunning ? '▶' : '❚❚';
             ctx.fillText(
-                this.isRunning ? 'Running... Click to pause' : 'Paused. Click to start',
-                20, 270
+                `${statusIcon} ${this.isRunning ? 'Running... Click to pause' : 'Paused. Click to start'}`,
+                20, 315
             );
         }
     }
