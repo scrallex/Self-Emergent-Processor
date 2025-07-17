@@ -12,7 +12,7 @@ export default class Scene10 {
 
         this.particles = [];
         this.numParticles = 300;
-        this.radius = 3;
+        this.radius = this.settings.size || 3;
         this.boundaryPadding = 10;
         this.mouse = { x: 0, y: 0, down: false };
         this.animation = true;
@@ -148,6 +148,9 @@ export default class Scene10 {
 
     updateSettings(newSettings) {
         this.settings = { ...this.settings, ...newSettings };
+        if (newSettings.size !== undefined) {
+            this.radius = newSettings.size;
+        }
     }
 
     cleanup() {

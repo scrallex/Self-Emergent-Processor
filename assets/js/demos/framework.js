@@ -14,16 +14,17 @@ class SEPDemoFramework {
             quality: 'medium',
             speed: 1.0,
             intensity: 50,
+            size: 3,
             videoMode: false
         };
         
         // Presets for video recording
         this.presets = {
-            default: { speed: 1.0, intensity: 50 },
-            intro: { speed: 0.5, intensity: 30 },
-            demo: { speed: 1.0, intensity: 60 },
-            climax: { speed: 1.5, intensity: 100 },
-            outro: { speed: 0.3, intensity: 20 }
+            default: { speed: 1.0, intensity: 50, size: 3 },
+            intro: { speed: 0.5, intensity: 30, size: 3 },
+            demo: { speed: 1.0, intensity: 60, size: 3 },
+            climax: { speed: 1.5, intensity: 100, size: 3 },
+            outro: { speed: 0.3, intensity: 20, size: 3 }
         };
         
         // Scene registry
