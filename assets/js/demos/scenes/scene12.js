@@ -317,8 +317,194 @@ export default class Scene12 {
     handleMouseDown(e) {
         this.isDragging = true;
         
-        // Generate a coherence wave on click
-        this.generateCoherenceWave();
+        // Get mouse position
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Check if we clicked on any particular zone
+        const zonePositions = this.calculateZonePositions();
+        let clickedZone = null;
+        let minDist = Infinity;
+
+        // Find the closest zone
+        for (const zone in zonePositions) {
+            const pos = zonePositions[zone];
+            const dist = Math.hypot(pos.x - mouseX, pos.y - mouseY);
+
+            if (dist < 80 && dist < minDist) { // Within 80px radius
+                minDist = dist;
+                clickedZone = zone;
+            }
+        }
+
+        if (clickedZone) {
+            // Generate a special coherence wave from the clicked zone
+            const pos = zonePositions[clickedZone];
+            this.coherenceWaves.push({
+                x: pos.x,
+                y: pos.y,
+                radius: 10,
+                maxRadius: Math.max(this.canvas.width, this.canvas.height),
+                strength: 0.9 + Math.random() * 0.1,
+                color: this.getZoneColor(clickedZone)
+            });
+
+            // Special interactions based on which zone was clicked
+            this.triggerZoneInteraction(clickedZone);
+        } else {
+            // Generate a standard coherence wave from the center
+            this.generateCoherenceWave();
+        }
+    }
+
+    /**
+     * Get color for a specific zone
+     * @param {string} zone - Zone name
+     * @returns {string} - HSLA color string
+     */
+    getZoneColor(zone) {
+        const colors = {
+            'waves': 'hsla(200, 100%, 50%, 0.4)',
+            'angles': 'hsla(40, 100%, 50%, 0.4)',
+            'billiards': 'hsla(220, 100%, 50%, 0.4)',
+            'boundary': 'hsla(270, 100%, 50%, 0.4)',
+            'bodies': 'hsla(30, 100%, 50%, 0.4)',
+            'primes': 'hsla(140, 100%, 50%, 0.4)',
+            'boids': 'hsla(210, 100%, 50%, 0.4)',
+            'grid': 'hsla(150, 100%, 50%, 0.4)',
+            'fluid': 'hsla(260, 100%, 50%, 0.4)',
+            'financial': 'hsla(40, 100%, 50%, 0.4)',
+            'logo': 'hsla(300, 100%, 50%, 0.4)'
+        };
+
+        return colors[zone] || 'hsla(170, 100%, 50%, 0.4)';
+    }
+
+    /**
+     * Trigger special interactions based on clicked zone
+     * @param {string} zone - Zone name
+     */
+    triggerZoneInteraction(zone) {
+        // Apply special effects to create a cohesive meta-visualization
+        switch (zone) {
+            case 'waves':
+                // Increase amplitude of all waves temporarily
+                this.elements.waves.amplitude *= 1.5;
+                setTimeout(() => { this.elements.waves.amplitude /= 1.5; }, 1000);
+                break;
+
+            case 'angles':
+                // Trigger angle changes in various elements
+                for (let i = 0; i < this.elements.bodies.positions.length; i++) {
+                    const body = this.elements.bodies.positions[i];
+                    // Add a small impulse to change trajectory
+                    body.x += (Math.random() - 0.5) * 10;
+                    body.y += (Math.random() - 0.5) * 10;
+                }
+                break;
+
+            case 'billiards':
+                // Add energy to billiard particles
+                for (const particle of this.elements.billiards.particles) {
+                    particle.vx *= 1.5;
+                    particle.vy *= 1.5;
+                }
+                break;
+
+            case 'boundary':
+                // Increase spring force and affect grid
+                this.elements.boundary.springForce *= 1.5;
+                setTimeout(() => { this.elements.boundary.springForce /= 1.5; }, 1000);
+
+                // Random grid ruptures
+                for (let i = 0; i < 2; i++) {
+                    const gridI = Math.floor(Math.random() * 4);
+                    const gridJ = Math.floor(Math.random() * 4);
+                    this.elements.grid.states[gridI][gridJ] = 1 - this.elements.grid.states[gridI][gridJ];
+                    this.elements.grid.ruptures.push({
+                        i: gridI,
+                        j: gridJ,
+                        time: 0
+                    });
+                }
+                break;
+
+            case 'bodies':
+                // Affect fluid dynamics
+                for (const particle of this.elements.fluid.particles) {
+                    particle.vorticity *= -1; // Reverse vorticity
+                }
+                break;
+
+            case 'primes':
+                // Highlight random primes
+                for (let i = 0; i < 3; i++) {
+                    const randomIndex = Math.floor(Math.random() * this.elements.primes.spiral.length);
+                    this.elements.primes.highlightedPrimes.push({
+                        index: randomIndex,
+                        time: 0
+                    });
+                }
+                break;
+
+            case 'boids':
+                // Increase alignment temporarily
+                this.elements.boids.alignment = Math.min(1, this.elements.boids.alignment + 0.3);
+                setTimeout(() => {
+                    this.elements.boids.alignment = Math.max(0, this.elements.boids.alignment - 0.3);
+                }, 1000);
+                break;
+
+            case 'grid':
+                // Create rupture pattern
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if ((i + j) % 2 === 0) {
+                            this.elements.grid.states[i][j] = 1 - this.elements.grid.states[i][j];
+                            this.elements.grid.ruptures.push({
+                                i: i,
+                                j: j,
+                                time: 0
+                            });
+                        }
+                    }
+                }
+                break;
+
+            case 'fluid':
+                // Affect particles and create vortex
+                for (const particle of this.elements.billiards.particles) {
+                    // Add vortex movement
+                    const dx = particle.x;
+                    const dy = particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+                    const force = 5 / (dist + 10);
+
+                    particle.vx -= Math.sin(angle) * force;
+                    particle.vy += Math.cos(angle) * force;
+                }
+                break;
+
+            case 'financial':
+                // Create wave pattern in financial surface
+                for (let i = 0; i < this.elements.financial.surface.length; i++) {
+                    for (let j = 0; j < this.elements.financial.surface[i].length; j++) {
+                        this.elements.financial.surface[i][j] += Math.sin(i + j + this.time * 5) * 5;
+                    }
+                }
+                break;
+
+            case 'logo':
+                // Generate multiple waves from center
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        this.generateCoherenceWave();
+                    }, i * 200);
+                }
+                break;
+        }
     }
     
     /**
