@@ -14,6 +14,7 @@ class SEPDemoFramework {
             quality: 'medium',
             speed: 1.0,
             intensity: 50,
+            blockSize: 30,
             videoMode: false
         };
         
