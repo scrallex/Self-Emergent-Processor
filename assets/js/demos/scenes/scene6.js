@@ -60,7 +60,7 @@ export default class Scene6 {
                 step: 10,
                 label: 'Initial Velocity'
             },
-            blockSize: {
+            size: {
                 value: this.baseSize,
                 min: 20,
                 max: 80,
@@ -110,6 +110,8 @@ export default class Scene6 {
         this.isRunning = false;
         this.isComplete = false;
         this.collisionHistory = [];
+
+        this.controls.size.value = this.baseSize;
         
         // Set mass ratio based on intensity
         this.massRatio = Math.max(1, Math.floor(this.settings.intensity / 20)); // 1-5 based on intensity
@@ -291,18 +293,17 @@ export default class Scene6 {
         }
 
         // Check if mouse is over size slider
-        const zs = this.controlPoints.sizeSlider;
-        if (mouseX >= zs.x && mouseX <= zs.x + zs.width &&
-            mouseY >= zs.y && mouseY <= zs.y + zs.height) {
-            zs.hovered = true;
+        const sz = this.controlPoints.sizeSlider;
+        if (mouseX >= sz.x && mouseX <= sz.x + sz.width &&
+            mouseY >= sz.y && mouseY <= sz.y + sz.height) {
+            sz.hovered = true;
 
-            // If dragging, update block size
-            if (zs.dragging) {
-                const relativeX = mouseX - zs.x;
-                const percentage = relativeX / zs.width;
-                const newSize = 20 + percentage * 60;
-                if (Math.abs(newSize - this.baseSize) > 1) {
-                    this.baseSize = newSize;
+            if (sz.dragging) {
+                const relativeX = mouseX - sz.x;
+                const size = 20 + (relativeX / sz.width) * 60;
+                if (Math.abs(size - this.baseSize) > 1) {
+                    this.baseSize = size;
+                    this.controls.size.value = size;
                     this.reset();
                 }
             }
@@ -350,7 +351,6 @@ export default class Scene6 {
         if (this.controlPoints.sizeSlider.hovered) {
             this.controlPoints.sizeSlider.dragging = true;
             this.handleMouseMove(e);
-
             const endDrag = () => {
                 this.controlPoints.sizeSlider.dragging = false;
                 window.removeEventListener('mouseup', endDrag);
@@ -1075,7 +1075,7 @@ export default class Scene6 {
         ctx.font = '12px Arial';
         ctx.fillText('Space: Play/Pause | R: Reset | 1-5: Set Mass Ratio', 20, 350);
         ctx.fillText('↑↓: Change Speed | Drag sliders to adjust parameters', 20, 370);
-        ctx.fillText('Drag Block Size slider to resize blocks', 20, 390);
+        ctx.fillText('Block Size slider adjusts collision block dimensions', 20, 388);
     }
 
     /**
