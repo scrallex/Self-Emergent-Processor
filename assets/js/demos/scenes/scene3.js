@@ -29,11 +29,13 @@ export default class Scene3 {
         this.balls = [];
         this.lastTime = 0;
         this.time = 0;
-        this.impactInfo = { cosine: 0, transfer: 0, time: 0 };
+        this.impactInfo = { cosine: 0, transfer: 0, time: 0, x: 0, y: 0 };
+        this.impactEffects = [];
 
         // Lattice formation parameters
         this.cosineThreshold = 0.5;
         this.latticePoints = [];
+        this.showLatticeConnections = true;
         
         // Interactive controller (initialized in init)
         this.controller = null;
@@ -179,6 +181,19 @@ export default class Scene3 {
                 onChange: (value) => {
                     this.cosineThreshold = value;
                 }
+            },
+            {
+                id: 'toggle_connections',
+                type: 'button',
+                label: this.showLatticeConnections ? 'Hide Connections' : 'Show Connections',
+                onClick: () => {
+                    this.showLatticeConnections = !this.showLatticeConnections;
+                    // Update button label
+                    const button = this.controller.getControlById('toggle_connections');
+                    if (button) {
+                        button.text = this.showLatticeConnections ? 'Hide Connections' : 'Show Connections';
+                    }
+                }
             }
         ];
     }
@@ -206,9 +221,17 @@ export default class Scene3 {
      * @param {number} dt - Delta time in seconds, adjusted by speed
      */
     update(dt) {
+        // Update impact effects
+        this.impactEffects = this.impactEffects.filter(effect => {
+            effect.life -= dt;
+            effect.radius = effect.maxRadius * (1 - Math.pow(1 - effect.life, 2));
+            effect.alpha = effect.life;
+            return effect.life > 0;
+        });
+        
         // Update lattice point lifetimes
         this.latticePoints = this.latticePoints.filter(p => {
-            p.life -= dt;
+            p.life -= dt * 0.125; // Slower decay for lattice points
             return p.life > 0;
         });
 
@@ -255,20 +278,41 @@ export default class Scene3 {
                     b2.vx -= impulse * nx;
                     b2.vy -= impulse * ny;
 
+                    // Calculate impact point (midpoint of contact)
+                    const impactX = (b1.x + b2.x) / 2;
+                    const impactY = (b1.y + b2.y) / 2;
+                    
                     // Store impact info
                     this.impactInfo = {
                         cosine: Math.abs(nx), // cosine alignment
                         transfer: Math.abs(nx) * 100, // %
-                        time: performance.now()
+                        time: performance.now(),
+                        x: impactX,
+                        y: impactY
                     };
+                    
+                    // Create impact visual effect
+                    this.impactEffects.push({
+                        x: impactX,
+                        y: impactY,
+                        radius: 5,
+                        maxRadius: 40 * Math.abs(nx), // Size based on cosine
+                        alpha: 1,
+                        color: Math.abs(nx) >= this.cosineThreshold ? '#00ff88' : '#ffaa00',
+                        life: 1
+                    });
 
                     // Create lattice point for strong alignments
                     if (Math.abs(nx) >= this.cosineThreshold) {
                         this.latticePoints.push({
-                            x: (b1.x + b2.x) / 2,
-                            y: (b1.y + b2.y) / 2,
-                            life: 1
+                            x: impactX,
+                            y: impactY,
+                            life: 8, // Longer lifetime for better visualization
+                            connections: []
                         });
+                        
+                        // Connect to nearby lattice points
+                        this.updateLatticeConnections();
                     }
 
                     // Prevent sticking
@@ -298,11 +342,30 @@ export default class Scene3 {
             this.ctx.fill();
         });
 
+        // Draw lattice connections if enabled
+        if (this.showLatticeConnections) {
+            this.drawLatticeConnections();
+        }
+        
         // Draw lattice points
         this.latticePoints.forEach(point => {
             this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            this.ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
             this.ctx.fillStyle = `rgba(96, 165, 250, ${point.life})`;
+            this.ctx.fill();
+            
+            // Add glow effect for lattice points
+            this.ctx.beginPath();
+            this.ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(96, 165, 250, ${point.life * 0.3})`;
+            this.ctx.fill();
+        });
+        
+        // Draw impact effects
+        this.impactEffects.forEach(effect => {
+            this.ctx.beginPath();
+            this.ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+            this.ctx.fillStyle = `${effect.color}${Math.floor(effect.alpha * 255).toString(16).padStart(2, '0')}`;
             this.ctx.fill();
         });
 
@@ -314,7 +377,8 @@ export default class Scene3 {
                     'Energy Transfer': `${this.impactInfo.transfer.toFixed(1)}%`,
                     'Cosine Threshold': this.cosineThreshold.toFixed(2),
                     'Lattice Points': this.latticePoints.length,
-                    'Status': this.isDragging ? 'Dragging' : 'Simulating'
+                    'Status': this.isDragging ? 'Dragging' : 'Simulating',
+                    'Connections': this.showLatticeConnections ? 'Visible' : 'Hidden'
                 });
                 this.controller.render(timestamp);
             }
@@ -374,6 +438,67 @@ export default class Scene3 {
     /**
      * Clean up resources when scene is unloaded
      */
+    /**
+     * Update connections between lattice points
+     * Creates a network visualization when points are close enough
+     */
+    updateLatticeConnections() {
+        const MAX_DISTANCE = 150; // Maximum distance for connection
+        
+        // For each lattice point, find connections to other points
+        for (let i = 0; i < this.latticePoints.length; i++) {
+            const p1 = this.latticePoints[i];
+            p1.connections = []; // Reset connections
+            
+            for (let j = 0; j < this.latticePoints.length; j++) {
+                if (i === j) continue; // Skip self
+                
+                const p2 = this.latticePoints[j];
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                // Connect if close enough
+                if (dist <= MAX_DISTANCE) {
+                    p1.connections.push({
+                        target: j,
+                        distance: dist
+                    });
+                }
+            }
+        }
+    }
+    
+    /**
+     * Draw connections between lattice points
+     */
+    drawLatticeConnections() {
+        // Draw lines between connected points
+        this.ctx.save();
+        
+        for (let i = 0; i < this.latticePoints.length; i++) {
+            const p1 = this.latticePoints[i];
+            
+            p1.connections.forEach(conn => {
+                if (conn.target >= this.latticePoints.length) return; // Safety check
+                
+                const p2 = this.latticePoints[conn.target];
+                const strength = 1 - (conn.distance / 150); // Fade by distance
+                const alpha = Math.min(p1.life, p2.life) * strength;
+                
+                // Draw connection line with gradient
+                this.ctx.beginPath();
+                this.ctx.moveTo(p1.x, p1.y);
+                this.ctx.lineTo(p2.x, p2.y);
+                this.ctx.strokeStyle = `rgba(96, 165, 250, ${alpha * 0.7})`;
+                this.ctx.lineWidth = 2 * alpha;
+                this.ctx.stroke();
+            });
+        }
+        
+        this.ctx.restore();
+    }
+
     cleanup() {
         // Clean up the interactive controller
         if (this.controller) {

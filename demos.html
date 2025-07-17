@@ -91,7 +91,7 @@
 
     <!-- Demo Framework Script -->
     <script type="module">
-        import demoFramework from './assets/js/demos/framework.js';
+        import demoFramework from './assets/js/demos/enhanced-framework.js';
 
     // DOM Elements
     const loadingScreen = document.getElementById('loadingScreen');
@@ -156,14 +156,16 @@
         }
 
             function updateBlockSize() {
-            const blockSize = parseInt(document.getElementById('blockSizeSlider').value);
-            document.getElementById('blockSizeValue').textContent = blockSize;
-            if (framework) framework.updateSettings({ blockSize });
-        function updateSize() {
-            const size = parseInt(document.getElementById('sizeSlider').value);
-            document.getElementById('sizeValue').textContent = size;
-            if (framework) framework.updateSettings({ size });
-        }
+                const blockSize = parseInt(document.getElementById('blockSizeSlider').value);
+                document.getElementById('blockSizeValue').textContent = blockSize;
+                if (framework) framework.updateSettings({ blockSize });
+            }
+            
+            function updateSize() {
+                const size = parseInt(document.getElementById('sizeSlider').value);
+                document.getElementById('sizeValue').textContent = size;
+                if (framework) framework.updateSettings({ size });
+            }
 
             function applyPreset() {
             const presetName = document.getElementById('presetSelect').value;
