@@ -231,6 +231,54 @@ export default class Scene7 {
     }
     
     /**
+     * Calculate the maximum gap between consecutive primes
+     * @returns {number} The maximum gap found
+     */
+    calculateMaxPrimeGap() {
+        if (this.primes.length < 2) return 0;
+        
+        let maxGap = 0;
+        for (let i = 1; i < this.primes.length; i++) {
+            const gap = this.primes[i] - this.primes[i-1];
+            if (gap > maxGap) maxGap = gap;
+        }
+        
+        return maxGap;
+    }
+    
+    /**
+     * Calculate the average gap between consecutive primes
+     * @returns {number} The average gap
+     */
+    calculateAveragePrimeGap() {
+        if (this.primes.length < 2) return 0;
+        
+        let totalGap = 0;
+        for (let i = 1; i < this.primes.length; i++) {
+            totalGap += this.primes[i] - this.primes[i-1];
+        }
+        
+        return totalGap / (this.primes.length - 1);
+    }
+    
+    /**
+     * Count the number of twin primes (pairs of primes that differ by 2)
+     * @returns {number} The count of twin primes
+     */
+    countTwinPrimes() {
+        if (this.primes.length < 2) return 0;
+        
+        let count = 0;
+        for (let i = 0; i < this.primes.length - 1; i++) {
+            if (this.primes[i+1] - this.primes[i] === 2) {
+                count++;
+            }
+        }
+        
+        return count;
+    }
+    
+    /**
      * Check if a number is prime
      * @param {number} num - The number to check
      * @returns {boolean} True if prime, false otherwise
@@ -547,6 +595,9 @@ export default class Scene7 {
         const centerX = this.gridCenter.x + this.gridOffset.x;
         const centerY = this.gridCenter.y + this.gridOffset.y;
         
+        // Draw prime connecting paths first (so they appear behind the numbers)
+        this.drawPrimeConnections(centerX, centerY, cellSize);
+        
         // Draw numbers
         for (const number of this.numbers) {
             const x = centerX + number.x * cellSize;
@@ -561,6 +612,65 @@ export default class Scene7 {
             // Draw cell
             this.drawNumberCell(number, x, y, cellSize);
         }
+    }
+    
+    /**
+     * Draw connections between consecutive primes to visualize their ordering
+     * @param {number} centerX - Center X coordinate
+     * @param {number} centerY - Center Y coordinate
+     * @param {number} cellSize - Size of each cell
+     */
+    drawPrimeConnections(centerX, centerY, cellSize) {
+        const { ctx } = this;
+        
+        if (this.primes.length < 2) return;
+        
+        // Set up styles for prime connections
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        
+        // Sort primes by value (they should already be sorted, but just to be sure)
+        const sortedPrimes = [...this.primes].sort((a, b) => a - b);
+        
+        // Start at the first prime
+        const firstNumber = this.numbers.find(n => n.value === sortedPrimes[0]);
+        if (!firstNumber) return;
+        
+        let firstX = centerX + firstNumber.x * cellSize;
+        let firstY = centerY + firstNumber.y * cellSize;
+        
+        ctx.moveTo(firstX, firstY);
+        
+        // Connect to each subsequent prime in order
+        for (let i = 1; i < sortedPrimes.length; i++) {
+            const number = this.numbers.find(n => n.value === sortedPrimes[i]);
+            if (!number) continue;
+            
+            const x = centerX + number.x * cellSize;
+            const y = centerY + number.y * cellSize;
+            
+            // Create a curved path between consecutive primes for visual appeal
+            if (i % 2 === 0) {
+                // Use a bezier curve for even indices
+                const midX = (firstX + x) / 2;
+                const midY = (firstY + y) / 2;
+                const controlX = midX + Math.sin(this.animationPhase) * cellSize * 0.5;
+                const controlY = midY + Math.cos(this.animationPhase) * cellSize * 0.5;
+                
+                ctx.quadraticCurveTo(controlX, controlY, x, y);
+            } else {
+                // Use a straight line for odd indices
+                ctx.lineTo(x, y);
+            }
+            
+            firstX = x;
+            firstY = y;
+        }
+        
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset dash pattern
     }
     
     /**
@@ -711,6 +821,42 @@ export default class Scene7 {
                 ctx.beginPath();
                 ctx.arc(x, y, glowSize, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Enhanced geometric rays to show prime order
+                // Get the index of this prime in the ordered list of primes
+                const primeIndex = this.primes.indexOf(number.value);
+                if (primeIndex !== -1) {
+                    // Calculate ray properties based on prime's order
+                    const primeOrder = primeIndex + 1; // 1-indexed position in prime sequence
+                    const rayCount = Math.min(primeOrder, 11); // Scale ray count based on prime order
+                    
+                    // Display prime order number
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = `${Math.max(6, size * 0.2)}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`p${primeOrder}`, x, y - halfSize * 1.2);
+                    
+                    // Draw rays in golden ratio spiral pattern
+                    const goldenRatio = 1.618033988749895;
+                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.7)';
+                    ctx.lineWidth = 1.5;
+                    
+                    for (let i = 0; i < rayCount; i++) {
+                        // Use golden angle to distribute rays (more mathematically significant)
+                        const angle = i * (Math.PI * 2 / goldenRatio) + this.animationPhase * 0.5;
+                        // Scale ray length based on prime's position in sequence
+                        const rayLength = glowSize * (1 + (0.1 * Math.min(primeOrder, 10)));
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(
+                            x + Math.cos(angle) * rayLength,
+                            y + Math.sin(angle) * rayLength
+                        );
+                        ctx.stroke();
+                    }
+                }
             }
         } else if (number.value === 1) {
             // Special case for 1
@@ -728,15 +874,61 @@ export default class Scene7 {
             }
         }
         
-        // Draw cell background
+        // Draw cell background with shape based on number properties
         ctx.fillStyle = fillColor;
-        ctx.beginPath();
-        ctx.arc(x, y, halfSize * 0.8, 0, Math.PI * 2);
-        ctx.fill();
+        
+        if (number.isPrime) {
+            // Draw prime numbers as circles (representing their uniqueness)
+            ctx.beginPath();
+            ctx.arc(x, y, halfSize * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add a border for clarity
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        } else if (number.value === 1) {
+            // Draw 1 as a diamond
+            ctx.beginPath();
+            ctx.moveTo(x, y - halfSize * 0.8);
+            ctx.lineTo(x + halfSize * 0.8, y);
+            ctx.lineTo(x, y + halfSize * 0.8);
+            ctx.lineTo(x - halfSize * 0.8, y);
+            ctx.closePath();
+            ctx.fill();
+        } else {
+            // Draw composite numbers as squares (representing their composite nature)
+            const squareSize = halfSize * 1.4;
+            ctx.beginPath();
+            ctx.rect(x - squareSize/2, y - squareSize/2, squareSize, squareSize);
+            ctx.fill();
+            
+            // For highlighted composites, show factor structure
+            if (number.highlighted) {
+                const factors = number.factors.filter(f => f > 1 && f < number.value);
+                if (factors.length > 0 && factors.length <= 4) {
+                    // Display visual representation of factors
+                    const gridSize = Math.ceil(Math.sqrt(factors.length));
+                    const cellSize = squareSize / gridSize;
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    for (let i = 0; i < factors.length; i++) {
+                        const row = Math.floor(i / gridSize);
+                        const col = i % gridSize;
+                        const fx = x - squareSize/2 + col * cellSize + cellSize/2;
+                        const fy = y - squareSize/2 + row * cellSize + cellSize/2;
+                        
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, cellSize * 0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
         
         // Draw number text
         ctx.fillStyle = textColor;
-        ctx.font = `${Math.max(8, size * 0.5)}px Arial`;
+        ctx.font = `${Math.max(8, size * 0.4)}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(number.value.toString(), x, y);
@@ -823,46 +1015,102 @@ export default class Scene7 {
                 continue;
             }
             
-            // Draw path
-            ctx.strokeStyle = trajectory.color + '40'; // Semi-transparent
-            ctx.lineWidth = 1;
+            // Calculate control points for curved paths
+            // This creates more interesting geometric demonstrations of number relationships
+            const controlPoint1X = startX + (endX - startX) * 0.5 + (Math.sin(this.animationPhase) * 50);
+            const controlPoint1Y = startY + (endY - startY) * 0.5 - (Math.cos(this.animationPhase) * 50);
             
-            // Path from factor 1 to factor 2
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(endX, endY);
-            ctx.stroke();
-            
-            // Path from factors to product
             const midX = (startX + endX) / 2;
             const midY = (startY + endY) / 2;
             
+            const controlPoint2X = midX + (targetX - midX) * 0.5 + (Math.cos(this.animationPhase + trajectory.factors[0]) * 50);
+            const controlPoint2Y = midY + (targetY - midY) * 0.5 - (Math.sin(this.animationPhase + trajectory.factors[1]) * 50);
+            
+            // Draw enhanced path with thicker, more visible lines
+            const alpha = 0.6 + (Math.sin(this.animationPhase * 0.5) * 0.2);
+            ctx.strokeStyle = trajectory.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+            ctx.lineWidth = 2;
+            
+            // Path from factor 1 to factor 2 with curved Bezier
             ctx.beginPath();
-            ctx.moveTo(midX, midY);
-            ctx.lineTo(targetX, targetY);
+            ctx.moveTo(startX, startY);
+            ctx.quadraticCurveTo(controlPoint1X, controlPoint1Y, endX, endY);
             ctx.stroke();
             
-            // Draw particles moving along the trajectory
+            // Add glow effect to show prime number relationships more clearly
+            if (trajectory.factors.some(f => this.isPrime(f))) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = trajectory.color;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+            
+            // Path from midpoint to product with curved Bezier
+            ctx.beginPath();
+            ctx.moveTo(midX, midY);
+            ctx.quadraticCurveTo(controlPoint2X, controlPoint2Y, targetX, targetY);
+            ctx.stroke();
+            
+            // Draw connection nodes at intersection points for better visualization
+            ctx.fillStyle = trajectory.color;
+            ctx.beginPath();
+            ctx.arc(midX, midY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw particles moving along the curved trajectory
             for (const particle of trajectory.particles) {
                 let particleX, particleY;
                 
                 if (particle.progress < 0.5) {
-                    // First half: moving from start to end
+                    // First half: moving along the bezier curve from start to end
                     const t = particle.progress * 2;
-                    particleX = startX + (endX - startX) * t;
-                    particleY = startY + (endY - startY) * t;
+                    particleX = Math.pow(1-t, 2) * startX + 2 * (1-t) * t * controlPoint1X + Math.pow(t, 2) * endX;
+                    particleY = Math.pow(1-t, 2) * startY + 2 * (1-t) * t * controlPoint1Y + Math.pow(t, 2) * endY;
                 } else {
-                    // Second half: moving from midpoint to target
+                    // Second half: moving along the bezier curve from midpoint to target
                     const t = (particle.progress - 0.5) * 2;
-                    particleX = midX + (targetX - midX) * t;
-                    particleY = midY + (targetY - midY) * t;
+                    particleX = Math.pow(1-t, 2) * midX + 2 * (1-t) * t * controlPoint2X + Math.pow(t, 2) * targetX;
+                    particleY = Math.pow(1-t, 2) * midY + 2 * (1-t) * t * controlPoint2Y + Math.pow(t, 2) * targetY;
                 }
                 
-                // Draw particle
+                // Draw enhanced particles with glowing effect
                 ctx.fillStyle = trajectory.color;
+                
+                // Outer glow
+                const glowSize = particle.size * 1.5;
+                const gradient = ctx.createRadialGradient(
+                    particleX, particleY, 0,
+                    particleX, particleY, glowSize
+                );
+                gradient.addColorStop(0, trajectory.color);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                
+                ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(particleX, particleY, particle.size, 0, Math.PI * 2);
+                ctx.arc(particleX, particleY, glowSize, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Core particle
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, particle.size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Add number order visualization with sequence markers
+            if (trajectory.factors.every(f => this.isPrime(f))) {
+                // Highlight special case of prime factors
+                const markerCount = 5;
+                for (let i = 0; i < markerCount; i++) {
+                    const t = i / (markerCount - 1);
+                    const markerX = midX + (targetX - midX) * t;
+                    const markerY = midY + (targetY - midY) * t;
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.beginPath();
+                    ctx.arc(markerX, markerY, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
         }
     }
@@ -874,7 +1122,7 @@ export default class Scene7 {
         const { ctx } = this;
         
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(10, 10, 300, 130);
+        ctx.fillRect(10, 10, 350, 240); // Increased height for additional info
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Arial';
@@ -896,9 +1144,33 @@ export default class Scene7 {
         ctx.fillText(`Primes: ${this.primeCount} (${this.primeDensity.toFixed(1)}%)`, 20, 85);
         ctx.fillText(`Active Trajectories: ${this.trajectories.filter(t => t.active).length}`, 20, 110);
         
+        // Prime pattern information
+        if (this.primes.length > 0) {
+            const lastPrimeGap = this.primes.length > 1 ?
+                this.primes[this.primes.length-1] - this.primes[this.primes.length-2] : 0;
+            const maxGap = this.calculateMaxPrimeGap();
+            const avgGap = this.calculateAveragePrimeGap();
+            
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText(`Last Prime: ${this.primes[this.primes.length-1]}`, 20, 135);
+            ctx.fillText(`Current Gap: ${lastPrimeGap}`, 20, 155);
+            ctx.fillText(`Max Gap: ${maxGap}`, 180, 155);
+            ctx.fillText(`Avg Gap: ${avgGap.toFixed(2)}`, 180, 175);
+            
+            // Add prime distribution insights
+            const twinPrimes = this.countTwinPrimes();
+            ctx.fillStyle = '#7c3aed'; // Purple for special insights
+            ctx.fillText(`Twin Primes: ${twinPrimes}`, 20, 195);
+            
+            // Show golden ratio connection to prime distribution
+            const goldenRatio = 1.618033988749895;
+            ctx.fillStyle = '#ffaa00'; // Gold color for golden ratio
+            ctx.fillText(`Golden Ratio: ${goldenRatio.toFixed(3)}`, 20, 215);
+        }
+        
         // Controls hint
         ctx.fillStyle = '#aaaaaa';
-        ctx.fillText('Double-click to change view, drag to pan', 20, 135);
+        ctx.fillText('Double-click to change view, drag to pan', 20, 235);
     }
 
     /**
