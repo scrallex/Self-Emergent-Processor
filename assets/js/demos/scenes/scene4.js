@@ -43,8 +43,9 @@ export default class Scene4 {
             position: 0,
             velocity: 0,
             target: 0,
-            stiffness: 0.3,  // Increased for better response
-            damping: 0.7     // Adjusted for smoother motion
+            stiffness: 0.5,  // tuned for clearer oscillation
+            damping: 0.85,   // slightly under-damped
+            boundaryStiffness: 1.2 // counter tangent growth
         };
         
         // Interactive controller (initialized in init)
@@ -238,10 +239,12 @@ export default class Scene4 {
             this.updateAngle(this.angle + (targetAngle - this.angle) * easing);
         }
         
-        // Update spring physics with improved response
-        const springForce = (this.spring.target - this.spring.position) * this.spring.stiffness;
-        this.spring.velocity += springForce * dt * 60; // Scale with deltaTime for consistent behavior
-        this.spring.velocity *= Math.pow(this.spring.damping, dt * 60); // Time-scaled damping
+        // Update spring physics with boundary response
+        const baseForce = (this.spring.target - this.spring.position) * this.spring.stiffness;
+        const boundaryForce = -this.spring.position * Math.abs(this.sine) * this.spring.boundaryStiffness;
+        const totalForce = baseForce + boundaryForce;
+        this.spring.velocity += totalForce * dt * 60; // frame-rate normalization
+        this.spring.velocity *= Math.pow(this.spring.damping, dt * 60); // damping
         this.spring.position += this.spring.velocity * dt * 60;
     }
 
