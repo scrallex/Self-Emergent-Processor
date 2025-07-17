@@ -53,6 +53,7 @@ export default class Scene11 {
         
         // Visualization parameters
         this.gridResolution = 20;
+        this.pointSize = 6;
         this.animateMarket = true;
         this.showOptionSurface = true;
         this.showGreeks = false;
@@ -96,7 +97,8 @@ export default class Scene11 {
                 { id: 'volatility', label: 'Volatility', x: 400, y: 350, width: 200, height: 20, min: 10, max: 100, value: this.volatility, action: (val) => this.updateVolatility(val), tooltip: 'Control market volatility (%)' },
                 { id: 'strikePrice', label: 'Strike Price', x: 400, y: 400, width: 200, height: 20, min: 50, max: 150, value: this.strikePrice, action: (val) => this.updateStrikePrice(val), tooltip: 'Set option strike price ($)' },
                 { id: 'timeToMaturity', label: 'Time to Maturity', x: 400, y: 450, width: 200, height: 20, min: 0.1, max: 3, value: this.timeToMaturity, action: (val) => this.updateTimeToMaturity(val), tooltip: 'Set time to option expiration (years)' },
-                { id: 'riskFreeRate', label: 'Risk-Free Rate', x: 400, y: 500, width: 200, height: 20, min: 0.01, max: 0.1, value: this.riskFreeRate, action: (val) => this.updateRiskFreeRate(val), tooltip: 'Set risk-free interest rate (%)' }
+                { id: 'riskFreeRate', label: 'Risk-Free Rate', x: 400, y: 500, width: 200, height: 20, min: 0.01, max: 0.1, value: this.riskFreeRate, action: (val) => this.updateRiskFreeRate(val), tooltip: 'Set risk-free interest rate (%)' },
+                { id: 'blockSize', label: 'Block Size', x: 400, y: 550, width: 200, height: 20, min: 2, max: 20, value: this.pointSize, action: (val) => this.updateBlockSize(val), tooltip: 'Adjust option surface block size' }
             ],
             activeControl: null,
             tooltip: {
@@ -288,6 +290,14 @@ export default class Scene11 {
     updateRiskFreeRate(value) {
         this.riskFreeRate = value;
         this.calculatePriceSurface();
+    }
+
+    /**
+     * Update option surface block size
+     * @param {number} value - New block size
+     */
+    updateBlockSize(value) {
+        this.pointSize = value;
     }
     
     /**
@@ -996,7 +1006,7 @@ export default class Scene11 {
             
             // Draw point
             ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
-            const size = 6 + normalizedValue * 4;
+            const size = this.pointSize + normalizedValue * 4;
             ctx.beginPath();
             ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
             ctx.fill();
@@ -1050,7 +1060,7 @@ export default class Scene11 {
             ctx.fillStyle = 'rgba(255,50,50,0.5)';
             for (const p of sepPoints) {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, Math.max(2, this.pointSize - 2), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -1413,12 +1423,12 @@ export default class Scene11 {
            ctx.fillText(`Time to Maturity: ${this.timeToMaturity.toFixed(2)} years`, 30, 170);
            ctx.fillText(`Risk-Free Rate: ${(this.riskFreeRate * 100).toFixed(2)}%`, 30, 195);
            ctx.fillText(`Grid Resolution: ${this.gridResolution}`, 30, 220);
-
+           ctx.fillText(`Block Size: ${this.pointSize.toFixed(1)}`, 30, 245);
            // Efficiency metrics
            ctx.fillStyle = '#00ddff';
-           ctx.fillText(`Trad Calc: ${this.traditionalCalcTime.toFixed(2)}ms`, 30, 245);
-           ctx.fillText(`SEP Calc: ${this.sepCalcTime.toFixed(2)}ms`, 30, 265);
-           ctx.fillText(`Mean Error: ${this.meanError.toFixed(4)}`, 30, 285);
+           ctx.fillText(`Trad Calc: ${this.traditionalCalcTime.toFixed(2)}ms`, 30, 270);
+           ctx.fillText(`SEP Calc: ${this.sepCalcTime.toFixed(2)}ms`, 30, 290);
+           ctx.fillText(`Mean Error: ${this.meanError.toFixed(4)}`, 30, 310);
 
            // Current optimization level
            const optLevels = ['Basic', 'Advanced', 'Neural', 'Quantum'];
