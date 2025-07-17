@@ -4,6 +4,17 @@
  * This finale scene brings together elements from all previous demonstrations
  * to show how the self-emergent processor creates a harmonious system
  * where all components interact and strengthen each other.
+ *
+ * Keyboard Controls:
+ *   - `1-6` select between All Systems, SEP Core, Neural Connections,
+ *     Vector Dynamics, Emergent Patterns and Quantum Harmonics.
+ *   - `Space` triggers an energy pulse from the core.
+ *
+ * Module Structure:
+ *   Scene12 exports a class which orchestrates particle, neural network,
+ *   vector field and wave subsystems.  It receives framework utilities
+ *   such as Physics, MathLib, EventManager, StateManager and RenderPipeline
+ *   during construction.
  */
 
 import InteractiveController from '../controllers/interactive-controller.js';
