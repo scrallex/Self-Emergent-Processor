@@ -1254,6 +1254,46 @@
         };
     </script>
 
+    <!-- Module script for Scene11 -->
+    <script type="module">
+        import Scene11 from '../../assets/js/demos/scenes/scene11.js';
+
+        let scene11;
+
+        function initOptionsDemo() {
+            const canvas = document.getElementById('options-canvas');
+            const ctx = canvas.getContext('2d');
+            const settings = { speed: 1, intensity: 30 };
+            scene11 = new Scene11(canvas, ctx, settings);
+            scene11.init().then(() => requestAnimationFrame(animateOptions));
+        }
+
+        function animateOptions(ts) {
+            if (scene11) {
+                scene11.animate(ts);
+                requestAnimationFrame(animateOptions);
+            }
+        }
+
+        window.calculateOptions = function() {
+            if (!scene11) return;
+            scene11.calculatePriceSurface();
+            document.getElementById('trad-time').textContent = scene11.traditionalCalcTime.toFixed(2) + 'ms';
+            document.getElementById('sep-time').textContent = scene11.sepCalcTime.toFixed(2) + 'ms';
+            document.getElementById('speedup').textContent = scene11.speedup.toFixed(1) + 'x';
+        };
+
+        window.addEventListener('load', () => {
+            const volSlider = document.getElementById('volatility');
+            const volValue = document.getElementById('vol-value');
+            volSlider.addEventListener('input', (e) => {
+                volValue.textContent = e.target.value + '%';
+                if (scene11) scene11.updateVolatility(+e.target.value);
+            });
+            initOptionsDemo();
+        });
+    </script>
+
     <!-- Module script for Scene12 -->
     <script type="module">
         import Scene12 from '../assets/js/demos/scenes/scene12.js';
