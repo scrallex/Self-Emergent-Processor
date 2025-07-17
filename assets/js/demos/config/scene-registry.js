@@ -228,9 +228,9 @@ export const SCENES = {
     },
     10: {
         id: 10,
-        name: "Unified Emergence",
-        description: "Conway's Game of Life",
-        longDescription: "Interactive cellular automaton showing how complex patterns emerge from simple rules. Create, save, and load patterns to observe gliders, oscillators, and other emergent structures.",
+        name: "Particle Fluid",
+        description: "Particle-based Fluid Simulation",
+        longDescription: "Fluid simulation with vorticity coloring and boundary rotation using interacting particles.",
         status: STATUS.READY,
         type: 'divergent',
         color: SCENE_COLORS.DIVERGENT,
@@ -244,7 +244,7 @@ export const SCENES = {
         videoSequence: {
             duration: 45,
             transition: 'flow',
-            focusPoints: ['pattern_evolution', 'glider_movement', 'oscillator_behavior']
+            focusPoints: ['vorticity_field', 'boundary_swirl', 'particle_motion']
         }
     },
     11: { 
