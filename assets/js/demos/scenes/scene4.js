@@ -50,9 +50,12 @@ export default class Scene4 {
         
         // Interactive controller (initialized in init)
         this.controller = null;
-        
+
         // Interactive elements (defined in createInteractiveElements)
         this.interactiveElements = [];
+
+        // References to dynamically created controls
+        this.slider = null;
         
         // Animation state
         this.isAnimating = false;
@@ -94,15 +97,22 @@ export default class Scene4 {
             height: 20,
             shape: 'rectangle',
             constrainToCanvas: true,
-            
+
+            onDragStart: () => { this.slider.isDragging = true; },
             onDrag: (dx, dy, x, y) => {
                 // Calculate angle from slider position
                 let ratio = (x - (this.canvas.width * 0.5 - 100)) / 200;
                 ratio = Math.max(0, Math.min(1, ratio));
                 this.updateAngle(ratio * 89.9);
-            }
+            },
+            onDragEnd: () => { this.slider.isDragging = false; }
         });
-        
+
+        // Store reference for later use
+        this.slider = slider;
+        this.slider.isDragging = false;
+        this.slider.handleRadius = 10;
+
         elements.push(slider);
         
         // Create animation toggle button
@@ -117,7 +127,10 @@ export default class Scene4 {
                 this.isAnimating = !this.isAnimating;
             }
         });
-        
+
+        // Expose button for external handlers if needed
+        this.toggleBtn = toggleBtn;
+
         elements.push(toggleBtn);
         
         return elements;
