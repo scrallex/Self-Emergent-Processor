@@ -161,10 +161,12 @@ export default class Scene9 {
         this.ruptures = [];
         
         // Calculate quantum boundary strengths between adjacent cells
+        const threshold = 1.0;
+
         for (let i = 0; i < this.stateSize; i++) {
             for (let j = 0; j < this.stateSize; j++) {
                 const cell = this.stateGrid[i][j];
-                
+
                 // Check cells in 4 directions
                 const directions = [
                     { di: -1, dj: 0 }, // top
@@ -172,36 +174,34 @@ export default class Scene9 {
                     { di: 0, dj: -1 }, // left
                     { di: 0, dj: 1 }   // right
                 ];
-                
+
                 directions.forEach(dir => {
                     const ni = i + dir.di;
                     const nj = j + dir.dj;
-                    
+
                     if (ni >= 0 && ni < this.stateSize && nj >= 0 && nj < this.stateSize) {
                         const neighbor = this.stateGrid[ni][nj];
-                        
-                        // If states differ and energies are both high, potential rupture
-                        if (cell.state !== neighbor.state &&
-                            cell.energy > 0.7 && neighbor.energy > 0.7) {
-                            
-                            // Calculate phase alignment (cosine)
-                            const phaseDiff = Math.abs(Math.cos(cell.phase - neighbor.phase));
-                            
-                            // If phase alignment near orthogonal (close to 0), detect rupture
-                            if (phaseDiff < 0.3) {
+
+                        if (cell.state !== neighbor.state) {
+                            // Phase difference wrapped to [0, π]
+                            let dPhi = Math.abs(cell.phase - neighbor.phase) % (Math.PI * 2);
+                            if (dPhi > Math.PI) dPhi = Math.PI * 2 - dPhi;
+
+                            // Boundary strength from documented phase imbalance
+                            const strength = dPhi * ((cell.energy + neighbor.energy) / 2);
+
+                            if (strength > threshold) {
                                 this.ruptures.push({
                                     x: (cell.x + neighbor.x) / 2,
                                     y: (cell.y + neighbor.y) / 2,
-                                    strength: (1 - phaseDiff) * cell.energy * neighbor.energy,
+                                    strength,
                                     time: this.time
                                 });
-                                
-                                // Mark cells as ruptured
+
                                 cell.rupture = true;
                                 neighbor.rupture = true;
-                                
-                                // Reduce coherence
-                                this.coherenceLevel *= 0.95;
+
+                                this.coherenceLevel = Math.max(0, this.coherenceLevel - 0.05);
                             }
                         }
                     }
@@ -216,37 +216,44 @@ export default class Scene9 {
     runQFH() {
         this.activeAlgorithm = 'QFH';
         
-        // Create pulses at harmonic intervals
         const harmonics = [1, 2, 3, 5, 8, 13, 21];
-        
+        const cellCount = this.stateSize * this.stateSize;
+
         for (let h of harmonics) {
-            for (let i = 0; i < this.stateSize; i += h) {
-                if (i >= this.stateSize) break;
-                
-                for (let j = 0; j < this.stateSize; j += h) {
-                    if (j >= this.stateSize) break;
-                    
+            let real = 0;
+            let imag = 0;
+
+            for (let i = 0; i < this.stateSize; i++) {
+                for (let j = 0; j < this.stateSize; j++) {
                     const cell = this.stateGrid[i][j];
-                    
-                    // Create pulse
-                    this.pulses.push({
-                        x: cell.x,
-                        y: cell.y,
-                        radius: 5,
-                        maxRadius: this.cellSize * (h + 2),
-                        hue: 180 + h * 20,
-                        opacity: 1,
-                        harmonic: h
-                    });
-                    
-                    // Update cell state based on harmonic
-                    cell.state = (cell.state + h) % 2;
-                    cell.phase = (cell.phase + h * Math.PI / 13) % (Math.PI * 2);
+                    real += Math.cos(cell.phase * h);
+                    imag += Math.sin(cell.phase * h);
+                }
+            }
+
+            const amplitude = Math.sqrt(real * real + imag * imag) / cellCount;
+
+            if (amplitude > 0.6) {
+                this.pulses.push({
+                    x: this.gridCenter.x,
+                    y: this.gridCenter.y,
+                    radius: 5,
+                    maxRadius: this.cellSize * (h + 2),
+                    hue: 180 + h * 20,
+                    opacity: 1,
+                    harmonic: h
+                });
+
+                // Nudge phases toward alignment
+                for (let i = 0; i < this.stateSize; i++) {
+                    for (let j = 0; j < this.stateSize; j++) {
+                        const cell = this.stateGrid[i][j];
+                        cell.phase = (cell.phase + amplitude * h) % (Math.PI * 2);
+                    }
                 }
             }
         }
-        
-        // Improve coherence
+
         this.coherenceLevel = Math.min(1, this.coherenceLevel + 0.1);
     }
 
