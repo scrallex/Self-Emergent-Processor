@@ -5,6 +5,7 @@
  * demonstrating how self-emergent processors can accelerate complex
  * calculations in options pricing and risk management.
  */
+import sepPathLearningSurface from '../../../../_sep/testbed/sepSurface.js';
 export default class Scene11 {
     /**
      * Constructor for the scene
@@ -60,6 +61,11 @@ export default class Scene11 {
         this.rotation = 0;
         
         // Calculation cache
+        this.traditionalSurface = [];
+        this.sepSurface = [];
+        this.traditionalCalcTime = 0;
+        this.sepCalcTime = 0;
+        this.meanError = 0;
         this.priceSurface = [];
         this.greeksSurface = {
             delta: [],
@@ -495,30 +501,32 @@ export default class Scene11 {
      */
     calculatePriceSurface() {
         const isPut = this.selectedOption === 1;
-        this.priceSurface = [];
+        this.traditionalSurface = [];
+        this.sepSurface = [];
         this.greeksSurface = { delta: [], gamma: [], theta: [], vega: [] };
-        
+
         const sigma = this.volatility / 100;
         const r = this.riskFreeRate;
         const K = this.strikePrice;
         const T = this.timeToMaturity;
-        
+
+        const tradStart = performance.now();
         for (let i = 0; i <= this.gridResolution; i++) {
             const priceRow = [];
             const deltaRow = [];
             const gammaRow = [];
             const thetaRow = [];
             const vegaRow = [];
-            
+
             for (let j = 0; j <= this.gridResolution; j++) {
                 const S = 50 + i * (150 / this.gridResolution);
                 const t = j * (T / this.gridResolution);
                 const timeRemaining = T - t;
-                
+
                 // Calculate option price
                 const price = this.calculateOptionPrice(S, K, r, timeRemaining, sigma, isPut);
                 priceRow.push(price);
-                
+
                 // Calculate Greeks
                 const greeks = this.calculateGreeks(S, K, r, timeRemaining, sigma, isPut);
                 deltaRow.push(greeks.delta);
@@ -526,13 +534,33 @@ export default class Scene11 {
                 thetaRow.push(greeks.theta);
                 vegaRow.push(greeks.vega);
             }
-            
-            this.priceSurface.push(priceRow);
+
+            this.traditionalSurface.push(priceRow);
             this.greeksSurface.delta.push(deltaRow);
             this.greeksSurface.gamma.push(gammaRow);
             this.greeksSurface.theta.push(thetaRow);
             this.greeksSurface.vega.push(vegaRow);
         }
+        const tradEnd = performance.now();
+        this.traditionalCalcTime = tradEnd - tradStart;
+
+        const sepStart = performance.now();
+        this.sepSurface = sepPathLearningSurface(this.traditionalSurface);
+        const sepEnd = performance.now();
+        this.sepCalcTime = sepEnd - sepStart;
+
+        // compute mean absolute error
+        let err = 0;
+        for (let i = 0; i < this.traditionalSurface.length; i++) {
+            for (let j = 0; j < this.traditionalSurface[i].length; j++) {
+                err += Math.abs(this.traditionalSurface[i][j] - this.sepSurface[i][j]);
+            }
+        }
+        const total = this.traditionalSurface.length * this.traditionalSurface[0].length;
+        this.meanError = err / total;
+
+        // Keep priceSurface for backward compatibility
+        this.priceSurface = this.traditionalSurface;
     }
     
     /**
@@ -730,7 +758,7 @@ export default class Scene11 {
     draw2DPriceSurface(gridX, gridY, gridWidth, gridHeight, cellWidth, cellHeight) {
         const surfaceData = this.showGreeks ?
             this.greeksSurface[Object.keys(this.greeksSurface)[this.marketState % 4]] :
-            this.priceSurface;
+            this.traditionalSurface;
         
         for (let i = 0; i < this.gridResolution; i++) {
             for (let j = 0; j < this.gridResolution; j++) {
@@ -800,6 +828,26 @@ export default class Scene11 {
                 );
             }
         }
+
+        // Overlay SEP surface with contrasting color
+        if (!this.showGreeks && this.sepSurface.length) {
+            for (let i = 0; i < this.gridResolution; i++) {
+                for (let j = 0; j < this.gridResolution; j++) {
+                    const value = this.sepSurface[i][j];
+                    const normalizedValue = Math.min(1, value / 50);
+                    const r = Math.floor(255 * normalizedValue);
+                    const g = 50;
+                    const b = Math.floor(255 * (1 - normalizedValue));
+                    this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    this.ctx.fillRect(
+                        gridX + i * cellWidth,
+                        gridY + j * cellHeight,
+                        cellWidth,
+                        cellHeight
+                    );
+                }
+            }
+        }
         
         // Add value indicator where mouse is hovering
         if (this.mouseX >= gridX && this.mouseX <= gridX + gridWidth &&
@@ -841,7 +889,7 @@ export default class Scene11 {
         const ctx = this.ctx;
         const surfaceData = this.showGreeks ?
             this.greeksSurface[Object.keys(this.greeksSurface)[this.marketState % 4]] :
-            this.priceSurface;
+            this.traditionalSurface;
         
         const centerX = gridX + gridWidth / 2;
         const centerY = gridY + gridHeight / 2;
@@ -980,6 +1028,30 @@ export default class Scene11 {
                     ctx.lineTo(down.x, down.y);
                     ctx.stroke();
                 }
+            }
+        }
+
+        // Overlay SEP surface in contrasting color
+        if (!this.showGreeks && this.sepSurface.length) {
+            const sepPoints = [];
+            for (let i = 0; i <= this.gridResolution; i++) {
+                for (let j = 0; j <= this.gridResolution; j++) {
+                    const value = this.sepSurface[i][j] / 50;
+                    const x = (i / this.gridResolution) * 2 - 1;
+                    const y = (j / this.gridResolution) * 2 - 1;
+                    const rotX = x * cos - y * sin;
+                    const rotY = x * sin + y * cos;
+                    const projX = centerX + rotX * scale;
+                    const projY = centerY + rotY * scale * 0.5 - value * scale * 0.5;
+                    sepPoints.push({ x: projX, y: projY, z: value, depth: rotY + value });
+                }
+            }
+            sepPoints.sort((a, b) => a.depth - b.depth);
+            ctx.fillStyle = 'rgba(255,50,50,0.5)';
+            for (const p of sepPoints) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
         
@@ -1341,16 +1413,21 @@ export default class Scene11 {
            ctx.fillText(`Time to Maturity: ${this.timeToMaturity.toFixed(2)} years`, 30, 170);
            ctx.fillText(`Risk-Free Rate: ${(this.riskFreeRate * 100).toFixed(2)}%`, 30, 195);
            ctx.fillText(`Grid Resolution: ${this.gridResolution}`, 30, 220);
-           
+
+           // Efficiency metrics
+           ctx.fillStyle = '#00ddff';
+           ctx.fillText(`Trad Calc: ${this.traditionalCalcTime.toFixed(2)}ms`, 30, 245);
+           ctx.fillText(`SEP Calc: ${this.sepCalcTime.toFixed(2)}ms`, 30, 265);
+           ctx.fillText(`Mean Error: ${this.meanError.toFixed(4)}`, 30, 285);
+
            // Current optimization level
            const optLevels = ['Basic', 'Advanced', 'Neural', 'Quantum'];
            ctx.fillStyle = '#ffaa00';
-           ctx.fillText(`SEP Optimization: ${optLevels[this.sepOptimization]} (${this.speedup.toFixed(1)}x)`, 30, 245);
-           
+           ctx.fillText(`SEP Optimization: ${optLevels[this.sepOptimization]} (${this.speedup.toFixed(1)}x)`, 30, 305);
            // Instructions hint
            ctx.fillStyle = '#00d4ff';
-           ctx.fillText('Press ? for help and keyboard shortcuts', 30, 270);
-           ctx.fillText('Mouse: Rotate 3D View | Scroll: Zoom In/Out', 30, 295);
+           ctx.fillText('Press ? for help and keyboard shortcuts', 30, 330);
+           ctx.fillText('Mouse: Rotate 3D View | Scroll: Zoom In/Out', 30, 350);
        } else {
            // Draw help panel when active
            this.drawHelpPanel();
