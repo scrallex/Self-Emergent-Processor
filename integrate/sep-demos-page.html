@@ -761,6 +761,8 @@
             let impactAngle = 45;
             
             function drawBilliards() {
+                // Ensure local reference reflects any external resets
+                balls = animations.billiard.balls || balls;
                 ctx.fillStyle = '#0f0f0f';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
@@ -848,7 +850,7 @@
             }
             
             drawBilliards();
-            animations.billiard = { draw: drawBilliards, isPlaying };
+            animations.billiard = { draw: drawBilliards, isPlaying, balls };
         }
         
         function resetBilliards() {
