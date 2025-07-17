@@ -4,7 +4,10 @@
  * Interactive protractor with dynamic angle measurement. Drag vectors to create angles
  * and observe real-time classification as acute, right, or obtuse with corresponding
  * cosine values.
- */
+ *
+ * A small Fourier spectrum panel shows how the current angle decomposes into
+ * cosine and sine series terms. The spectrum updates live as the angle changes.
+*/
 
 export default class Scene2 {
     /**
@@ -280,7 +283,10 @@ export default class Scene2 {
         ctx.textAlign = 'center';
         ctx.fillText(`${this.angle.toFixed(1)}°`, labelX, labelY - 10);
         ctx.textAlign = 'left'; // Reset alignment
-        
+
+        // Fourier spectrum beside the protractor
+        this.drawFourierDecomposition(centerX, centerY, radius);
+
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
             this.drawInfo();
@@ -347,6 +353,48 @@ export default class Scene2 {
         });
         
         this.ctx.textAlign = 'left'; // Reset alignment
+    }
+
+    /**
+     * Draw a simple magnitude spectrum for the first few Fourier terms.
+     * Bars are shown to the right of the protractor and update with the angle.
+     * @param {number} centerX - Center X position
+     * @param {number} centerY - Center Y position
+     * @param {number} radius - Radius of the protractor
+     */
+    drawFourierDecomposition(centerX, centerY, radius) {
+        const { ctx } = this;
+        const theta = this.angle * Math.PI / 180;
+        const terms = 5;
+        const magnitudes = [];
+        for (let k = 1; k <= terms; k++) {
+            const a = Math.sin(k * theta) / k;
+            const b = (1 - Math.cos(k * theta)) / k;
+            magnitudes.push(Math.sqrt(a * a + b * b));
+        }
+
+        // Position spectrum beside the protractor
+        const startX = centerX + radius + 40;
+        const baseY = centerY + radius;
+        const barWidth = 12;
+        const maxHeight = radius * 0.8;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.fillText('Spectrum', startX, baseY - maxHeight - 10);
+
+        for (let i = 0; i < terms; i++) {
+            const h = magnitudes[i] * maxHeight;
+            ctx.fillStyle = '#00d4ff';
+            ctx.fillRect(startX + i * (barWidth + 6), baseY - h, barWidth, h);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(
+                (i + 1).toString(),
+                startX + i * (barWidth + 6) + barWidth / 2,
+                baseY + 12
+            );
+        }
+        ctx.textAlign = 'left';
     }
 
     /**
