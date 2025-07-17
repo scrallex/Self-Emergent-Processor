@@ -175,7 +175,9 @@ export default class Scene5 {
                 color: '#00d4ff', // Acute - cyan
                 baseColor: '#00d4ff',
                 trail: [],
-                isDragging: false
+                isDragging: false,
+                isEscaping: false,
+                energy: 0
             },
             {
                 x: this.canvas.width * 0.6,
@@ -186,7 +188,9 @@ export default class Scene5 {
                 color: '#ffaa00', // Right - orange
                 baseColor: '#ffaa00',
                 trail: [],
-                isDragging: false
+                isDragging: false,
+                isEscaping: false,
+                energy: 0
             },
             {
                 x: this.canvas.width / 2,
@@ -197,7 +201,9 @@ export default class Scene5 {
                 color: '#7c3aed', // Obtuse - purple
                 baseColor: '#7c3aed',
                 trail: [],
-                isDragging: false
+                isDragging: false,
+                isEscaping: false,
+                energy: 0
             }
         ];
         
@@ -276,31 +282,44 @@ export default class Scene5 {
      * Calculate total energy of the system (kinetic + potential)
      */
     calculateSystemEnergy() {
+        this.updateBodyEnergies();
         let energy = 0;
-        
-        // Kinetic energy: 1/2 * m * v^2
+        for (const body of this.bodies) {
+            energy += body.energy;
+        }
+        this.systemEnergy = energy;
+    }
+
+    /**
+     * Update per-body energies and escape status
+     */
+    updateBodyEnergies() {
+        // Reset energies with kinetic term
         for (const body of this.bodies) {
             const v2 = body.vx * body.vx + body.vy * body.vy;
-            energy += 0.5 * body.m * v2;
+            body.energy = 0.5 * body.m * v2;
         }
-        
-        // Potential energy: -G * m1 * m2 / r
+
+        // Add potential terms
         for (let i = 0; i < this.bodies.length; i++) {
             for (let j = i + 1; j < this.bodies.length; j++) {
                 const b1 = this.bodies[i];
                 const b2 = this.bodies[j];
-                
                 const dx = b2.x - b1.x;
                 const dy = b2.y - b1.y;
                 const r = Math.sqrt(dx * dx + dy * dy);
-                
                 if (r > 0) {
-                    energy -= this.G * b1.m * b2.m / r;
+                    const pe = this.G * b1.m * b2.m / r;
+                    b1.energy -= pe;
+                    b2.energy -= pe;
                 }
             }
         }
-        
-        this.systemEnergy = energy;
+
+        // Determine escaping status
+        for (const body of this.bodies) {
+            body.isEscaping = body.energy > 0;
+        }
     }
     
     /**
@@ -451,9 +470,15 @@ export default class Scene5 {
         if (!this.settings.videoMode) {
             if (this.controller) {
                 // Update info panel with real-time metrics
+                const escaping = this.bodies
+                    .map((b, i) => b.isEscaping ? i + 1 : null)
+                    .filter(v => v !== null)
+                    .join(', ') || 'None';
+
                 this.controller.updateInfoPanel({
-                    'System Status': this.systemStability,
+                    'System Stability': this.systemStability,
                     'System Energy': this.systemEnergy.toFixed(1),
+                    'Escaping Bodies': escaping,
                     'G Constant': this.G.toFixed(2),
                     'Angles': this.angles.map(a =>
                         `Body ${a.bodies[0] + 1}: ${a.type} (${a.angle.toFixed(1)}°)`
@@ -525,8 +550,8 @@ export default class Scene5 {
     drawTrails() {
         this.bodies.forEach(body => {
             if (body.trail.length <= 1) return;
-            
-            this.ctx.strokeStyle = body.color;
+
+            this.ctx.strokeStyle = body.isEscaping ? '#ff4444' : body.color;
             this.ctx.lineWidth = 2;
             this.ctx.beginPath();
             
@@ -549,16 +574,17 @@ export default class Scene5 {
                 body.x, body.y, 0,
                 body.x, body.y, body.m * 1.5
             );
-            gradient.addColorStop(0, body.color);
+            const bodyColor = body.isEscaping ? '#ff4444' : body.color;
+            gradient.addColorStop(0, bodyColor);
             gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
             
             this.ctx.fillStyle = gradient;
             this.ctx.beginPath();
             this.ctx.arc(body.x, body.y, body.m * 1.5, 0, Math.PI * 2);
             this.ctx.fill();
-            
+
             // Draw body
-            this.ctx.fillStyle = body.color;
+            this.ctx.fillStyle = bodyColor;
             this.ctx.beginPath();
             this.ctx.arc(body.x, body.y, body.m * 0.7, 0, Math.PI * 2);
             this.ctx.fill();
@@ -577,6 +603,14 @@ export default class Scene5 {
                     body.y + body.vy * scaleFactor
                 );
                 this.ctx.stroke();
+            }
+
+            if (body.isEscaping) {
+                this.ctx.fillStyle = '#ff4444';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('Escaping', body.x, body.y - body.m * 2);
+                this.ctx.textAlign = 'left';
             }
         });
     }
