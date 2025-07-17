@@ -198,7 +198,7 @@ export default class Scene3 {
         this.update(deltaTime * this.settings.speed);
         
         // Render the scene
-        this.draw();
+        this.draw(timestamp);
     }
 
     /**
@@ -285,7 +285,7 @@ export default class Scene3 {
     /**
      * Draw the scene - handles both normal and video modes
      */
-    draw() {
+    draw(timestamp) {
         // Clear canvas
         this.ctx.fillStyle = '#0a0a0a';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
