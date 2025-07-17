@@ -13,7 +13,7 @@ export default class Scene6 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings, interactiveController) {
+    constructor(canvas, ctx, settings, interactiveController = null) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
@@ -68,7 +68,7 @@ export default class Scene6 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        // Register with interactive controller
+        // Register with interactive controller if available
         if (this.interactiveController) {
             this.interactiveController.registerControls(this.controls, (control, value) => {
                 if (control === 'massRatio') {
@@ -79,6 +79,8 @@ export default class Scene6 {
                     this.reset();
                 }
             });
+        } else {
+            console.warn('InteractiveController not available - controls disabled');
         }
         
         this.reset();
