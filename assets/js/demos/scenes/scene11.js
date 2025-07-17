@@ -27,6 +27,10 @@ export default class Scene11 {
         this.dragStartX = 0;
         this.dragStartY = 0;
         
+        // UI state
+        this.showHelp = false;
+        this.showGridLines = true;
+        
         // Financial model parameters
         this.volatility = 30; // Initial volatility in percent
         this.riskFreeRate = 0.05; // 5%
@@ -73,16 +77,28 @@ export default class Scene11 {
         // UI controls
         this.controls = {
             buttons: [
-                { id: 'viewToggle', label: 'Toggle View (2D/3D)', x: 400, y: 30, width: 200, height: 30, action: () => this.toggleView() },
-                { id: 'optionToggle', label: 'Toggle Option Type', x: 400, y: 70, width: 200, height: 30, action: () => this.toggleOptionType() },
-                { id: 'greeksToggle', label: 'Show Greeks', x: 400, y: 110, width: 200, height: 30, action: () => this.toggleGreeks() },
-                { id: 'surfaceToggle', label: 'Surface/Comparison', x: 400, y: 150, width: 200, height: 30, action: () => this.toggleSurface() }
+                { id: 'viewToggle', label: 'Toggle View (2D/3D)', x: 400, y: 30, width: 200, height: 30, action: () => this.toggleView(), tooltip: 'Switch between 2D heatmap and 3D surface' },
+                { id: 'optionToggle', label: 'Toggle Option Type', x: 400, y: 70, width: 200, height: 30, action: () => this.toggleOptionType(), tooltip: 'Switch between Call and Put options' },
+                { id: 'greeksToggle', label: 'Show Greeks', x: 400, y: 110, width: 200, height: 30, action: () => this.toggleGreeks(), tooltip: 'Show option greeks (Delta, Gamma, Theta, Vega)' },
+                { id: 'surfaceToggle', label: 'Surface/Comparison', x: 400, y: 150, width: 200, height: 30, action: () => this.toggleSurface(), tooltip: 'Switch between option surface and SEP comparison' },
+                { id: 'animToggle', label: 'Toggle Animation', x: 400, y: 190, width: 200, height: 30, action: () => this.toggleAnimation(), tooltip: 'Start/stop market price animation' },
+                { id: 'gridToggle', label: 'Toggle Grid Lines', x: 400, y: 230, width: 200, height: 30, action: () => this.toggleGridLines(), tooltip: 'Show/hide grid lines on surface' },
+                { id: 'helpToggle', label: 'Help [?]', x: 400, y: 270, width: 200, height: 30, action: () => this.toggleHelp(), tooltip: 'Show/hide help panel' },
+                { id: 'resetButton', label: 'Reset Parameters', x: 400, y: 310, width: 200, height: 30, action: () => this.resetParameters(), tooltip: 'Reset all parameters to default values' }
             ],
             sliders: [
-                { id: 'volatility', label: 'Volatility', x: 400, y: 200, width: 200, height: 20, min: 10, max: 100, value: this.volatility, action: (val) => this.updateVolatility(val) },
-                { id: 'strikePrice', label: 'Strike Price', x: 400, y: 250, width: 200, height: 20, min: 50, max: 150, value: this.strikePrice, action: (val) => this.updateStrikePrice(val) }
+                { id: 'volatility', label: 'Volatility', x: 400, y: 350, width: 200, height: 20, min: 10, max: 100, value: this.volatility, action: (val) => this.updateVolatility(val), tooltip: 'Control market volatility (%)' },
+                { id: 'strikePrice', label: 'Strike Price', x: 400, y: 400, width: 200, height: 20, min: 50, max: 150, value: this.strikePrice, action: (val) => this.updateStrikePrice(val), tooltip: 'Set option strike price ($)' },
+                { id: 'timeToMaturity', label: 'Time to Maturity', x: 400, y: 450, width: 200, height: 20, min: 0.1, max: 3, value: this.timeToMaturity, action: (val) => this.updateTimeToMaturity(val), tooltip: 'Set time to option expiration (years)' },
+                { id: 'riskFreeRate', label: 'Risk-Free Rate', x: 400, y: 500, width: 200, height: 20, min: 0.01, max: 0.1, value: this.riskFreeRate, action: (val) => this.updateRiskFreeRate(val), tooltip: 'Set risk-free interest rate (%)' }
             ],
-            activeControl: null
+            activeControl: null,
+            tooltip: {
+                show: false,
+                text: '',
+                x: 0,
+                y: 0
+            }
         };
         
         // Bind event handlers
@@ -120,37 +136,48 @@ export default class Scene11 {
      * @param {KeyboardEvent} e - The keyboard event
      */
     handleKeyDown(e) {
-        switch (e.key) {
-            case 'm':
-                // Toggle market animation
-                this.animateMarket = !this.animateMarket;
-                break;
-            case 'v':
-                // Toggle view mode
-                this.viewMode = this.viewMode === '2d' ? '3d' : '2d';
-                break;
-            case 'g':
-                // Toggle Greeks display
-                this.showGreeks = !this.showGreeks;
-                break;
-            case 'o':
-                // Toggle option type
-                this.selectedOption = 1 - this.selectedOption;
-                this.calculatePriceSurface();
-                break;
-            case 's':
-                // Toggle surface/comparison display
-                this.showOptionSurface = !this.showOptionSurface;
-                break;
-            case '1': case '2': case '3': case '4':
-                // Select market scenario
-                const scenarioIndex = parseInt(e.key) - 1;
-                this.marketState = scenarioIndex;
-                this.sepOptimization = scenarioIndex;
-                this.updateBenchmarkDisplay();
-                break;
-        }
-    }
+       switch (e.key) {
+           case 'm':
+               // Toggle market animation
+               this.toggleAnimation();
+               break;
+           case 'v':
+               // Toggle view mode
+               this.toggleView();
+               break;
+           case 'g':
+               // Toggle Greeks display
+               this.toggleGreeks();
+               break;
+           case 'o':
+               // Toggle option type
+               this.toggleOptionType();
+               break;
+           case 's':
+               // Toggle surface/comparison display
+               this.toggleSurface();
+               break;
+           case '?':
+               // Toggle help display
+               this.toggleHelp();
+               break;
+           case 'r':
+               // Reset parameters
+               this.resetParameters();
+               break;
+           case 'l':
+               // Toggle grid lines
+               this.toggleGridLines();
+               break;
+           case '1': case '2': case '3': case '4':
+               // Select market scenario
+               const scenarioIndex = parseInt(e.key) - 1;
+               this.marketState = scenarioIndex;
+               this.sepOptimization = scenarioIndex;
+               this.updateBenchmarkDisplay();
+               break;
+       }
+   }
     
     /**
      * Toggle view mode between 2D and 3D
@@ -182,6 +209,46 @@ export default class Scene11 {
     }
     
     /**
+     * Toggle market animation
+     */
+    toggleAnimation() {
+        this.animateMarket = !this.animateMarket;
+    }
+    
+    /**
+     * Toggle grid lines visibility
+     */
+    toggleGridLines() {
+        this.showGridLines = !this.showGridLines;
+    }
+    
+    /**
+     * Toggle help panel visibility
+     */
+    toggleHelp() {
+        this.showHelp = !this.showHelp;
+    }
+    
+    /**
+     * Reset all parameters to default values
+     */
+    resetParameters() {
+        this.volatility = 30;
+        this.riskFreeRate = 0.05;
+        this.strikePrice = 100;
+        this.timeToMaturity = 1.0;
+        this.currentPrice = 100;
+        this.marketState = 0;
+        this.sepOptimization = 0;
+        this.showGreeks = false;
+        this.viewMode = '3d';
+        this.animateMarket = true;
+        this.showGridLines = true;
+        this.updateBenchmarkDisplay();
+        this.calculatePriceSurface();
+    }
+    
+    /**
      * Update volatility value
      * @param {number} value - New volatility value
      */
@@ -200,44 +267,75 @@ export default class Scene11 {
     }
     
     /**
+     * Update time to maturity value
+     * @param {number} value - New time to maturity value
+     */
+    updateTimeToMaturity(value) {
+        this.timeToMaturity = value;
+        this.calculatePriceSurface();
+    }
+    
+    /**
+     * Update risk-free rate value
+     * @param {number} value - New risk-free rate value
+     */
+    updateRiskFreeRate(value) {
+        this.riskFreeRate = value;
+        this.calculatePriceSurface();
+    }
+    
+    /**
      * Handle mouse move for interactive highlighting and dragging
      * @param {MouseEvent} e - The mouse event
      */
     handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouseX = e.clientX - rect.left;
-        this.mouseY = e.clientY - rect.top;
-        
-        // Handle 3D rotation if dragging
-        if (this.isDragging && this.viewMode === '3d') {
-            const deltaX = this.mouseX - this.dragStartX;
-            this.rotation += deltaX * 0.01;
-            this.dragStartX = this.mouseX;
-        }
-        
-        // Check for hover over UI controls
-        this.controls.activeControl = null;
-        
-        // Check buttons
-        for (const button of this.controls.buttons) {
-            if (this.mouseX >= button.x && this.mouseX <= button.x + button.width &&
-                this.mouseY >= button.y && this.mouseY <= button.y + button.height) {
-                this.controls.activeControl = button;
-                break;
-            }
-        }
-        
-        // Check sliders
-        if (!this.controls.activeControl) {
-            for (const slider of this.controls.sliders) {
-                if (this.mouseX >= slider.x && this.mouseX <= slider.x + slider.width &&
-                    this.mouseY >= slider.y - 10 && this.mouseY <= slider.y + slider.height + 10) {
-                    this.controls.activeControl = slider;
-                    break;
-                }
-            }
-        }
-    }
+       const rect = this.canvas.getBoundingClientRect();
+       this.mouseX = e.clientX - rect.left;
+       this.mouseY = e.clientY - rect.top;
+       
+       // Handle 3D rotation if dragging
+       if (this.isDragging && this.viewMode === '3d') {
+           const deltaX = this.mouseX - this.dragStartX;
+           this.rotation += deltaX * 0.01;
+           this.dragStartX = this.mouseX;
+       }
+       
+       // Check for hover over UI controls
+       this.controls.activeControl = null;
+       this.controls.tooltip.show = false;
+       
+       // Check buttons
+       for (const button of this.controls.buttons) {
+           if (this.mouseX >= button.x && this.mouseX <= button.x + button.width &&
+               this.mouseY >= button.y && this.mouseY <= button.y + button.height) {
+               this.controls.activeControl = button;
+               if (button.tooltip) {
+                   this.controls.tooltip.show = true;
+                   this.controls.tooltip.text = button.tooltip;
+                   this.controls.tooltip.x = button.x + button.width + 10;
+                   this.controls.tooltip.y = button.y + button.height / 2;
+               }
+               break;
+           }
+       }
+       
+       // Check sliders
+       if (!this.controls.activeControl) {
+           for (const slider of this.controls.sliders) {
+               if (this.mouseX >= slider.x && this.mouseX <= slider.x + slider.width &&
+                   this.mouseY >= slider.y - 10 && this.mouseY <= slider.y + slider.height + 10) {
+                   this.controls.activeControl = slider;
+                   if (slider.tooltip) {
+                       this.controls.tooltip.show = true;
+                       this.controls.tooltip.text = slider.tooltip;
+                       this.controls.tooltip.x = slider.x + slider.width + 10;
+                       this.controls.tooltip.y = slider.y + slider.height / 2;
+                   }
+                   break;
+               }
+           }
+       }
+   }
     
     /**
      * Handle mouse down events for UI interaction
@@ -890,6 +988,42 @@ export default class Scene11 {
         ctx.lineWidth = 2;
         const axisLength = scale * 1.2;
         
+        // Draw grid lines if enabled
+        if (this.showGridLines) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 0.5;
+            
+            // Draw grid lines along X and Y
+            for (let i = 0; i <= 4; i++) {
+                const t = i / 4;
+                // X grid lines
+                const gridX1 = centerX + (-1 + t * 2) * cos * scale;
+                const gridY1 = centerY + (-1 + t * 2) * sin * scale * 0.5;
+                const gridX2 = centerX + (-1 + t * 2) * cos * scale + scale * sin;
+                const gridY2 = centerY + (-1 + t * 2) * sin * scale * 0.5 - scale * cos * 0.5;
+                
+                ctx.beginPath();
+                ctx.moveTo(gridX1, gridY1);
+                ctx.lineTo(gridX2, gridY2);
+                ctx.stroke();
+                
+                // Y grid lines
+                const gridX3 = centerX + (-1 + t * 2) * sin * scale;
+                const gridY3 = centerY - (-1 + t * 2) * cos * scale * 0.5;
+                const gridX4 = centerX + (-1 + t * 2) * sin * scale + scale * cos;
+                const gridY4 = centerY - (-1 + t * 2) * cos * scale * 0.5 + scale * sin * 0.5;
+                
+                ctx.beginPath();
+                ctx.moveTo(gridX3, gridY3);
+                ctx.lineTo(gridX4, gridY4);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw main axes
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        
         // X-axis
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
@@ -1060,95 +1194,294 @@ export default class Scene11 {
     }
 
     /**
-     * Draw UI controls
-     */
-    drawControls() {
-        const { ctx } = this;
-        
-        // Draw buttons
-        for (const button of this.controls.buttons) {
-            // Draw button background
-            ctx.fillStyle = this.controls.activeControl === button ? 'rgba(80, 150, 255, 0.8)' : 'rgba(40, 80, 150, 0.7)';
-            ctx.fillRect(button.x, button.y, button.width, button.height);
-            
-            // Draw button border
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(button.x, button.y, button.width, button.height);
-            
-            // Draw button label
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(button.label, button.x + button.width / 2, button.y + button.height / 2);
-        }
-        
-        // Draw sliders
-        for (const slider of this.controls.sliders) {
-            // Draw slider label
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(`${slider.label}: ${slider.value.toFixed(1)}`, slider.x, slider.y - 5);
-            
-            // Draw slider track
-            ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
-            ctx.fillRect(slider.x, slider.y, slider.width, slider.height);
-            
-            // Draw slider fill
-            const fillWidth = ((slider.value - slider.min) / (slider.max - slider.min)) * slider.width;
-            ctx.fillStyle = this.controls.activeControl === slider ? 'rgba(80, 200, 255, 0.8)' : 'rgba(50, 150, 255, 0.7)';
-            ctx.fillRect(slider.x, slider.y, fillWidth, slider.height);
-            
-            // Draw slider handle
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            const handleX = slider.x + fillWidth;
-            ctx.arc(handleX, slider.y + slider.height / 2, slider.height / 2 + 5, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw slider border
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(slider.x, slider.y, slider.width, slider.height);
-        }
-    }
+    * Draw UI controls
+    */
+   drawControls() {
+       const { ctx } = this;
+       
+       // Draw buttons
+       for (const button of this.controls.buttons) {
+           // Skip drawing buttons if help panel is visible (except help toggle)
+           if (this.showHelp && button.id !== 'helpToggle') continue;
+           
+           // Highlight active buttons based on state
+           let isActive = this.controls.activeControl === button;
+           
+           // Highlight based on current state
+           if (button.id === 'viewToggle' && this.viewMode === '3d') isActive = true;
+           if (button.id === 'optionToggle' && this.selectedOption === 1) isActive = true;
+           if (button.id === 'greeksToggle' && this.showGreeks) isActive = true;
+           if (button.id === 'surfaceToggle' && !this.showOptionSurface) isActive = true;
+           if (button.id === 'animToggle' && this.animateMarket) isActive = true;
+           if (button.id === 'gridToggle' && this.showGridLines) isActive = true;
+           if (button.id === 'helpToggle' && this.showHelp) isActive = true;
+           
+           // Draw button background
+           ctx.fillStyle = isActive ? 'rgba(80, 150, 255, 0.8)' : 'rgba(40, 80, 150, 0.7)';
+           ctx.fillRect(button.x, button.y, button.width, button.height);
+           
+           // Draw button border
+           ctx.strokeStyle = '#ffffff';
+           ctx.lineWidth = 1;
+           ctx.strokeRect(button.x, button.y, button.width, button.height);
+           
+           // Draw button label
+           ctx.fillStyle = '#ffffff';
+           ctx.font = '14px Arial';
+           ctx.textAlign = 'center';
+           ctx.textBaseline = 'middle';
+           ctx.fillText(button.label, button.x + button.width / 2, button.y + button.height / 2);
+       }
+       
+       // Draw sliders if help panel is not visible
+       if (!this.showHelp) {
+           for (const slider of this.controls.sliders) {
+               // Format display value based on slider type
+               let displayValue;
+               switch(slider.id) {
+                   case 'riskFreeRate':
+                       displayValue = `${(slider.value * 100).toFixed(1)}%`;
+                       break;
+                   case 'timeToMaturity':
+                       displayValue = `${slider.value.toFixed(2)} yr${slider.value !== 1 ? 's' : ''}`;
+                       break;
+                   case 'volatility':
+                       displayValue = `${slider.value.toFixed(0)}%`;
+                       break;
+                   default:
+                       displayValue = slider.value.toFixed(1);
+               }
+               
+               // Draw slider label
+               ctx.fillStyle = '#ffffff';
+               ctx.font = '14px Arial';
+               ctx.textAlign = 'left';
+               ctx.textBaseline = 'bottom';
+               ctx.fillText(`${slider.label}: ${displayValue}`, slider.x, slider.y - 5);
+               
+               // Draw slider track
+               ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
+               ctx.fillRect(slider.x, slider.y, slider.width, slider.height);
+               
+               // Draw slider fill
+               const fillWidth = ((slider.value - slider.min) / (slider.max - slider.min)) * slider.width;
+               ctx.fillStyle = this.controls.activeControl === slider ? 'rgba(80, 200, 255, 0.8)' : 'rgba(50, 150, 255, 0.7)';
+               ctx.fillRect(slider.x, slider.y, fillWidth, slider.height);
+               
+               // Draw slider handle
+               ctx.fillStyle = '#ffffff';
+               ctx.beginPath();
+               const handleX = slider.x + fillWidth;
+               ctx.arc(handleX, slider.y + slider.height / 2, slider.height / 2 + 5, 0, Math.PI * 2);
+               ctx.fill();
+               
+               // Draw slider border
+               ctx.strokeStyle = '#ffffff';
+               ctx.lineWidth = 1;
+               ctx.strokeRect(slider.x, slider.y, slider.width, slider.height);
+           }
+       }
+       
+       // Draw tooltip if active
+       if (this.controls.tooltip.show) {
+           const tooltip = this.controls.tooltip;
+           const padding = 8;
+           const fontSize = 14;
+           
+           // Measure tooltip width
+           ctx.font = `${fontSize}px Arial`;
+           const textWidth = ctx.measureText(tooltip.text).width;
+           const tooltipWidth = textWidth + padding * 2;
+           const tooltipHeight = fontSize + padding * 2;
+           
+           // Draw tooltip background
+           ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+           ctx.fillRect(tooltip.x, tooltip.y - tooltipHeight/2, tooltipWidth, tooltipHeight);
+           
+           // Draw tooltip border
+           ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+           ctx.lineWidth = 1;
+           ctx.strokeRect(tooltip.x, tooltip.y - tooltipHeight/2, tooltipWidth, tooltipHeight);
+           
+           // Draw tooltip text
+           ctx.fillStyle = '#ffffff';
+           ctx.textAlign = 'left';
+           ctx.textBaseline = 'middle';
+           ctx.fillText(tooltip.text, tooltip.x + padding, tooltip.y);
+       }
+   }
 
     /**
-     * Draw the information panel for normal mode
-     */
-    drawInfo() {
-        const { ctx } = this;
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(20, 20, 350, 230);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText('Financial Intelligence System', 30, 45);
-        
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#aaaaaa';
-        
-        // Option type
-        const optionType = this.selectedOption === 0 ? 'Call Option' : 'Put Option';
-        ctx.fillText(`${optionType} with SEP Enhancement`, 30, 70);
-        
-        // Model parameters
-        ctx.fillText(`Volatility: ${this.volatility.toFixed(0)}%`, 30, 95);
-        ctx.fillText(`Current Price: $${this.currentPrice.toFixed(2)}`, 30, 120);
-        ctx.fillText(`Strike Price: $${this.strikePrice.toFixed(2)}`, 30, 145);
-        ctx.fillText(`Grid Resolution: ${this.gridResolution}`, 30, 170);
-        
-        // Instructions
-        ctx.fillStyle = '#00d4ff';
-        ctx.fillText('Keyboard Controls:', 30, 195);
-        ctx.fillText('1-4: Market Scenarios | V: View | G: Greeks | O: Option Type', 30, 220);
-        ctx.fillText('Mouse: Rotate 3D View | Scroll: Zoom In/Out', 30, 245);
-    }
+    * Draw the information panel for normal mode
+    */
+   drawInfo() {
+       const { ctx } = this;
+       
+       // Draw the main info panel
+       if (!this.showHelp) {
+           ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+           ctx.fillRect(20, 20, 350, 280);
+           
+           ctx.fillStyle = '#ffffff';
+           ctx.font = 'bold 16px Arial';
+           ctx.textAlign = 'left';
+           ctx.fillText('Financial Intelligence System', 30, 45);
+           
+           ctx.font = '14px Arial';
+           ctx.fillStyle = '#aaaaaa';
+           
+           // Option type
+           const optionType = this.selectedOption === 0 ? 'Call Option' : 'Put Option';
+           ctx.fillText(`${optionType} with SEP Enhancement`, 30, 70);
+           
+           // Model parameters
+           ctx.fillText(`Volatility: ${this.volatility.toFixed(0)}%`, 30, 95);
+           ctx.fillText(`Current Price: $${this.currentPrice.toFixed(2)}`, 30, 120);
+           ctx.fillText(`Strike Price: $${this.strikePrice.toFixed(2)}`, 30, 145);
+           ctx.fillText(`Time to Maturity: ${this.timeToMaturity.toFixed(2)} years`, 30, 170);
+           ctx.fillText(`Risk-Free Rate: ${(this.riskFreeRate * 100).toFixed(2)}%`, 30, 195);
+           ctx.fillText(`Grid Resolution: ${this.gridResolution}`, 30, 220);
+           
+           // Current optimization level
+           const optLevels = ['Basic', 'Advanced', 'Neural', 'Quantum'];
+           ctx.fillStyle = '#ffaa00';
+           ctx.fillText(`SEP Optimization: ${optLevels[this.sepOptimization]} (${this.speedup.toFixed(1)}x)`, 30, 245);
+           
+           // Instructions hint
+           ctx.fillStyle = '#00d4ff';
+           ctx.fillText('Press ? for help and keyboard shortcuts', 30, 270);
+           ctx.fillText('Mouse: Rotate 3D View | Scroll: Zoom In/Out', 30, 295);
+       } else {
+           // Draw help panel when active
+           this.drawHelpPanel();
+       }
+   }
+   
+   /**
+    * Draw the help panel with all controls and explanations
+    */
+   drawHelpPanel() {
+       const { ctx, canvas } = this;
+       
+       // Background panel
+       ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+       ctx.fillRect(50, 50, canvas.width - 100, canvas.height - 100);
+       
+       // Title
+       ctx.fillStyle = '#ffffff';
+       ctx.font = 'bold 24px Arial';
+       ctx.textAlign = 'center';
+       ctx.fillText('Financial Intelligence System - Help', canvas.width / 2, 80);
+       
+       // Sections
+       const col1X = 100;
+       const col2X = canvas.width / 2 + 50;
+       let y = 130;
+       const lineHeight = 25;
+       
+       // Keyboard Controls
+       ctx.font = 'bold 18px Arial';
+       ctx.textAlign = 'left';
+       ctx.fillStyle = '#00d4ff';
+       ctx.fillText('Keyboard Controls:', col1X, y);
+       y += lineHeight * 1.5;
+       
+       ctx.font = '16px Arial';
+       ctx.fillStyle = '#ffffff';
+       
+       const keyboardControls = [
+           { key: '1-4', description: 'Select market scenario' },
+           { key: 'v', description: 'Toggle 2D/3D view' },
+           { key: 'g', description: 'Toggle Greeks display' },
+           { key: 'o', description: 'Toggle Call/Put option' },
+           { key: 's', description: 'Toggle surface/comparison view' },
+           { key: 'm', description: 'Toggle market animation' },
+           { key: 'l', description: 'Toggle grid lines' },
+           { key: 'r', description: 'Reset all parameters' },
+           { key: '?', description: 'Show/hide this help' }
+       ];
+       
+       for (const control of keyboardControls) {
+           ctx.fillStyle = '#ffaa00';
+           ctx.fillText(control.key, col1X, y);
+           ctx.fillStyle = '#ffffff';
+           ctx.fillText(control.description, col1X + 50, y);
+           y += lineHeight;
+       }
+       
+       // Financial Parameters
+       y = 130;
+       ctx.font = 'bold 18px Arial';
+       ctx.fillStyle = '#00d4ff';
+       ctx.fillText('Model Parameters:', col2X, y);
+       y += lineHeight * 1.5;
+       
+       ctx.font = '16px Arial';
+       const parameters = [
+           { name: 'Volatility', description: 'Market price fluctuation (%)' },
+           { name: 'Strike Price', description: 'Option contract price ($)' },
+           { name: 'Time to Maturity', description: 'Time until option expires (years)' },
+           { name: 'Risk-Free Rate', description: 'Treasury yield rate (%)' }
+       ];
+       
+       for (const param of parameters) {
+           ctx.fillStyle = '#ffaa00';
+           ctx.fillText(param.name, col2X, y);
+           ctx.fillStyle = '#ffffff';
+           ctx.fillText(param.description, col2X + 150, y);
+           y += lineHeight;
+       }
+       
+       // Visualization explanation
+       y += lineHeight;
+       ctx.font = 'bold 18px Arial';
+       ctx.fillStyle = '#00d4ff';
+       ctx.fillText('Visualization:', col2X, y);
+       y += lineHeight * 1.5;
+       
+       ctx.font = '16px Arial';
+       const visualizations = [
+           { name: '3D Surface', description: 'Option price over stock price & time' },
+           { name: 'Greeks', description: 'Delta, Gamma, Theta, Vega sensitivity' },
+           { name: 'SEP Comparison', description: 'Performance vs. traditional methods' }
+       ];
+       
+       for (const vis of visualizations) {
+           ctx.fillStyle = '#ffaa00';
+           ctx.fillText(vis.name, col2X, y);
+           ctx.fillStyle = '#ffffff';
+           ctx.fillText(vis.description, col2X + 150, y);
+           y += lineHeight;
+       }
+       
+       // Black-Scholes explanation
+       y = canvas.height - 160;
+       ctx.font = 'bold 18px Arial';
+       ctx.fillStyle = '#00d4ff';
+       ctx.textAlign = 'center';
+       ctx.fillText('About Black-Scholes Option Pricing', canvas.width / 2, y);
+       y += lineHeight * 1.2;
+       
+       ctx.font = '14px Arial';
+       ctx.fillStyle = '#aaaaaa';
+       ctx.textAlign = 'center';
+       const explanation = [
+           'The Black-Scholes model is a mathematical model for pricing options contracts.',
+           'SEP enhances calculation speed through emergent parallelization and neural optimization.',
+           'This demo shows how SEP principles accelerate complex financial models and risk calculations.'
+       ];
+       
+       for (const line of explanation) {
+           ctx.fillText(line, canvas.width / 2, y);
+           y += lineHeight;
+       }
+       
+       // Close instruction
+       y = canvas.height - 70;
+       ctx.font = 'bold 16px Arial';
+       ctx.fillStyle = '#ffffff';
+       ctx.fillText('Press ? again to close help', canvas.width / 2, y);
+   }
     
     /**
      * Draw minimal information for video recording mode
