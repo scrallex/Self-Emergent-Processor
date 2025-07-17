@@ -63,7 +63,7 @@ export const SCENES = {
         name: "Identity Through Distinction",
         description: "Euclid's Angle Classification System",
         longDescription: "Interactive protractor with dynamic angle measurement. Drag vectors to create angles and observe real-time classification as acute, right, or obtuse with corresponding cosine values.",
-        status: STATUS.IN_PROGRESS,
+        status: STATUS.READY,
         type: 'boundary',
         color: SCENE_COLORS.BOUNDARY,
         demoName: DEMO_NAMES.ANGLE_CLASSIFICATION,
