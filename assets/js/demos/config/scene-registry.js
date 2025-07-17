@@ -84,7 +84,7 @@ export const SCENES = {
         name: "Cosine Alignment",
         description: "Billiard Ball Collision Dynamics",
         longDescription: "Physics simulation with cosine overlay showing the relationship between impact angle and energy transfer. See how acute impacts result in contained bounces while right angles create separation.",
-        status: STATUS.IN_PROGRESS,
+        status: STATUS.READY,
         type: 'wave',
         color: SCENE_COLORS.WAVE,
         demoName: DEMO_NAMES.COSINE_ALIGNMENT,
