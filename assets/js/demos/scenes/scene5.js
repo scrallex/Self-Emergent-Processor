@@ -368,7 +368,7 @@ export default class Scene5 {
         this.update(deltaTime * this.settings.speed);
         
         // Render the scene
-        this.draw();
+        this.draw(timestamp);
     }
 
     /**
@@ -443,8 +443,9 @@ export default class Scene5 {
 
     /**
      * Draw the scene - handles both normal and video modes
+     * @param {number} timestamp - The current timestamp from requestAnimationFrame
      */
-    draw() {
+    draw(timestamp) {
         // Clear canvas with semi-transparent background for trail effect
         this.ctx.fillStyle = `rgba(10, 10, 10, ${this.showTrails ? 0.15 : 1.0})`;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
