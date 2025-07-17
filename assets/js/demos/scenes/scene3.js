@@ -30,6 +30,10 @@ export default class Scene3 {
         this.lastTime = 0;
         this.time = 0;
         this.impactInfo = { cosine: 0, transfer: 0, time: 0 };
+
+        // Lattice formation parameters
+        this.cosineThreshold = 0.5;
+        this.latticePoints = [];
         
         // Interactive controller (initialized in init)
         this.controller = null;
@@ -115,6 +119,9 @@ export default class Scene3 {
         const rad = impactAngle * Math.PI / 180;
         const radius = 20;
 
+        // Clear lattice formations
+        this.latticePoints = [];
+
         this.balls = [
             {
                 x: this.canvas.width * 0.25,
@@ -160,6 +167,18 @@ export default class Scene3 {
                     this.settings.intensity = value / 1.8;
                     this.reset();
                 }
+            },
+            {
+                id: 'cosine_threshold',
+                type: 'slider',
+                label: 'Cosine Threshold',
+                min: 0,
+                max: 1,
+                value: this.cosineThreshold,
+                step: 0.05,
+                onChange: (value) => {
+                    this.cosineThreshold = value;
+                }
             }
         ];
     }
@@ -187,6 +206,12 @@ export default class Scene3 {
      * @param {number} dt - Delta time in seconds, adjusted by speed
      */
     update(dt) {
+        // Update lattice point lifetimes
+        this.latticePoints = this.latticePoints.filter(p => {
+            p.life -= dt;
+            return p.life > 0;
+        });
+
         // Move balls
         this.balls.forEach(ball => {
             ball.x += ball.vx * dt;
@@ -237,6 +262,15 @@ export default class Scene3 {
                         time: performance.now()
                     };
 
+                    // Create lattice point for strong alignments
+                    if (Math.abs(nx) >= this.cosineThreshold) {
+                        this.latticePoints.push({
+                            x: (b1.x + b2.x) / 2,
+                            y: (b1.y + b2.y) / 2,
+                            life: 1
+                        });
+                    }
+
                     // Prevent sticking
                     const overlap = (b1.r + b2.r - dist) / 2;
                     b1.x -= overlap * nx;
@@ -264,12 +298,22 @@ export default class Scene3 {
             this.ctx.fill();
         });
 
+        // Draw lattice points
+        this.latticePoints.forEach(point => {
+            this.ctx.beginPath();
+            this.ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(96, 165, 250, ${point.life})`;
+            this.ctx.fill();
+        });
+
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
             if (this.controller) {
                 this.controller.updateInfoPanel({
                     'Impact Cosine': this.impactInfo.cosine.toFixed(3),
                     'Energy Transfer': `${this.impactInfo.transfer.toFixed(1)}%`,
+                    'Cosine Threshold': this.cosineThreshold.toFixed(2),
+                    'Lattice Points': this.latticePoints.length,
                     'Status': this.isDragging ? 'Dragging' : 'Simulating'
                 });
                 this.controller.render(timestamp);
@@ -288,7 +332,7 @@ export default class Scene3 {
         const opacity = Math.max(0, 1 - age * 2);
 
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(10, 10, 280, 100);
+        this.ctx.fillRect(10, 10, 280, 150);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 16px Arial';
@@ -298,7 +342,9 @@ export default class Scene3 {
         this.ctx.fillStyle = `rgba(204, 204, 204, ${opacity})`;
         this.ctx.fillText(`Last Impact Cosine: ${this.impactInfo.cosine.toFixed(3)}`, 20, 60);
         this.ctx.fillText(`Energy Transfer: ${this.impactInfo.transfer.toFixed(1)}%`, 20, 80);
-        this.ctx.fillText('Click to reset with new angle', 20, 100);
+        this.ctx.fillText(`Cosine Threshold: ${this.cosineThreshold.toFixed(2)}`, 20, 100);
+        this.ctx.fillText(`Lattice Points: ${this.latticePoints.length}`, 20, 120);
+        this.ctx.fillText('Click to reset with new angle', 20, 140);
     }
 
     /**
