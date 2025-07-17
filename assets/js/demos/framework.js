@@ -14,7 +14,8 @@ class SEPDemoFramework {
             quality: 'medium',
             speed: 1.0,
             intensity: 50,
-            videoMode: false
+            videoMode: false,
+            gridSize: 8
         };
         
         // Presets for video recording
