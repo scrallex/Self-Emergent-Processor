@@ -982,21 +982,25 @@
             const canvas = document.getElementById('gravity-canvas');
             const ctx = canvas.getContext('2d');
             const G = 0.5;
-            let showTrails = false;
-            let isPlaying = true;
-            
-            let bodies = [
-                { x: 400, y: 300, vx: 0, vy: -0.5, m: 20, color: '#ff0000', trail: [] },
-                { x: 600, y: 300, vx: 0, vy: 0.5, m: 20, color: '#0088ff', trail: [] },
-                { x: 500, y: 200, vx: 0.5, vy: 0, m: 20, color: '#00ff00', trail: [] }
-            ];
-            
+
+            const gravityState = {
+                bodies: [
+                    { x: 400, y: 300, vx: 0, vy: -0.5, m: 20, color: '#ff0000', trail: [] },
+                    { x: 600, y: 300, vx: 0, vy: 0.5, m: 20, color: '#0088ff', trail: [] },
+                    { x: 500, y: 200, vx: 0.5, vy: 0, m: 20, color: '#00ff00', trail: [] }
+                ],
+                showTrails: false,
+                isPlaying: true,
+                draw: null
+            };
+
             function drawGravity() {
+                const { bodies, showTrails, isPlaying } = gravityState;
                 if (!showTrails) {
                     ctx.fillStyle = 'rgba(15, 15, 15, 0.1)';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
-                
+
                 if (isPlaying) {
                     // Update forces
                     bodies.forEach((body, i) => {
@@ -1073,11 +1077,12 @@
                     requestAnimationFrame(drawGravity);
                 }
             }
-            
+
+            gravityState.draw = drawGravity;
+            animations.gravity = gravityState;
             drawGravity();
-            animations.gravity = { draw: drawGravity, isPlaying, showTrails };
         }
-        
+
         function resetGravity() {
             animations.gravity.bodies = [
                 { x: 400, y: 300, vx: 0, vy: -0.5, m: 20, color: '#ff0000', trail: [] },
@@ -1086,12 +1091,12 @@
             ];
             animations.gravity.draw();
         }
-        
+
         function toggleGravityAnimation() {
             animations.gravity.isPlaying = !animations.gravity.isPlaying;
             if (animations.gravity.isPlaying) animations.gravity.draw();
         }
-        
+
         function addTrails() {
             animations.gravity.showTrails = !animations.gravity.showTrails;
         }
