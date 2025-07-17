@@ -1102,11 +1102,19 @@
             const ctx = canvas.getContext('2d');
             let collisions = 0;
             let isCalculating = false;
+            let digitString = '';
+            let lastCollisions = 0;
             
             let block1 = { x: 200, vx: 0, m: 1, w: 50 };
             let block2 = { x: 400, vx: -1, m: 100, w: 100 };
             
-            function drawPi() {
+           function drawPi() {
+                if (animations.pi) {
+                    collisions = animations.pi.collisions;
+                    block1 = animations.pi.block1;
+                    block2 = animations.pi.block2;
+                    digitString = animations.pi.digitString;
+                }
                 ctx.fillStyle = '#0f0f0f';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
@@ -1145,6 +1153,16 @@
                     // Update positions
                     block1.x += block1.vx * 5;
                     block2.x += block2.vx * 5;
+
+                    if (collisions > lastCollisions) {
+                        const str = collisions.toString();
+                        digitString = str.length > 1 ? str[0] + '.' + str.slice(1) : str;
+                        lastCollisions = collisions;
+                        animations.pi.digitString = digitString;
+                    }
+                    animations.pi.collisions = collisions;
+                    animations.pi.block1 = block1;
+                    animations.pi.block2 = block2;
                 }
                 
                 // Draw blocks
@@ -1167,12 +1185,16 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText(`v1: ${block1.vx.toFixed(2)}`, block1.x, groundY - block1.w - 10);
                 ctx.fillText(`v2: ${block2.vx.toFixed(2)}`, block2.x, groundY - block2.w - 10);
-                
+
                 // Update info
                 document.getElementById('collision-count').textContent = collisions;
                 const piApprox = collisions / Math.pow(10, Math.floor(Math.log10(block2.m) / 2));
                 document.getElementById('pi-approximation').textContent = piApprox.toFixed(6);
                 document.getElementById('pi-error').textContent = (Math.abs(piApprox - Math.PI) / Math.PI * 100).toFixed(2) + '%';
+
+                ctx.font = '24px monospace';
+                ctx.fillStyle = '#00ff00';
+                ctx.fillText(digitString, 20, 40);
                 
                 if (isCalculating && Math.abs(block2.vx) > 0.001) {
                     requestAnimationFrame(drawPi);
@@ -1182,12 +1204,14 @@
             }
             
             drawPi();
-            animations.pi = { draw: drawPi, isCalculating };
+            animations.pi = { draw: drawPi, isCalculating, collisions, block1, block2, digitString };
+            animations.pi.digitString = digitString;
         }
         
         function startPiCalculation() {
             animations.pi.isCalculating = true;
             animations.pi.draw();
+            animations.pi.digitString = digitString;
         }
         
         function resetPiCalculation() {
@@ -1196,6 +1220,7 @@
             animations.pi.block1 = { x: 200, vx: 0, m: 1, w: 50 };
             animations.pi.block2 = { x: 400, vx: -1, m: Math.pow(100, power), w: 100 };
             animations.pi.isCalculating = false;
+            animations.pi.digitString = '';
             document.getElementById('mass-power').textContent = power * 2;
             animations.pi.draw();
         }
