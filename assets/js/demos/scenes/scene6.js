@@ -273,7 +273,7 @@ export default class Scene6 {
                 }
             }
         }
-        
+
         // Check if mouse is over speed slider
         const ss = this.controlPoints.speedSlider;
         if (mouseX >= ss.x && mouseX <= ss.x + ss.width &&

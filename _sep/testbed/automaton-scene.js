@@ -26,7 +26,7 @@ export default class AutomatonScene {
         // Cellular automaton state
         this.rule = 30; // Default rule (classic chaotic pattern)
         this.ruleset = [];
-        this.cellSize = 8;
+        this.cellSize = settings.cellSize || 8;
         this.cols = 0;
         this.rows = 0;
         this.generations = [];
@@ -615,6 +615,7 @@ export default class AutomatonScene {
      */
     updateSettings(newSettings) {
         let needsReset = false;
+        let needsResize = false;
         
         // Use intensity slider to select rule (0-100)
         if (newSettings.intensity !== undefined) {
@@ -630,11 +631,28 @@ export default class AutomatonScene {
             }
         }
 
+        // Allow adjusting cell (block) size
+        if (newSettings.cellSize !== undefined) {
+            const size = parseInt(newSettings.cellSize, 10);
+            if (!isNaN(size) && size > 1 && size !== this.cellSize) {
+                this.cellSize = size;
+                needsResize = true;
+            }
+        } else if (newSettings.blockSize !== undefined) {
+            const size = parseInt(newSettings.blockSize, 10);
+            if (!isNaN(size) && size > 1 && size !== this.cellSize) {
+                this.cellSize = size;
+                needsResize = true;
+            }
+        }
+
         // Update settings
         Object.assign(this.settings, newSettings);
 
         // Reset if needed
-        if (needsReset) {
+        if (needsResize) {
+            this.resize();
+        } else if (needsReset) {
             this.resetAutomaton();
         }
     }

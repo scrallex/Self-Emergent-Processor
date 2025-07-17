@@ -14,16 +14,19 @@ class SEPDemoFramework {
             quality: 'medium',
             speed: 1.0,
             intensity: 50,
+            blockSize: 30,
             videoMode: false
+            gridSize: 8,
+            size: 3
         };
         
         // Presets for video recording
         this.presets = {
-            default: { speed: 1.0, intensity: 50 },
-            intro: { speed: 0.5, intensity: 30 },
-            demo: { speed: 1.0, intensity: 60 },
-            climax: { speed: 1.5, intensity: 100 },
-            outro: { speed: 0.3, intensity: 20 }
+            default: { speed: 1.0, intensity: 50, size: 3 },
+            intro: { speed: 0.5, intensity: 30, size: 3 },
+            demo: { speed: 1.0, intensity: 60, size: 3 },
+            climax: { speed: 1.5, intensity: 100, size: 3 },
+            outro: { speed: 0.3, intensity: 20, size: 3 }
         };
         
         // Scene registry
@@ -74,16 +77,16 @@ class SEPDemoFramework {
                     radToDeg: (rad) => rad * 180 / Math.PI
                 },
                 eventManager: {
-                    // Basic event management
+                    // Basic namespaced event management
                     listeners: {},
-                    on: function(event, callback) {
-                        if (!this.listeners[event]) this.listeners[event] = [];
-                        this.listeners[event].push(callback);
+                    on: function(category, event, callback) {
+                        if (!this.listeners[category]) this.listeners[category] = {};
+                        if (!this.listeners[category][event]) this.listeners[category][event] = [];
+                        this.listeners[category][event].push(callback);
                     },
-                    emit: function(event, data) {
-                        if (this.listeners[event]) {
-                            this.listeners[event].forEach(callback => callback(data));
-                        }
+                    emit: function(category, event, data) {
+                        const evts = this.listeners[category]?.[event];
+                        if (evts) evts.forEach(cb => cb(data));
                     },
                     mouse: { x: 0, y: 0, down: false }
                 },
@@ -106,16 +109,24 @@ class SEPDemoFramework {
             // Set up mouse tracking
             this.canvas.addEventListener('mousemove', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
-                this._dependencies.eventManager.mouse.x = e.clientX - rect.left;
-                this._dependencies.eventManager.mouse.y = e.clientY - rect.top;
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const em = this._dependencies.eventManager;
+                em.mouse.x = x;
+                em.mouse.y = y;
+                em.emit('mouse', 'move', { x, y });
             });
-            
-            this.canvas.addEventListener('mousedown', () => {
-                this._dependencies.eventManager.mouse.down = true;
+
+            this.canvas.addEventListener('mousedown', (e) => {
+                const em = this._dependencies.eventManager;
+                em.mouse.down = true;
+                em.emit('mouse', 'down', { x: em.mouse.x, y: em.mouse.y });
             });
-            
-            this.canvas.addEventListener('mouseup', () => {
-                this._dependencies.eventManager.mouse.down = false;
+
+            this.canvas.addEventListener('mouseup', (e) => {
+                const em = this._dependencies.eventManager;
+                em.mouse.down = false;
+                em.emit('mouse', 'up', { x: em.mouse.x, y: em.mouse.y });
             });
         }
         
