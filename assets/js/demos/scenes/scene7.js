@@ -35,7 +35,7 @@ export default class Scene7 {
         // Animation parameters
         this.trajectories = [];
         this.animationPhase = 0;
-        this.viewMode = 'spiral'; // 'spiral', 'grid', '3d'
+        this.viewMode = 'spiral'; // view modes: 'spiral', 'grid', '3d' (sphere)
         this.zoom = 1.0;
         
         // Interactive parameters
@@ -55,6 +55,7 @@ export default class Scene7 {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseClick = this.handleMouseClick.bind(this);
         this.handleWheel = this.handleWheel.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
     }
 
     /**
@@ -67,6 +68,7 @@ export default class Scene7 {
         this.canvas.addEventListener('mouseup', this.handleMouseUp);
         this.canvas.addEventListener('click', this.handleMouseClick);
         this.canvas.addEventListener('wheel', this.handleWheel);
+        window.addEventListener('keydown', this.handleKeyDown);
         
         this.gridCenter = {
             x: this.canvas.width / 2,
@@ -90,6 +92,7 @@ export default class Scene7 {
         this.gridOffset = { x: 0, y: 0 };
         this.rotation = { x: 0, y: 0, z: 0 };
         this.zoom = 1.0;
+        this.spiralRange = 1;
         
         // Generate Ulam spiral
         this.generateUlamSpiral();
@@ -109,6 +112,7 @@ export default class Scene7 {
         let x = 0, y = 0;
         let dx = 0, dy = -1;
         
+        let maxCoord = 0;
         for (let i = 1; i <= maxN; i++) {
             // Add the number to our grid
             this.numbers.push({
@@ -141,7 +145,9 @@ export default class Scene7 {
             // Move to next position
             x += dx;
             y += dy;
+            maxCoord = Math.max(maxCoord, Math.abs(x), Math.abs(y));
         }
+        this.spiralRange = Math.max(1, maxCoord);
     }
     
     /**
@@ -355,7 +361,7 @@ export default class Scene7 {
             this.gridOffset.x += mouseX - this.lastMousePosition.x;
             this.gridOffset.y += mouseY - this.lastMousePosition.y;
         } else if (this.isRotating && this.viewMode === '3d') {
-            // Rotate the view (3D mode only)
+            // Rotate the sphere (3D view only)
             this.rotation.y += (mouseX - this.lastMousePosition.x) * 0.01;
             this.rotation.x += (mouseY - this.lastMousePosition.y) * 0.01;
         }
@@ -391,7 +397,7 @@ export default class Scene7 {
             // Check if it's a double-click (switch view mode)
             const now = performance.now();
             if (now - this.lastClickTime < 300) {
-                // Cycle through view modes
+                // Cycle through spiral, grid, and sphere views
                 if (this.viewMode === 'spiral') {
                     this.viewMode = 'grid';
                 } else if (this.viewMode === 'grid') {
@@ -412,12 +418,44 @@ export default class Scene7 {
      */
     handleWheel(e) {
         e.preventDefault();
-        
+
         // Adjust zoom level
         this.zoom *= e.deltaY > 0 ? 0.9 : 1.1;
-        
+
         // Clamp zoom level
         this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+    }
+
+    /**
+     * Handle keyboard controls for rotation and view toggling
+     * @param {KeyboardEvent} e - The keyboard event
+     */
+    handleKeyDown(e) {
+        switch (e.key) {
+            case 'ArrowLeft':
+                if (this.viewMode === '3d') this.rotation.y -= 0.1;
+                break;
+            case 'ArrowRight':
+                if (this.viewMode === '3d') this.rotation.y += 0.1;
+                break;
+            case 'ArrowUp':
+                if (this.viewMode === '3d') this.rotation.x -= 0.1;
+                break;
+            case 'ArrowDown':
+                if (this.viewMode === '3d') this.rotation.x += 0.1;
+                break;
+            case 'v':
+            case 'V':
+                if (this.viewMode === 'spiral') {
+                    this.viewMode = 'grid';
+                } else if (this.viewMode === 'grid') {
+                    this.viewMode = '3d';
+                } else {
+                    this.viewMode = 'spiral';
+                }
+                this.reset();
+                break;
+        }
     }
 
     /**
@@ -721,15 +759,15 @@ export default class Scene7 {
     }
     
     /**
-     * Draw 3D projection view
+     * Draw spherical projection view
      */
     draw3DProjection() {
         const { ctx, canvas } = this;
         const centerX = this.gridCenter.x + this.gridOffset.x;
         const centerY = this.gridCenter.y + this.gridOffset.y;
-        const scale = this.gridSize * 0.8 * this.zoom;
-        
-        // Apply 3D rotation
+        const radius = this.gridSize * this.spiralRange * 0.5 * this.zoom;
+
+        // Apply sphere rotation
         const sinX = Math.sin(this.rotation.x);
         const cosX = Math.cos(this.rotation.x);
         const sinY = Math.sin(this.rotation.y);
@@ -741,35 +779,31 @@ export default class Scene7 {
         const renderObjects = [];
         
         for (const number of this.numbers) {
-            // Get prime factors
-            const factors = number.isPrime ? [number.value] : number.factors.filter(f => this.isPrime(f));
-            
-            // Convert factors to coordinates (max 3 dimensions)
-            let x = 0, y = 0, z = 0;
-            
-            if (factors.length >= 1) x = Math.log(factors[0]);
-            if (factors.length >= 2) y = Math.log(factors[1]);
-            if (factors.length >= 3) z = Math.log(factors[2]);
-            
-            // Apply rotation
+            const theta = (number.x / this.spiralRange) * Math.PI; // longitude
+            const phi = (number.y / this.spiralRange) * (Math.PI / 2); // latitude
+
+            let x = radius * Math.cos(phi) * Math.cos(theta);
+            let y = radius * Math.sin(phi);
+            let z = radius * Math.cos(phi) * Math.sin(theta);
+
             // Rotate around X axis
             const y1 = y * cosX - z * sinX;
             const z1 = y * sinX + z * cosX;
-            
+
             // Rotate around Y axis
             const x2 = x * cosY + z1 * sinY;
             const z2 = -x * sinY + z1 * cosY;
-            
+
             // Rotate around Z axis
             const x3 = x2 * cosZ - y1 * sinZ;
             const y3 = x2 * sinZ + y1 * cosZ;
-            
-            // Project to screen
-            const distance = 5;
-            const projX = centerX + x3 * scale / (1 + z2 / distance);
-            const projY = centerY + y3 * scale / (1 + z2 / distance);
-            const projSize = scale * 0.5 / (1 + z2 / distance);
-            
+
+            // Perspective projection
+            const distance = radius * 2;
+            const projX = centerX + (x3 * distance) / (distance + z2);
+            const projY = centerY + (y3 * distance) / (distance + z2);
+            const projSize = this.gridSize * this.zoom / (distance + z2);
+
             renderObjects.push({
                 number,
                 x: projX,
@@ -1136,7 +1170,7 @@ export default class Scene7 {
         switch (this.viewMode) {
             case 'spiral': viewModeText = 'Ulam Spiral'; break;
             case 'grid': viewModeText = 'Coordinate Grid'; break;
-            case '3d': viewModeText = '3D Prime Factor Space'; break;
+            case '3d': viewModeText = 'Sphere View'; break;
             default: viewModeText = this.viewMode;
         }
         
@@ -1192,7 +1226,7 @@ export default class Scene7 {
         switch (this.viewMode) {
             case 'spiral': viewModeText = 'Ulam Spiral'; break;
             case 'grid': viewModeText = 'Grid View'; break;
-            case '3d': viewModeText = '3D View'; break;
+            case '3d': viewModeText = 'Sphere View'; break;
             default: viewModeText = this.viewMode;
         }
         
@@ -1219,6 +1253,7 @@ export default class Scene7 {
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);
         this.canvas.removeEventListener('click', this.handleMouseClick);
         this.canvas.removeEventListener('wheel', this.handleWheel);
+        window.removeEventListener('keydown', this.handleKeyDown);
         
         this.numbers = [];
         this.primes = [];
