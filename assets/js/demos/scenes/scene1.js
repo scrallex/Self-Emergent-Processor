@@ -3,7 +3,7 @@
  *
  * This scene demonstrates basic wave interference patterns, showing how
  * complex signals emerge from sine/cosine components with real-time
- * Fourier transform visualization.
+ * Fourier Transform visualization.
  */
 
 import InteractiveController from '../controllers/interactive-controller.js';
@@ -38,6 +38,7 @@ export default class Scene1 {
         this.interference = 'Constructive';
         this.waveValues = [];
         this.waveAmplitude = this.settings.intensity || 50;
+        this.spectrum = null; // Fourier Transform results
         
         // Interactive controller (initialized in init)
         this.controller = null;
@@ -80,6 +81,7 @@ export default class Scene1 {
         this.frequency = 3;
         this.wavePhaseOffsets = [0, Math.PI / 3, 2 * Math.PI / 3];
         this.waveAmplitude = this.settings.intensity || 50;
+        this.spectrum = null;
     }
     
     /**
@@ -178,7 +180,7 @@ export default class Scene1 {
             {
                 id: 'wave_toggle',
                 type: 'toggle',
-                label: 'Show Individual Waves',
+                label: 'Show Waves & Fourier Transform',
                 value: true,
                 onChange: (value) => {
                     this.showIndividualWaves = value;
@@ -260,7 +262,7 @@ export default class Scene1 {
             this.interference = 'Mixed';
         }
         
-        // Store wave values for analysis
+        // Store wave values for Fourier analysis
         for (let x = 0; x < this.canvas.width; x++) {
             let ySum = 0;
             for (let wave = 0; wave < 3; wave++) {
@@ -269,6 +271,16 @@ export default class Scene1 {
             }
             this.waveValues[x] = ySum;
         }
+
+        // Compute a discrete Fourier transform on a small sample
+        const sampleCount = 64;
+        const step = Math.max(1, Math.floor(this.waveValues.length / sampleCount));
+        const samples = [];
+        for (let i = 0; i < this.waveValues.length; i += step) {
+            samples.push(this.waveValues[i]);
+            if (samples.length >= sampleCount) break;
+        }
+        this.spectrum = this.math.fourierTransform(samples);
     }
 
     /**
@@ -332,7 +344,7 @@ export default class Scene1 {
         }
         ctx.stroke();
         
-        // Draw simple frequency domain representation at the bottom
+        // Draw Fourier Transform frequency domain at the bottom
         this.drawFrequencyDomain(amplitude);
         
         // Draw minimal video info if in video mode and no controller
@@ -342,7 +354,7 @@ export default class Scene1 {
     }
     
     /**
-     * Draw a simple frequency domain representation
+     * Draw the Fourier Transform frequency domain representation
      * @param {number} amplitude - Wave amplitude
      */
     drawFrequencyDomain(amplitude) {
@@ -359,27 +371,18 @@ export default class Scene1 {
         ctx.lineWidth = 1;
         ctx.strokeRect(0, y, canvas.width, height);
         
-        // Draw frequency components
-        for (let f = 1; f <= 10; f++) {
-            // Calculate amplitude for this frequency
-            let freqAmplitude = 0;
-            if (Math.abs(f - this.frequency) < 1) {
-                freqAmplitude = amplitude * (1 - Math.abs(f - this.frequency));
-            }
-            
-            const x = (f / 10) * canvas.width;
-            const barHeight = (freqAmplitude / 100) * height;
-            
-            // Draw frequency bar
-            ctx.fillStyle = `rgba(255, 0, 255, ${freqAmplitude / 100})`;
-            ctx.fillRect(x - 10, y + height - barHeight, 20, barHeight);
-            
-            // Label
-            if (f % 2 === 0) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.font = '10px Arial';
-                ctx.fillText(`${f}Hz`, x - 10, y + height + 12);
-            }
+        if (!this.spectrum) return;
+
+        const mags = this.spectrum.magnitude;
+        const half = Math.floor(mags.length / 2);
+        const barWidth = canvas.width / half;
+        for (let k = 0; k < half; k++) {
+            const m = mags[k];
+            const norm = m / amplitude;
+            const barHeight = norm * height;
+
+            ctx.fillStyle = `rgba(255, 0, 255, ${Math.min(1, norm)})`;
+            ctx.fillRect(k * barWidth, y + height - barHeight, barWidth - 2, barHeight);
         }
     }
 

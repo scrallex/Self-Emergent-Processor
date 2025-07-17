@@ -41,7 +41,7 @@ export const SCENES = {
         id: 1,
         name: "The Hidden Code",
         description: "Wave Interference & Sine/Cosine Emergence",
-        longDescription: "Interactive wave superposition showing sine/cosine emergence. Observe how complex signals decompose into sine/cosine components with real-time Fourier transform visualization.",
+        longDescription: "Interactive wave superposition showing sine/cosine emergence. Observe how complex signals decompose into sine/cosine components with real-time Fourier Transform visualization.",
         status: STATUS.PENDING,
         type: 'wave',
         color: SCENE_COLORS.WAVE,
