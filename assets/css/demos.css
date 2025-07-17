@@ -57,6 +57,11 @@ body.demo-hub {
     overflow: hidden;
 }
 
+.demo-card.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .demo-card:hover {
     transform: translateY(-5px);
     border-color: rgba(0, 212, 255, 0.5);
@@ -97,6 +102,11 @@ body.demo-hub {
 
 .demo-status.pending {
     background: #ffaa00; /* Orange: Pending/In-progress */
+    box-shadow: 0 0 8px #ffaa00;
+}
+
+.demo-status.in-progress {
+    background: #ffaa00; /* Orange: In-progress */
     box-shadow: 0 0 8px #ffaa00;
 }
 

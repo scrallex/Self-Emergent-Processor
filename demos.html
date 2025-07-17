@@ -203,13 +203,16 @@
                     scenes.forEach(scene => {
                         const card = document.createElement('div');
                         card.className = 'demo-card';
+                        if (scene.status !== 'ready') card.classList.add('disabled');
                         card.dataset.scene = scene.id;
                         card.innerHTML = `
                     <div class="demo-status ${scene.status}"></div>
                     <h3>Scene ${scene.id}: ${scene.name}</h3>
                     <p>${scene.description || 'An interactive visualization.'}</p>
                 `;
-                        card.addEventListener('click', () => loadDemo(scene.id));
+                        if (scene.status === 'ready') {
+                            card.addEventListener('click', () => loadDemo(scene.id));
+                        }
                         demoGrid.appendChild(card);
                     });
                 }
