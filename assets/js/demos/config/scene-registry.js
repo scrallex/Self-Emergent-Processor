@@ -126,7 +126,7 @@ export const SCENES = {
         name: "Angle Reality Classification",
         description: "Three-Body Gravitational System",
         longDescription: "Interactive planetary system with three masses and adjustable positions. Observe how interactions are color-coded by angle type, with acute angles forming stable orbits and obtuse angles creating escape trajectories.",
-        status: STATUS.IN_PROGRESS,
+        status: STATUS.READY,
         type: 'boundary',
         color: SCENE_COLORS.BOUNDARY,
         demoName: DEMO_NAMES.THREE_BODY,
