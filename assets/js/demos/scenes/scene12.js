@@ -1,23 +1,13 @@
 /**
- * Scene 12: SEP Unified System
+ * Scene 12: Reality's Code
  *
- * This finale scene brings together elements from all previous demonstrations
- * to show how the self-emergent processor creates a harmonious system
- * where all components interact and strengthen each other.
- *
- * Keyboard Controls:
- *   - `1-6` select between All Systems, SEP Core, Neural Connections,
- *     Vector Dynamics, Emergent Patterns and Quantum Harmonics.
- *   - `Space` triggers an energy pulse from the core.
- *
- * Module Structure:
- *   Scene12 exports a class which orchestrates particle, neural network,
- *   vector field and wave subsystems.  It receives framework utilities
- *   such as Physics, MathLib, EventManager, StateManager and RenderPipeline
- *   during construction.
+ * A meta-visualization that combines elements from all previous scenes.
+ * Features angles modulating in the center with boundaries containing emergence,
+ * primes as foundation points, and coherence waves propagating throughout.
  */
 
-import InteractiveController from '../controllers/interactive-controller.js';
+// Import utilities and elements from other scenes for reuse
+import LogoGenerator from '../utils/logo-generator.js';
 
 export default class Scene12 {
     /**
@@ -25,73 +15,101 @@ export default class Scene12 {
      * @param {HTMLCanvasElement} canvas - The canvas element
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
-     * @param {Object} physics - Physics engine instance
-     * @param {Object} math - Math library instance
-     * @param {Object} eventManager - Event manager instance
-     * @param {Object} stateManager - State manager instance
-     * @param {Object} renderPipeline - Render pipeline instance
      */
-    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
+    constructor(canvas, ctx, settings) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
-        this.physics = physics;
-        this.math = math;
-        this.eventManager = eventManager;
-        this.stateManager = stateManager;
-        this.renderPipeline = renderPipeline;
         
         // Animation state
         this.time = 0;
         this.lastTime = 0;
-        this.animationPhase = 0;
         
-        // System components
-        this.particleSystem = this.createParticleSystem();
-        this.neuralNetwork = this.createNeuralNetwork();
-        this.vectorField = this.createVectorField();
-        this.waveSystem = this.createWaveSystem();
-        this.fractals = this.createFractals();
-        
-        // Central SEP system
-        this.sepCore = {
+        // SEP logo properties
+        this.logo = {
             x: 0,
             y: 0,
-            radius: 100,
+            size: 120,
             rotation: 0,
-            connections: [],
-            pulses: [],
-            energy: 0
+            pulsePhase: 0
+        };
+
+        // Create logo generator
+        this.logoGenerator = new LogoGenerator({
+            size: this.logo.size,
+            color: '#00ff88',
+            secondaryColor: '#00d4ff',
+            accentColor: '#ff00ff',
+            waveCount: 5,
+            waveSpeed: 1.5,
+            waveAmplitude: 0.7
+        });
+        
+        // Scene elements from previous scenes
+        this.elements = {
+            waves: {
+                amplitude: 20,
+                frequency: 0.5,
+                phase: 0
+            },
+            angles: {
+                value: Math.PI / 4,
+                classification: 'acute'
+            },
+            billiards: {
+                particles: [],
+                collisionCount: 0
+            },
+            boundary: {
+                tangentValue: 0,
+                springForce: 0
+            },
+            bodies: {
+                positions: [],
+                trajectories: []
+            },
+            primes: {
+                spiral: [],
+                highlightedPrimes: []
+            },
+            boids: {
+                flock: [],
+                alignment: 0
+            },
+            grid: {
+                states: [],
+                ruptures: []
+            },
+            fluid: {
+                particles: [],
+                vorticity: 0
+            },
+            financial: {
+                surface: [],
+                comparison: 0
+            }
         };
         
-        // Interface components
-        this.activeVisualization = 0;
-        this.visualizationNames = [
-            "All Systems",
-            "SEP Core",
-            "Neural Connections",
-            "Vector Dynamics",
-            "Emergent Patterns",
-            "Quantum Harmonics"
-        ];
+        // Coherence waves
+        this.coherenceWaves = [];
         
-        // System stats
-        this.systemStats = {
-            efficiency: 0.8,
-            coherence: 0.7,
-            emergence: 0.5,
-            stability: 0.9
-        };
+        // View settings
+        this.activeZone = null;
+        this.zoomLevel = 1;
+        this.showConnections = true;
+        this.highlightFoundation = false;
         
-        // Mouse state
+        // Mouse interaction
         this.mouseX = 0;
         this.mouseY = 0;
-        this.lastClickTime = 0;
+        this.isDragging = false;
         
-        // Interactive controller (initialized in init)
-        this.controller = null;
-        this.paused = false;
+        // Bind event handlers
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
     }
 
     /**
@@ -99,462 +117,270 @@ export default class Scene12 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        // Initialize the interactive controller
-        this.controller = new InteractiveController(
-            this,
-            this.canvas,
-            this.ctx,
-            this.eventManager,
-            this.stateManager,
-            this.renderPipeline
-        ).init();
-        
-        // Register the addSceneSpecificControls method
-        this.controller.addSceneSpecificControls = this.addSceneSpecificControls.bind(this);
-        
-        // Register event handlers
-        this.handleKeyDown = this.handleKeyDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseClick = this.handleMouseClick.bind(this);
-        
-        // Add event listeners
-        window.addEventListener('keydown', this.handleKeyDown);
+        // Set up event listeners
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('click', this.handleMouseClick);
+        this.canvas.addEventListener('mousedown', this.handleMouseDown);
+        this.canvas.addEventListener('mouseup', this.handleMouseUp);
+        window.addEventListener('keydown', this.handleKeyDown);
         
-        // Create particle systems
-        this.initializeParticles();
+        // Initialize SEP logo at center
+        this.logo.x = this.canvas.width / 2;
+        this.logo.y = this.canvas.height / 2;
         
-        // Initialize SEP core
-        this.initializeSepCore();
+        // Initialize elements from previous scenes
+        this.initializeWaves();
+        this.initializeAngles();
+        this.initializeBilliards();
+        this.initializeBoundary();
+        this.initializeBodies();
+        this.initializePrimes();
+        this.initializeBoids();
+        this.initializeGrid();
+        this.initializeFluid();
+        this.initializeFinancial();
+        
+        // Initialize coherence waves
+        this.generateCoherenceWave();
         
         return Promise.resolve();
     }
     
     /**
-     * Initialize the particle systems
+     * Initialize wave elements (Scene 1)
      */
-    initializeParticles() {
-        // Reset particles
-        this.particleSystem.particles = [];
-        
-        // Create various particle types
-        for (let i = 0; i < this.particleSystem.count; i++) {
-            // Create base particle
-            const particle = {
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                vx: (Math.random() - 0.5) * 2,
-                vy: (Math.random() - 0.5) * 2,
-                size: Math.random() * 5 + 2,
-                color: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                type: Math.floor(Math.random() * 5), // 0-4 for different behaviors
-                age: 0,
-                lifespan: 100 + Math.random() * 200,
-                phase: Math.random() * Math.PI * 2
-            };
-            
-            // Additional properties based on type
-            switch (particle.type) {
-                case 0: // Bouncing particles
-                    particle.elasticity = 0.8 + Math.random() * 0.2;
-                    break;
-                case 1: // Orbiting particles
-                    particle.orbitRadius = 50 + Math.random() * 150;
-                    particle.orbitSpeed = (Math.random() - 0.5) * 0.02;
-                    particle.centerX = this.canvas.width / 2;
-                    particle.centerY = this.canvas.height / 2;
-                    break;
-                case 2: // Flocking particles
-                    particle.alignment = Math.random() * 0.2;
-                    particle.cohesion = Math.random() * 0.2;
-                    particle.separation = Math.random() * 0.2;
-                    break;
-                case 3: // Wave particles
-                    particle.amplitude = 5 + Math.random() * 20;
-                    particle.frequency = 0.01 + Math.random() * 0.03;
-                    break;
-                case 4: // Quantum particles
-                    particle.entangled = i % 2 === 0 ? i + 1 : i - 1;
-                    particle.spin = Math.random() > 0.5 ? 1 : -1;
-                    particle.superposition = true;
-                    break;
-            }
-            
-            this.particleSystem.particles.push(particle);
-        }
+    initializeWaves() {
+        // Simple wave initialization
+        this.elements.waves.values = Array(100).fill(0);
     }
     
     /**
-     * Initialize the SEP core
+     * Initialize angle elements (Scene 2)
      */
-    initializeSepCore() {
-        // Set core position
-        this.sepCore.x = this.canvas.width / 2;
-        this.sepCore.y = this.canvas.height / 2;
-        
-        // Initialize core properties
-        this.sepCore.rotation = 0;
-        this.sepCore.energy = 0.5; // Start with medium energy
-        this.sepCore.pulses = []; // Empty array for energy pulses
-        
-        // Create initial energy pulse to show interactivity
-        this.createEnergyPulse();
-        
-        // Create connections to each system
-        const systems = [
-            this.particleSystem,
-            this.neuralNetwork,
-            this.vectorField,
-            this.waveSystem,
-            this.fractals
+    initializeAngles() {
+        // Setup angles for protractor visualization
+        this.elements.angles.vectors = [
+            { x: 40, y: 0 },
+            { x: 30, y: 30 }
         ];
-        
-        this.sepCore.connections = systems.map((system, index) => {
-            const angle = (index / systems.length) * Math.PI * 2;
-            return {
-                system: index,
-                angle: angle,
-                strength: 0.5 + Math.random() * 0.5,
-                pulsePhase: Math.random() * Math.PI * 2,
-                x: this.sepCore.x + Math.cos(angle) * this.sepCore.radius * 2,
-                y: this.sepCore.y + Math.sin(angle) * this.sepCore.radius * 2
-            };
-        });
-        
-        // Set initial system stats based on active systems and energy level
-        this.updateSystemStats(0.1);
     }
     
     /**
-     * Create particle system configuration
-     * @returns {Object} Particle system configuration
+     * Initialize billiard elements (Scene 3, 6)
      */
-    createParticleSystem() {
-        return {
-            count: 150,
-            particles: [],
-            active: true,
-            vizMode: 0
-        };
-    }
-    
-    /**
-     * Create neural network configuration
-     * @returns {Object} Neural network configuration
-     */
-    createNeuralNetwork() {
-        // Create a simple neural network representation
-        const layerCount = 4;
-        const nodesPerLayer = [6, 12, 8, 4];
-        const layers = [];
-        
-        for (let i = 0; i < layerCount; i++) {
-            const layer = [];
-            for (let j = 0; j < nodesPerLayer[i]; j++) {
-                layer.push({
-                    x: 0, // Will be positioned during rendering
-                    y: 0,
-                    activation: Math.random(),
-                    connections: []
-                });
-            }
-            layers.push(layer);
-        }
-        
-        // Create connections between layers
-        for (let i = 0; i < layerCount - 1; i++) {
-            for (let j = 0; j < layers[i].length; j++) {
-                for (let k = 0; k < layers[i + 1].length; k++) {
-                    if (Math.random() < 0.6) { // 60% connection probability
-                        layers[i][j].connections.push({
-                            target: k,
-                            weight: Math.random() * 2 - 1, // -1 to 1
-                            active: true
-                        });
-                    }
-                }
-            }
-        }
-        
-        return {
-            layers: layers,
-            active: true,
-            learningRate: 0.1,
-            activation: 0
-        };
-    }
-    
-    /**
-     * Create vector field configuration
-     * @returns {Object} Vector field configuration
-     */
-    createVectorField() {
-        const resolution = 20;
-        const cols = Math.floor(this.canvas.width / resolution);
-        const rows = Math.floor(this.canvas.height / resolution);
-        const vectors = [];
-        
-        for (let i = 0; i < cols; i++) {
-            for (let j = 0; j < rows; j++) {
-                vectors.push({
-                    x: i * resolution + resolution / 2,
-                    y: j * resolution + resolution / 2,
-                    dx: Math.random() * 2 - 1,
-                    dy: Math.random() * 2 - 1,
-                    magnitude: Math.random() * 0.5 + 0.5
-                });
-            }
-        }
-        
-        return {
-            vectors: vectors,
-            resolution: resolution,
-            active: true,
-            mode: 'flow' // 'flow', 'curl', 'divergence'
-        };
-    }
-    
-    /**
-     * Create wave system configuration
-     * @returns {Object} Wave system configuration
-     */
-    createWaveSystem() {
-        const waves = [];
-        const waveCount = 3;
-        
-        for (let i = 0; i < waveCount; i++) {
-            waves.push({
-                amplitude: 20 + Math.random() * 30,
-                frequency: 0.005 + Math.random() * 0.01,
-                phase: Math.random() * Math.PI * 2,
-                color: `hsl(${i * 120}, 70%, 50%)`
+    initializeBilliards() {
+        // Create a few billiard particles
+        for (let i = 0; i < 3; i++) {
+            this.elements.billiards.particles.push({
+                x: Math.random() * 100 - 50,
+                y: Math.random() * 100 - 50,
+                vx: Math.random() * 2 - 1,
+                vy: Math.random() * 2 - 1,
+                radius: 5 + Math.random() * 5
             });
         }
-        
-        return {
-            waves: waves,
-            active: true,
-            interference: true
-        };
     }
     
     /**
-     * Create fractals configuration
-     * @returns {Object} Fractals configuration
+     * Initialize boundary elements (Scene 4)
      */
-    createFractals() {
-        return {
-            depth: 5,
-            angle: Math.PI / 5,
-            scaleFactor: 0.7,
-            active: true,
-            type: 'tree' // 'tree', 'sierpinski', 'koch'
-        };
+    initializeBoundary() {
+        // Setup boundary values
+        this.elements.boundary.values = Array(100).fill(0);
     }
     
     /**
-     * Create interactive elements specific to this scene
-     * @param {InteractiveUtils} utils - Interactive utilities instance
-     * @returns {Array} - Array of interactive elements
+     * Initialize three-body elements (Scene 5)
      */
-    createInteractiveElements(utils) {
-        const elements = [];
-        
-        // Create core control element
-        const coreControl = utils.createDraggable({
-            id: 'sep_core_control',
-            x: this.canvas.width / 2 - 50,
-            y: this.canvas.height / 2 - 50,
-            width: 100,
-            height: 100,
-            shape: 'circle',
-            color: 'rgba(0, 255, 136, 0.3)',
-            tooltip: 'SEP Core - Click to interact or drag to move',
-            draggable: true,
-            
-            onDrag: (dx, dy, x, y) => {
-                // Update core position
-                this.sepCore.x = x + 50; // Adjust for center point
-                this.sepCore.y = y + 50;
-            },
-            
-            onClick: () => {
-                // Generate a pulse from the core
-                this.sepCore.pulses.push({
-                    x: this.sepCore.x,
-                    y: this.sepCore.y,
-                    radius: 10,
-                    maxRadius: 500,
-                    alpha: 1,
-                    color: '#00ff88'
-                });
-                
-                // Increase core energy
-                this.sepCore.energy = Math.min(1, this.sepCore.energy + 0.2);
-                
-                // Toggle visualization mode
-                this.activeVisualization = (this.activeVisualization + 1) % this.visualizationNames.length;
-            }
-        });
-        
-        elements.push(coreControl);
-        
-        // Create connection control points
-        const systemTypes = [
-            { name: 'Particles', color: '#00d4ff' },
-            { name: 'Neural', color: '#ffaa00' },
-            { name: 'Vector', color: '#7c3aed' },
-            { name: 'Wave', color: '#ff00ff' },
-            { name: 'Fractal', color: '#00ff88' }
-        ];
-        
-        for (let i = 0; i < systemTypes.length; i++) {
-            const angle = (i / systemTypes.length) * Math.PI * 2;
-            const x = this.canvas.width / 2 + Math.cos(angle) * 200;
-            const y = this.canvas.height / 2 + Math.sin(angle) * 200;
-            
-            const connectionControl = utils.createDraggable({
-                id: `connection_${i}`,
-                x: x - 15,
-                y: y - 15,
-                width: 30,
-                height: 30,
-                shape: 'circle',
-                color: systemTypes[i].color,
-                tooltip: `${systemTypes[i].name} Connection - Drag to adjust`,
-                draggable: true,
-                
-                onDrag: (dx, dy, x, y) => {
-                    // Update connection point
-                    const connectionX = x + 15; // Adjust for center point
-                    const connectionY = y + 15;
-                    
-                    // Update connection in sepCore
-                    if (this.sepCore.connections[i]) {
-                        this.sepCore.connections[i].x = connectionX;
-                        this.sepCore.connections[i].y = connectionY;
-                        
-                        // Calculate new angle from core
-                        const dx = connectionX - this.sepCore.x;
-                        const dy = connectionY - this.sepCore.y;
-                        this.sepCore.connections[i].angle = Math.atan2(dy, dx);
-                        
-                        // Update strength based on distance
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        const normalizedDist = Math.min(1, Math.max(0.1, distance / 300));
-                        this.sepCore.connections[i].strength = 1 - normalizedDist;
-                    }
-                }
+    initializeBodies() {
+        // Setup three bodies
+        for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2;
+            this.elements.bodies.positions.push({
+                x: Math.cos(angle) * 50,
+                y: Math.sin(angle) * 50,
+                mass: 5 + i * 3
             });
-            
-            elements.push(connectionControl);
+            this.elements.bodies.trajectories.push([]);
+        }
+    }
+    
+    /**
+     * Initialize prime elements (Scene 7)
+     */
+    initializePrimes() {
+        // Generate some prime points
+        const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+        for (const prime of primes) {
+            const angle = prime * 0.1;
+            const radius = Math.sqrt(prime) * 5;
+            this.elements.primes.spiral.push({
+                value: prime,
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius
+            });
+        }
+    }
+    
+    /**
+     * Initialize boid elements (Scene 8)
+     */
+    initializeBoids() {
+        // Create a small flock of boids
+        for (let i = 0; i < 10; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            this.elements.boids.flock.push({
+                x: Math.random() * 100 - 50,
+                y: Math.random() * 100 - 50,
+                vx: Math.cos(angle) * 2,
+                vy: Math.sin(angle) * 2
+            });
+        }
+    }
+    
+    /**
+     * Initialize grid elements (Scene 9)
+     */
+    initializeGrid() {
+        // Create a 4x4 state grid
+        this.elements.grid.states = [];
+        for (let i = 0; i < 4; i++) {
+            const row = [];
+            for (let j = 0; j < 4; j++) {
+                row.push(Math.random() > 0.5 ? 1 : 0);
+            }
+            this.elements.grid.states.push(row);
+        }
+    }
+    
+    /**
+     * Initialize fluid elements (Scene 10)
+     */
+    initializeFluid() {
+        // Create some fluid particles
+        for (let i = 0; i < 20; i++) {
+            this.elements.fluid.particles.push({
+                x: Math.random() * 100 - 50,
+                y: Math.random() * 100 - 50,
+                vx: Math.random() * 2 - 1,
+                vy: Math.random() * 2 - 1,
+                vorticity: Math.random()
+            });
+        }
+    }
+    
+    /**
+     * Initialize financial elements (Scene 11)
+     */
+    initializeFinancial() {
+        // Create a simple price surface
+        this.elements.financial.surface = [];
+        for (let i = 0; i < 5; i++) {
+            const row = [];
+            for (let j = 0; j < 5; j++) {
+                row.push(Math.sin(i/2) * Math.cos(j/2) * 10 + 20);
+            }
+            this.elements.financial.surface.push(row);
+        }
+    }
+    
+    /**
+     * Generate a new coherence wave from the center
+     */
+    generateCoherenceWave() {
+        this.coherenceWaves.push({
+            x: this.logo.x,
+            y: this.logo.y,
+            radius: 10,
+            maxRadius: Math.max(this.canvas.width, this.canvas.height),
+            strength: 0.8 + Math.random() * 0.2,
+            color: `hsla(${Math.random() * 60 + 170}, 100%, 50%, 0.4)`
+        });
+    }
+    
+    /**
+     * Handle mouse movement for interactive highlighting
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseMove(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        this.mouseX = e.clientX - rect.left;
+        this.mouseY = e.clientY - rect.top;
+        
+        // Check if hovering over any zone
+        this.checkActiveZone();
+    }
+    
+    /**
+     * Handle mouse down for interaction
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseDown(e) {
+        this.isDragging = true;
+        
+        // Generate a coherence wave on click
+        this.generateCoherenceWave();
+    }
+    
+    /**
+     * Handle mouse up
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseUp(e) {
+        this.isDragging = false;
+    }
+    
+    /**
+     * Handle keyboard input
+     * @param {KeyboardEvent} e - The keyboard event
+     */
+    handleKeyDown(e) {
+        switch(e.key.toLowerCase()) {
+            case 'c':
+                // Toggle connections
+                this.showConnections = !this.showConnections;
+                break;
+            case 'f':
+                // Toggle foundation highlighting
+                this.highlightFoundation = !this.highlightFoundation;
+                break;
+            case 'r':
+                // Reset view
+                this.zoomLevel = 1;
+                this.activeZone = null;
+                break;
+            case 'w':
+                // Generate wave
+                this.generateCoherenceWave();
+                break;
+        }
+    }
+    
+    /**
+     * Check if mouse is over an interactive zone
+     */
+    checkActiveZone() {
+        // Check distance to center (logo)
+        const distToLogo = Math.hypot(this.mouseX - this.logo.x, this.mouseY - this.logo.y);
+        if (distToLogo < this.logo.size / 2) {
+            this.activeZone = 'logo';
+            return;
         }
         
-        return elements;
+        // Otherwise, calculate which zone we're in based on position
+        const angle = Math.atan2(this.mouseY - this.logo.y, this.mouseX - this.logo.x);
+        const sector = Math.floor(((angle + Math.PI) / (Math.PI * 2)) * 10);
+        
+        // Map sector to scene
+        const zones = ['waves', 'angles', 'billiards', 'boundary', 'bodies', 
+                      'primes', 'boids', 'grid', 'fluid', 'financial'];
+        this.activeZone = zones[sector];
     }
     
-    /**
-     * Provide custom controls for the control panel
-     * @returns {Array} Array of control configurations
-     */
-    getCustomControls() {
-        return [
-            {
-                id: 'visualization_mode',
-                type: 'slider',
-                label: 'Visualization Mode',
-                min: 0,
-                max: this.visualizationNames.length - 1,
-                value: this.activeVisualization,
-                step: 1,
-                onChange: (value) => {
-                    this.activeVisualization = Math.round(value);
-                }
-            },
-            {
-                id: 'particles_toggle',
-                type: 'toggle',
-                label: 'Particle System',
-                value: this.particleSystem.active,
-                onChange: (value) => {
-                    this.particleSystem.active = value;
-                }
-            },
-            {
-                id: 'neural_toggle',
-                type: 'toggle',
-                label: 'Neural Network',
-                value: this.neuralNetwork.active,
-                onChange: (value) => {
-                    this.neuralNetwork.active = value;
-                }
-            },
-            {
-                id: 'vector_toggle',
-                type: 'toggle',
-                label: 'Vector Field',
-                value: this.vectorField.active,
-                onChange: (value) => {
-                    this.vectorField.active = value;
-                }
-            },
-            {
-                id: 'wave_toggle',
-                type: 'toggle',
-                label: 'Wave System',
-                value: this.waveSystem.active,
-                onChange: (value) => {
-                    this.waveSystem.active = value;
-                }
-            },
-            {
-                id: 'fractal_toggle',
-                type: 'toggle',
-                label: 'Fractals',
-                value: this.fractals.active,
-                onChange: (value) => {
-                    this.fractals.active = value;
-                }
-            },
-            {
-                id: 'reset_btn',
-                type: 'button',
-                label: 'Reset All Systems',
-                onClick: () => {
-                    this.initializeParticles();
-                    this.initializeSepCore();
-                    
-                    // Update interactive elements positions
-                    if (this.controller && this.controller.components.sceneElements) {
-                        const coreControl = this.controller.components.sceneElements.find(el => el.id === 'sep_core_control');
-                        if (coreControl) {
-                            coreControl.x = this.sepCore.x - 50;
-                            coreControl.y = this.sepCore.y - 50;
-                        }
-                        
-                        // Update connection controls
-                        for (let i = 0; i < this.sepCore.connections.length; i++) {
-                            const connection = this.sepCore.connections[i];
-                            const connectionControl = this.controller.components.sceneElements.find(el => el.id === `connection_${i}`);
-                            
-                            if (connectionControl && connection) {
-                                connectionControl.x = connection.x - 15;
-                                connectionControl.y = connection.y - 15;
-                            }
-                        }
-                    }
-                }
-            }
-        ];
-    }
-
     /**
      * Main animation loop - called by the framework on each frame
      * @param {number} timestamp - The current timestamp from requestAnimationFrame
      */
     animate(timestamp) {
-        if (this.paused) return;
         // Calculate delta time
         if (!this.lastTime) this.lastTime = timestamp;
         const deltaTime = (timestamp - this.lastTime) / 1000; // in seconds
@@ -566,1453 +392,1193 @@ export default class Scene12 {
         
         // Render the scene
         this.draw();
-        
-        // Track mouse position if we need it
-        if (this.eventManager) {
-            this.mouseX = this.eventManager.mouse.x;
-            this.mouseY = this.eventManager.mouse.y;
-        }
-        
-        // Update information panel
-        if (this.controller) {
-            // Update info with current system stats and visualization mode
-            this.controller.updateInfoPanel({
-                'Visualization': this.visualizationNames[this.activeVisualization],
-                'Efficiency': (this.systemStats.efficiency * 100).toFixed(1) + '%',
-                'Coherence': (this.systemStats.coherence * 100).toFixed(1) + '%',
-                'Emergence': (this.systemStats.emergence * 100).toFixed(1) + '%',
-                'Stability': (this.systemStats.stability * 100).toFixed(1) + '%',
-                'Core Energy': (this.sepCore.energy * 100).toFixed(1) + '%'
-            });
-            
-            // Render UI components
-            this.controller.render(timestamp);
-        }
     }
     
     /**
-     * Update scene state - separated from animation for clarity
+     * Update scene state
      * @param {number} dt - Delta time in seconds, adjusted by speed
      */
     update(dt) {
-        // Update animation phase
-        this.animationPhase += dt;
+        // Update SEP logo
+        this.logo.rotation += dt * 0.1;
+        this.logo.pulsePhase += dt * 0.5;
         
-        // Update SEP core
-        this.updateSepCore(dt);
+        // Update logo generator
+        this.logoGenerator.update(dt);
         
-        // Update particles
-        if (this.particleSystem.active) {
-            this.updateParticles(dt);
+        // Generate new coherence waves occasionally
+        if (Math.random() < dt * 0.2) {
+            this.generateCoherenceWave();
         }
         
-        // Update neural network
-        if (this.neuralNetwork.active) {
-            this.updateNeuralNetwork(dt);
-        }
-        
-        // Update vector field
-        if (this.vectorField.active) {
-            this.updateVectorField(dt);
-        }
-        
-        // Update system stats based on component interactions
-        this.updateSystemStats(dt);
-    }
-    
-    /**
-     * Update the SEP core
-     * @param {number} dt - Delta time in seconds
-     */
-    updateSepCore(dt) {
-        // Update core rotation - speed based on energy level
-        this.sepCore.rotation += dt * (0.1 + this.sepCore.energy * 0.3);
-        
-        // Update connections
-        this.sepCore.connections.forEach(conn => {
-            conn.pulsePhase += dt * (0.3 + this.sepCore.energy * 0.5);
+        // Update existing coherence waves
+        for (let i = this.coherenceWaves.length - 1; i >= 0; i--) {
+            const wave = this.coherenceWaves[i];
+            wave.radius += dt * 100;
             
-            // Calculate position based on angle and distance from core
-            conn.angle += dt * (0.02 + this.sepCore.energy * 0.08);
-            conn.x = this.sepCore.x + Math.cos(conn.angle) * this.sepCore.radius * 2;
-            conn.y = this.sepCore.y + Math.sin(conn.angle) * this.sepCore.radius * 2;
-        });
-        
-        // Update pulses
-        for (let i = this.sepCore.pulses.length - 1; i >= 0; i--) {
-            const pulse = this.sepCore.pulses[i];
-            pulse.radius += dt * 200;
-            pulse.alpha -= dt * 0.5;
-            
-            if (pulse.alpha <= 0 || pulse.radius >= pulse.maxRadius) {
-                this.sepCore.pulses.splice(i, 1);
+            // Remove waves that have expanded beyond the screen
+            if (wave.radius > wave.maxRadius) {
+                this.coherenceWaves.splice(i, 1);
             }
         }
         
-        // Slowly decrease energy over time
-        this.sepCore.energy = Math.max(0, this.sepCore.energy - dt * 0.05);
+        // Update elements from previous scenes
+        this.updateWaves(dt);
+        this.updateAngles(dt);
+        this.updateBilliards(dt);
+        this.updateBoundary(dt);
+        this.updateBodies(dt);
+        this.updatePrimes(dt);
+        this.updateBoids(dt);
+        this.updateGrid(dt);
+        this.updateFluid(dt);
+        this.updateFinancial(dt);
     }
     
     /**
-     * Update particle system
-     * @param {number} dt - Delta time in seconds
+     * Update wave elements
+     * @param {number} dt - Delta time
      */
-    updateParticles(dt) {
-        for (let i = this.particleSystem.particles.length - 1; i >= 0; i--) {
-            const p = this.particleSystem.particles[i];
+    updateWaves(dt) {
+        // Update wave pattern
+        this.elements.waves.phase += dt;
+        for (let i = 0; i < this.elements.waves.values.length; i++) {
+            const x = i / this.elements.waves.values.length;
+            this.elements.waves.values[i] = 
+                Math.sin(x * this.elements.waves.frequency * 20 + this.elements.waves.phase) * 
+                this.elements.waves.amplitude;
+        }
+    }
+    
+    /**
+     * Update angle elements
+     * @param {number} dt - Delta time
+     */
+    updateAngles(dt) {
+        // Rotate angle slowly
+        const angle = this.time * 0.1;
+        this.elements.angles.vectors[1].x = Math.cos(angle) * 40;
+        this.elements.angles.vectors[1].y = Math.sin(angle) * 40;
+        
+        // Calculate angle classification
+        const v1 = this.elements.angles.vectors[0];
+        const v2 = this.elements.angles.vectors[1];
+        const dot = v1.x * v2.x + v1.y * v2.y;
+        const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+        const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+        const cosAngle = dot / (mag1 * mag2);
+        const angle_rad = Math.acos(cosAngle);
+        
+        this.elements.angles.value = angle_rad;
+        
+        if (angle_rad < Math.PI / 4) {
+            this.elements.angles.classification = 'acute';
+        } else if (angle_rad < Math.PI / 2) {
+            this.elements.angles.classification = 'acute';
+        } else if (angle_rad === Math.PI / 2) {
+            this.elements.angles.classification = 'right';
+        } else {
+            this.elements.angles.classification = 'obtuse';
+        }
+    }
+    
+    /**
+     * Update billiard elements
+     * @param {number} dt - Delta time
+     */
+    updateBilliards(dt) {
+        // Move billiard particles
+        for (const particle of this.elements.billiards.particles) {
+            particle.x += particle.vx * dt * 20;
+            particle.y += particle.vy * dt * 20;
             
-            // Age the particle
-            p.age += dt;
-            if (p.age >= p.lifespan) {
-                // Respawn particle
-                p.age = 0;
-                p.x = Math.random() * this.canvas.width;
-                p.y = Math.random() * this.canvas.height;
-                p.phase = Math.random() * Math.PI * 2;
+            // Simple bounds checking
+            if (Math.abs(particle.x) > 50) {
+                particle.vx *= -1;
+                this.elements.billiards.collisionCount++;
             }
-            
-            // Update based on type
-            switch (p.type) {
-                case 0: // Bouncing particles
-                    p.x += p.vx * dt * 60;
-                    p.y += p.vy * dt * 60;
-                    
-                    // Bounce off edges
-                    if (p.x < 0 || p.x > this.canvas.width) {
-                        p.vx *= -p.elasticity;
-                        p.x = Math.max(0, Math.min(this.canvas.width, p.x));
-                    }
-                    if (p.y < 0 || p.y > this.canvas.height) {
-                        p.vy *= -p.elasticity;
-                        p.y = Math.max(0, Math.min(this.canvas.height, p.y));
-                    }
-                    break;
-                    
-                case 1: // Orbiting particles
-                    // Orbit around center
-                    const angle = p.phase + this.time * p.orbitSpeed;
-                    p.x = p.centerX + Math.cos(angle) * p.orbitRadius;
-                    p.y = p.centerY + Math.sin(angle) * p.orbitRadius;
-                    break;
-                    
-                case 2: // Flocking particles
-                    // Simplified flocking behavior
-                    let avgDx = 0, avgDy = 0, sepX = 0, sepY = 0, count = 0;
-                    
-                    // Check against other particles
-                    for (const other of this.particleSystem.particles) {
-                        if (other === p) continue;
-                        
-                        const dx = other.x - p.x;
-                        const dy = other.y - p.y;
-                        const distSq = dx * dx + dy * dy;
-                        
-                        if (distSq < 5000) {
-                            // Alignment - match velocity
-                            avgDx += other.vx;
-                            avgDy += other.vy;
-                            
-                            // Separation - avoid crowding
-                            if (distSq < 1000) {
-                                sepX -= dx;
-                                sepY -= dy;
-                            }
-                            
-                            count++;
-                        }
-                    }
-                    
-                    if (count > 0) {
-                        // Apply flocking forces
-                        avgDx /= count;
-                        avgDy /= count;
-                        
-                        p.vx += avgDx * p.alignment + sepX * p.separation;
-                        p.vy += avgDy * p.alignment + sepY * p.separation;
-                        
-                        // Limit speed
-                        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-                        if (speed > 3) {
-                            p.vx = (p.vx / speed) * 3;
-                            p.vy = (p.vy / speed) * 3;
-                        }
-                    }
-                    
-                    // Cohesion - move toward center
-                    p.vx += (this.sepCore.x - p.x) * p.cohesion * 0.01;
-                    p.vy += (this.sepCore.y - p.y) * p.cohesion * 0.01;
-                    
-                    // Update position
-                    p.x += p.vx * dt * 60;
-                    p.y += p.vy * dt * 60;
-                    
-                    // Wrap around edges
-                    if (p.x < 0) p.x += this.canvas.width;
-                    if (p.x > this.canvas.width) p.x -= this.canvas.width;
-                    if (p.y < 0) p.y += this.canvas.height;
-                    if (p.y > this.canvas.height) p.y -= this.canvas.height;
-                    break;
-                    
-                case 3: // Wave particles
-                    // Move in a wave pattern
-                    p.x += p.vx * dt * 60;
-                    p.y = p.y + p.vy * dt * 60 + Math.sin(this.time * p.frequency + p.phase) * p.amplitude;
-                    
-                    // Wrap around edges
-                    if (p.x < 0) p.x += this.canvas.width;
-                    if (p.x > this.canvas.width) p.x -= this.canvas.width;
-                    if (p.y < 0) p.y += this.canvas.height;
-                    if (p.y > this.canvas.height) p.y -= this.canvas.height;
-                    break;
-                    
-                case 4: // Quantum particles
-                    if (p.superposition) {
-                        // Probabilistic movement in superposition
-                        if (Math.random() < 0.1) {
-                            p.vx = (Math.random() - 0.5) * 4;
-                            p.vy = (Math.random() - 0.5) * 4;
-                        }
-                    }
-                    
-                    // Update position
-                    p.x += p.vx * dt * 60;
-                    p.y += p.vy * dt * 60;
-                    
-                    // Handle entanglement
-                    if (p.entangled < this.particleSystem.particles.length) {
-                        const entangled = this.particleSystem.particles[p.entangled];
-                        
-                        // If particles get too far apart, pull them back
-                        const dx = entangled.x - p.x;
-                        const dy = entangled.y - p.y;
-                        const distSq = dx * dx + dy * dy;
-                        
-                        if (distSq > 40000) { // 200^2
-                            p.vx += dx * 0.001;
-                            p.vy += dy * 0.001;
-                            
-                            // Collapse superposition randomly
-                            if (Math.random() < 0.02) {
-                                p.superposition = false;
-                                entangled.superposition = false;
-                                
-                                // Ensure opposite spin
-                                entangled.spin = -p.spin;
-                            }
-                        }
-                    }
-                    
-                    // Bounce off edges
-                    if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
-                    if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
-                    break;
+            if (Math.abs(particle.y) > 50) {
+                particle.vy *= -1;
+                this.elements.billiards.collisionCount++;
             }
         }
     }
     
     /**
-     * Update neural network
-     * @param {number} dt - Delta time in seconds
+     * Update boundary elements
+     * @param {number} dt - Delta time
      */
-    updateNeuralNetwork(dt) {
-        // Activate input layer based on particle positions
-        const inputLayer = this.neuralNetwork.layers[0];
+    updateBoundary(dt) {
+        // Update boundary values (tangent curve)
+        for (let i = 0; i < this.elements.boundary.values.length; i++) {
+            const x = (i / this.elements.boundary.values.length) * Math.PI - Math.PI/2;
+            this.elements.boundary.values[i] = Math.tan(x + Math.sin(this.time * 0.2) * 0.2);
+        }
         
-        // Simple activation propagation
-        for (let i = 0; i < this.neuralNetwork.layers.length - 1; i++) {
-            const currentLayer = this.neuralNetwork.layers[i];
-            const nextLayer = this.neuralNetwork.layers[i + 1];
+        // Calculate spring force
+        const angle = Math.PI/2 - Math.abs(Math.sin(this.time * 0.2) * 0.2);
+        this.elements.boundary.tangentValue = Math.tan(angle);
+        this.elements.boundary.springForce = 1 / Math.cos(angle);
+    }
+    
+    /**
+     * Update three-body elements
+     * @param {number} dt - Delta time
+     */
+    updateBodies(dt) {
+        // Simplified orbital motion
+        for (let i = 0; i < this.elements.bodies.positions.length; i++) {
+            const body = this.elements.bodies.positions[i];
+            const angle = this.time * 0.2 + (i * Math.PI * 2) / 3;
+            body.x = Math.cos(angle) * (30 + i * 10);
+            body.y = Math.sin(angle) * (30 + i * 10);
             
-            // Propagate activations forward
-            for (let j = 0; j < nextLayer.length; j++) {
-                let sum = 0;
-                let connectionCount = 0;
-                
-                // Sum weighted inputs
-                for (let k = 0; k < currentLayer.length; k++) {
-                    for (const conn of currentLayer[k].connections) {
-                        if (conn.target === j && conn.active) {
-                            sum += currentLayer[k].activation * conn.weight;
-                            connectionCount++;
-                        }
-                    }
-                }
-                
-                if (connectionCount > 0) {
-                    // Apply sigmoid activation function
-                    nextLayer[j].activation = 1 / (1 + Math.exp(-sum / connectionCount));
+            // Record trajectory
+            if (this.time % 0.1 < dt) {
+                this.elements.bodies.trajectories[i].push({x: body.x, y: body.y});
+                if (this.elements.bodies.trajectories[i].length > 50) {
+                    this.elements.bodies.trajectories[i].shift();
                 }
             }
         }
     }
     
     /**
-     * Update vector field
-     * @param {number} dt - Delta time in seconds
+     * Update prime elements
+     * @param {number} dt - Delta time
      */
-    updateVectorField(dt) {
-        const t = this.time * 0.5;
+    updatePrimes(dt) {
+        // Rotate the entire spiral
+        const rotation = this.time * 0.05;
+        for (const point of this.elements.primes.spiral) {
+            const radius = Math.sqrt(point.value) * 5;
+            const angle = point.value * 0.1 + rotation;
+            point.x = Math.cos(angle) * radius;
+            point.y = Math.sin(angle) * radius;
+        }
         
-        // Update vector directions based on noise-like function
-        for (const vector of this.vectorField.vectors) {
-            const noiseX = Math.sin(vector.x * 0.01 + t) * Math.cos(vector.y * 0.01 + t);
-            const noiseY = Math.sin(vector.y * 0.01 - t) * Math.cos(vector.x * 0.01 - t);
-            
-            vector.dx = noiseX;
-            vector.dy = noiseY;
-            
-            const len = Math.sqrt(vector.dx * vector.dx + vector.dy * vector.dy);
-            if (len > 0) {
-                vector.dx /= len;
-                vector.dy /= len;
+        // Highlight random primes occasionally
+        if (Math.random() < dt * 0.5) {
+            const randomIndex = Math.floor(Math.random() * this.elements.primes.spiral.length);
+            this.elements.primes.highlightedPrimes.push({
+                index: randomIndex,
+                time: 0
+            });
+        }
+        
+        // Update highlights
+        for (let i = this.elements.primes.highlightedPrimes.length - 1; i >= 0; i--) {
+            const highlight = this.elements.primes.highlightedPrimes[i];
+            highlight.time += dt;
+            if (highlight.time > 1) {
+                this.elements.primes.highlightedPrimes.splice(i, 1);
             }
-            
-            // Vary magnitude
-            vector.magnitude = 0.5 + 0.5 * Math.sin(t * 0.5 + vector.x * 0.01 + vector.y * 0.01);
         }
     }
     
     /**
-     * Update system stats based on component interactions
-     * @param {number} dt - Delta time in seconds
+     * Update boid elements
+     * @param {number} dt - Delta time
      */
-    updateSystemStats(dt) {
-        // Count active systems and calculate their contribution
-        let activeCount = 0;
-        if (this.particleSystem.active) activeCount++;
-        if (this.neuralNetwork.active) activeCount++;
-        if (this.vectorField.active) activeCount++;
-        if (this.waveSystem.active) activeCount++;
-        if (this.fractals.active) activeCount++;
-        
-        // Calculate system synergy based on active components
-        const systemSynergy = activeCount / 5;
-        
-        // System energy affects all stats
-        const energyFactor = this.sepCore.energy * 0.7;
-        
-        // Base stats calculations with component contributions
-        let baseEfficiency = 0.2 + (energyFactor * 0.4) + (systemSynergy * 0.4);
-        let baseCoherence = 0.3 + (energyFactor * 0.3) + (systemSynergy * 0.4);
-        let baseEmergence = 0.1 + (energyFactor * 0.3) + (systemSynergy * 0.6);
-        let baseStability = 0.4 + (energyFactor * 0.2) + (systemSynergy * 0.4);
-        
-        // Apply specific component contributions
-        if (this.particleSystem.active) {
-            baseEfficiency += 0.05;
-            baseStability += 0.03;
+    updateBoids(dt) {
+        // Update boid positions
+        for (const boid of this.elements.boids.flock) {
+            boid.x += boid.vx * dt * 10;
+            boid.y += boid.vy * dt * 10;
+            
+            // Wrap around boundaries
+            if (boid.x > 50) boid.x -= 100;
+            if (boid.x < -50) boid.x += 100;
+            if (boid.y > 50) boid.y -= 100;
+            if (boid.y < -50) boid.y += 100;
         }
         
-        if (this.neuralNetwork.active) {
-            baseCoherence += 0.07;
-            baseEmergence += 0.05;
+        // Calculate alignment
+        let avgDir = {x: 0, y: 0};
+        for (const boid of this.elements.boids.flock) {
+            const mag = Math.sqrt(boid.vx * boid.vx + boid.vy * boid.vy);
+            avgDir.x += boid.vx / mag;
+            avgDir.y += boid.vy / mag;
         }
         
-        if (this.vectorField.active) {
-            baseEfficiency += 0.04;
-            baseCoherence += 0.04;
-        }
+        avgDir.x /= this.elements.boids.flock.length;
+        avgDir.y /= this.elements.boids.flock.length;
         
-        if (this.waveSystem.active) {
-            baseEmergence += 0.06;
-            baseCoherence += 0.03;
-        }
-        
-        if (this.fractals.active) {
-            baseEmergence += 0.08;
-            baseStability += 0.05;
-        }
-        
-        // Add small random fluctuations for natural behavior
-        const randomFactor = (stat) => (Math.random() - 0.5) * 0.02 * stat;
-        
-        // Update the stats with smooth interpolation
-        this.systemStats.efficiency = this.math.lerp(
-            this.systemStats.efficiency,
-            this.math.clamp(baseEfficiency + randomFactor(baseEfficiency), 0, 1),
-            dt * 2
-        );
-        
-        this.systemStats.coherence = this.math.lerp(
-            this.systemStats.coherence,
-            this.math.clamp(baseCoherence + randomFactor(baseCoherence), 0, 1),
-            dt * 2
-        );
-        
-        this.systemStats.emergence = this.math.lerp(
-            this.systemStats.emergence,
-            this.math.clamp(baseEmergence + randomFactor(baseEmergence), 0, 1),
-            dt * 2
-        );
-        
-        this.systemStats.stability = this.math.lerp(
-            this.systemStats.stability,
-            this.math.clamp(baseStability + randomFactor(baseStability), 0, 1),
-            dt * 2
-        );
-        
-        // Update SEP core visual effects based on system stats
-        this.updateCorePulses(dt);
+        this.elements.boids.alignment = Math.sqrt(avgDir.x * avgDir.x + avgDir.y * avgDir.y);
     }
     
     /**
-     * Update energy pulses emanating from the SEP core
-     * @param {number} dt - Delta time in seconds
+     * Update grid elements
+     * @param {number} dt - Delta time
      */
-    updateCorePulses(dt) {
-        // Update existing pulses
-        for (let i = this.sepCore.pulses.length - 1; i >= 0; i--) {
-            const pulse = this.sepCore.pulses[i];
+    updateGrid(dt) {
+        // Occasionally flip random cells
+        if (Math.random() < dt * 0.5) {
+            const i = Math.floor(Math.random() * 4);
+            const j = Math.floor(Math.random() * 4);
+            this.elements.grid.states[i][j] = 1 - this.elements.grid.states[i][j];
             
-            // Expand the pulse
-            pulse.radius += dt * pulse.speed * 60;
-            
-            // Fade out as it expands
-            pulse.alpha = 1 - (pulse.radius / pulse.maxRadius);
-            
-            // Remove pulses that have expanded fully
-            if (pulse.radius >= pulse.maxRadius) {
-                this.sepCore.pulses.splice(i, 1);
-            }
+            // Add rupture effect
+            this.elements.grid.ruptures.push({
+                i: i,
+                j: j,
+                time: 0
+            });
         }
         
-        // Spontaneously create new pulses based on energy level and emergence
-        if (Math.random() < 0.01 * this.sepCore.energy * this.systemStats.emergence) {
-            this.createEnergyPulse();
+        // Update ruptures
+        for (let i = this.elements.grid.ruptures.length - 1; i >= 0; i--) {
+            const rupture = this.elements.grid.ruptures[i];
+            rupture.time += dt;
+            if (rupture.time > 1) {
+                this.elements.grid.ruptures.splice(i, 1);
+            }
         }
     }
-
+    
     /**
-     * Draw the scene - handles both normal and video modes
+     * Update fluid elements
+     * @param {number} dt - Delta time
+     */
+    updateFluid(dt) {
+        // Update fluid particles
+        for (const particle of this.elements.fluid.particles) {
+            // Apply a swirling force
+            const distToCenter = Math.hypot(particle.x, particle.y);
+            const angle = Math.atan2(particle.y, particle.x);
+            const swirl = Math.sin(distToCenter * 0.1 + this.time * 0.5) * 2;
+            
+            particle.vx += -Math.sin(angle) * swirl * dt;
+            particle.vy += Math.cos(angle) * swirl * dt;
+            
+            // Apply friction
+            particle.vx *= 0.99;
+            particle.vy *= 0.99;
+            
+            // Update position
+            particle.x += particle.vx * dt * 10;
+            particle.y += particle.vy * dt * 10;
+            
+            // Calculate vorticity
+            particle.vorticity = Math.hypot(particle.vx, particle.vy) * Math.sign(swirl);
+        }
+        
+        // Update overall vorticity
+        let totalVorticity = 0;
+        for (const particle of this.elements.fluid.particles) {
+            totalVorticity += particle.vorticity;
+        }
+        this.elements.fluid.vorticity = totalVorticity / this.elements.fluid.particles.length;
+    }
+    
+    /**
+     * Update financial elements
+     * @param {number} dt - Delta time
+     */
+    updateFinancial(dt) {
+        // Update price surface with wave pattern
+        for (let i = 0; i < this.elements.financial.surface.length; i++) {
+            for (let j = 0; j < this.elements.financial.surface[i].length; j++) {
+                const baseValue = Math.sin(i/2) * Math.cos(j/2) * 10 + 20;
+                const timeOffset = Math.sin(this.time + i * 0.2 + j * 0.3) * 5;
+                this.elements.financial.surface[i][j] = baseValue + timeOffset;
+            }
+        }
+    }
+    
+    /**
+     * Draw the scene
      */
     draw() {
         const { ctx, canvas } = this;
         
-        // Gradient background
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, '#0a0a0a');
-        gradient.addColorStop(1, '#1a1a1a');
-        ctx.fillStyle = gradient;
+        // Clear canvas
+        ctx.fillStyle = '#0f0f0f';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw according to selected visualization
-        switch (this.activeVisualization) {
-            case 0:
-                // All systems
-                this.drawAllSystems();
-                break;
-            case 1:
-                // SEP Core focus
-                this.drawSepCoreDetailed();
-                break;
-            case 2:
-                // Neural Network focus
-                this.drawNeuralNetworkDetailed();
-                break;
-            case 3:
-                // Vector Field focus
-                this.drawVectorFieldDetailed();
-                break;
-            case 4:
-                // Emergent Patterns focus
-                this.drawEmergentPatterns();
-                break;
-            case 5:
-                // Quantum Harmonics focus
-                this.drawQuantumHarmonics();
-                break;
+        // Draw connections if enabled
+        if (this.showConnections) {
+            this.drawConnections();
         }
         
-        // Always draw SEP core and connections
-        this.drawSepCore();
+        // Draw coherence waves
+        this.drawCoherenceWaves();
         
-        // Draw pulses
-        this.drawPulses();
-        
-        // Draw info panel or video info
-        if (!this.settings.videoMode) {
-            this.drawInfo();
-        } else {
-            this.drawVideoInfo();
+        // Draw prime foundation if enabled
+        if (this.highlightFoundation) {
+            this.drawPrimeFoundation();
         }
+        
+        // Draw elements from each scene
+        this.drawSceneElements();
+        
+        // Draw SEP logo in center
+        this.drawSEPLogo();
+        
+        // Draw info panel
+        this.drawInfoPanel();
     }
     
     /**
-     * Draw all systems together
+     * Draw connections between elements
      */
-    drawAllSystems() {
-        if (this.vectorField.active) {
-            this.drawVectorField();
-        }
+    drawConnections() {
+        const { ctx } = this;
         
-        if (this.waveSystem.active) {
-            this.drawWaveSystem();
-        }
+        // Draw connection lines between related concepts
+        ctx.strokeStyle = 'rgba(80, 180, 255, 0.15)';
+        ctx.lineWidth = 1;
         
-        if (this.particleSystem.active) {
-            this.drawParticles();
-        }
+        // Connect all elements to the center logo
+        const zonePositions = this.calculateZonePositions();
         
-        if (this.neuralNetwork.active) {
-            this.drawNeuralNetwork();
-        }
-        
-        if (this.fractals.active) {
-            this.drawFractal(this.canvas.width / 2, this.canvas.height * 0.8, -Math.PI/2, 100, 0);
-        }
-    }
-    
-    /**
-     * Draw particles
-     */
-    drawParticles() {
-        for (const p of this.particleSystem.particles) {
-            // Set color based on particle type
-            let color;
-            switch (p.type) {
-                case 0: // Bouncing
-                    color = p.color;
-                    break;
-                case 1: // Orbiting
-                    color = `hsl(180, 70%, 50%)`;
-                    break;
-                case 2: // Flocking
-                    color = `hsl(280, 70%, 50%)`;
-                    break;
-                case 3: // Wave
-                    color = `hsl(120, 70%, 50%)`;
-                    break;
-                case 4: // Quantum
-                    color = p.superposition ?
-                        `rgba(0, 212, 255, 0.7)` :
-                        p.spin > 0 ? `rgba(255, 0, 128, 0.9)` : `rgba(0, 255, 128, 0.9)`;
-                    break;
-            }
-            
-            // Draw based on particle type
-            this.ctx.fillStyle = color;
-            
-            if (p.type === 4 && !p.superposition) {
-                // Quantum particle (collapsed)
-                this.ctx.beginPath();
-                this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                // Draw spin indicator
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = '10px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText(p.spin > 0 ? '↑' : '↓', p.x, p.y);
-            } else if (p.type === 4) {
-                // Quantum particle (superposition)
-                this.ctx.globalAlpha = 0.7;
-                this.ctx.beginPath();
-                this.ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.globalAlpha = 1.0;
-            } else {
-                // Regular particle
-                this.ctx.beginPath();
-                this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-            
-            // Draw trail for some particle types
-            if (p.type === 1 || p.type === 3) {
-                this.ctx.strokeStyle = color.replace(')', ', 0.3)').replace('rgb', 'rgba');
-                this.ctx.lineWidth = 1;
-                this.ctx.beginPath();
-                
-                const trailLength = 10;
-                for (let i = 0; i < trailLength; i++) {
-                    const t = this.time - i * 0.05;
-                    let trailX, trailY;
-                    
-                    if (p.type === 1) {
-                        // Orbit trail
-                        const angle = p.phase + t * p.orbitSpeed;
-                        trailX = p.centerX + Math.cos(angle) * p.orbitRadius;
-                        trailY = p.centerY + Math.sin(angle) * p.orbitRadius;
-                    } else {
-                        // Wave trail
-                        trailX = p.x - i * p.vx * 3;
-                        trailY = p.y - i * p.vy * 3 + Math.sin(t * p.frequency + p.phase) * p.amplitude;
-                    }
-                    
-                    if (i === 0) {
-                        this.ctx.moveTo(trailX, trailY);
-                    } else {
-                        this.ctx.lineTo(trailX, trailY);
-                    }
-                }
-                
-                this.ctx.stroke();
-            }
-        }
-        
-        // Reset text alignment
-        this.ctx.textAlign = 'left';
-        this.ctx.textBaseline = 'alphabetic';
-    }
-    
-    /**
-     * Draw neural network
-     */
-    drawNeuralNetwork() {
-        const ctx = this.ctx;
-        const layers = this.neuralNetwork.layers;
-        const layerSpacing = this.canvas.width / (layers.length + 1);
-        
-        // Position neurons
-        for (let i = 0; i < layers.length; i++) {
-            const layer = layers[i];
-            const x = (i + 1) * layerSpacing;
-            const neuronSpacing = this.canvas.height / (layer.length + 1);
-            
-            for (let j = 0; j < layer.length; j++) {
-                const neuron = layer[j];
-                neuron.x = x;
-                neuron.y = (j + 1) * neuronSpacing;
-            }
-        }
-        
-        // Draw connections
-        for (let i = 0; i < layers.length - 1; i++) {
-            const currentLayer = layers[i];
-            const nextLayer = layers[i + 1];
-            
-            for (let j = 0; j < currentLayer.length; j++) {
-                const neuron = currentLayer[j];
-                
-                for (const conn of neuron.connections) {
-                    if (conn.target < nextLayer.length) {
-                        const targetNeuron = nextLayer[conn.target];
-                        
-                        // Determine connection color based on weight
-                        let connColor;
-                        if (conn.weight > 0) {
-                            const intensity = Math.min(1, conn.weight);
-                            connColor = `rgba(0, ${Math.floor(255 * intensity)}, 255, 0.3)`;
-                        } else {
-                            const intensity = Math.min(1, -conn.weight);
-                            connColor = `rgba(255, 0, ${Math.floor(255 * intensity)}, 0.3)`;
-                        }
-                        
-                        // Draw connection
-                        ctx.strokeStyle = connColor;
-                        ctx.lineWidth = Math.abs(conn.weight) * 3;
-                        ctx.beginPath();
-                        ctx.moveTo(neuron.x, neuron.y);
-                        ctx.lineTo(targetNeuron.x, targetNeuron.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-        }
-        
-        // Draw neurons
-        for (let i = 0; i < layers.length; i++) {
-            const layer = layers[i];
-            
-            for (let j = 0; j < layer.length; j++) {
-                const neuron = layer[j];
-                
-                // Determine neuron color based on activation
-                const activation = neuron.activation;
-                const color = `rgb(${Math.floor(255 * (1 - activation))}, ${Math.floor(255 * activation)}, 255)`;
-                
-                // Draw neuron
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(neuron.x, neuron.y, 8, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Draw outline
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-        }
-    }
-    
-    /**
-     * Draw vector field
-     */
-    drawVectorField() {
-        const ctx = this.ctx;
-        
-        for (const vector of this.vectorField.vectors) {
-            // Calculate vector endpoints
-            const length = vector.magnitude * 10;
-            const endX = vector.x + vector.dx * length;
-            const endY = vector.y + vector.dy * length;
-            
-            // Determine color based on direction
-            const angle = Math.atan2(vector.dy, vector.dx);
-            const hue = ((angle + Math.PI) / (Math.PI * 2)) * 360;
-            const color = `hsla(${hue}, 70%, 50%, 0.6)`;
-            
-            // Draw vector line
-            ctx.strokeStyle = color;
-            ctx.lineWidth = vector.magnitude * 2;
-            ctx.beginPath();
-            ctx.moveTo(vector.x, vector.y);
-            ctx.lineTo(endX, endY);
-            ctx.stroke();
-            
-            // Draw arrowhead
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(endX, endY, 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    /**
-     * Draw wave system
-     */
-    drawWaveSystem() {
-        const ctx = this.ctx;
-        const centerY = this.canvas.height / 2;
-        
-        // Draw each wave
-        this.waveSystem.waves.forEach((wave, index) => {
-            ctx.strokeStyle = wave.color;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            
-            for (let x = 0; x < this.canvas.width; x++) {
-                const y = centerY + Math.sin(x * wave.frequency + this.time + wave.phase) * wave.amplitude;
-                
-                if (x === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            
-            ctx.stroke();
-        });
-        
-        // Draw interference pattern if enabled
-        if (this.waveSystem.interference) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            
-            for (let x = 0; x < this.canvas.width; x++) {
-                let y = centerY;
-                
-                // Sum all waves
-                this.waveSystem.waves.forEach(wave => {
-                    y += Math.sin(x * wave.frequency + this.time + wave.phase) * wave.amplitude / this.waveSystem.waves.length;
-                });
-                
-                if (x === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            
-            ctx.stroke();
-        }
-    }
-    
-    /**
-     * Draw fractal recursively
-     * @param {number} x - X coordinate
-     * @param {number} y - Y coordinate
-     * @param {number} angle - Branch angle
-     * @param {number} length - Branch length
-     * @param {number} depth - Current recursion depth
-     */
-    drawFractal(x, y, angle, length, depth) {
-        if (depth >= this.fractals.depth) return;
-        
-        const ctx = this.ctx;
-        
-        // Calculate endpoint
-        const endX = x + Math.cos(angle) * length;
-        const endY = y + Math.sin(angle) * length;
-        
-        // Draw branch
-        ctx.strokeStyle = `hsl(${120 + depth * 30}, 70%, 50%)`;
-        ctx.lineWidth = this.fractals.depth - depth;
         ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(endX, endY);
+        for (const zone in zonePositions) {
+            const pos = zonePositions[zone];
+            ctx.moveTo(this.logo.x, this.logo.y);
+            ctx.lineTo(pos.x, pos.y);
+        }
         ctx.stroke();
         
-        // Recursive calls for branches
-        const newLength = length * this.fractals.scaleFactor;
-        const angleChange = this.fractals.angle;
+        // Draw concept relationship arcs
+        ctx.strokeStyle = 'rgba(100, 255, 200, 0.1)';
+        ctx.lineWidth = 2;
         
-        this.drawFractal(endX, endY, angle - angleChange, newLength, depth + 1);
-        this.drawFractal(endX, endY, angle + angleChange, newLength, depth + 1);
+        // Connect related concepts
+        const relatedConcepts = [
+            ['waves', 'angles'],
+            ['angles', 'billiards'],
+            ['billiards', 'boundary'],
+            ['boundary', 'bodies'],
+            ['bodies', 'primes'],
+            ['primes', 'boids'],
+            ['boids', 'grid'],
+            ['grid', 'fluid'],
+            ['fluid', 'financial'],
+            ['financial', 'waves']
+        ];
+        
+        for (const [concept1, concept2] of relatedConcepts) {
+            const pos1 = zonePositions[concept1];
+            const pos2 = zonePositions[concept2];
+            
+            ctx.beginPath();
+            ctx.moveTo(pos1.x, pos1.y);
+            ctx.lineTo(pos2.x, pos2.y);
+            ctx.stroke();
+        }
     }
     
     /**
-     * Draw SEP core and connections
+     * Draw coherence waves emanating from center
      */
-    drawSepCore() {
-        const ctx = this.ctx;
-        const core = this.sepCore;
+    drawCoherenceWaves() {
+        const { ctx } = this;
         
-        // Draw connections to systems
-        core.connections.forEach(conn => {
-            const pulse = Math.sin(conn.pulsePhase) * 0.5 + 0.5;
+        // First draw the existing coherence waves
+        for (const wave of this.coherenceWaves) {
+            // Create gradient for wave effect
+            const gradient = ctx.createRadialGradient(
+                wave.x, wave.y, wave.radius * 0.8,
+                wave.x, wave.y, wave.radius
+            );
             
-            // Determine color based on system type
-            let color;
-            switch (conn.system) {
-                case 0: color = 'rgba(255, 170, 0, 0.6)'; break; // Particles
-                case 1: color = 'rgba(0, 212, 255, 0.6)'; break; // Neural
-                case 2: color = 'rgba(255, 0, 136, 0.6)'; break; // Vector
-                case 3: color = 'rgba(0, 255, 136, 0.6)'; break; // Wave
-                case 4: color = 'rgba(170, 0, 255, 0.6)'; break; // Fractal
-            }
+            // Parse the color to get hue
+            const hueMatch = wave.color.match(/hsla\((\d+)/);
+            const hue = hueMatch ? parseInt(hueMatch[1]) : 170;
             
-            // Draw connection line
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2 + pulse * 3;
-            ctx.setLineDash([5, 5]);
+            // Create pulsing wave effect with gradient
+            gradient.addColorStop(0, `hsla(${hue}, 100%, 50%, 0)`);
+            gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${wave.strength * 0.3})`);
+            gradient.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
+            
+            // Draw wave ring
+            ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.moveTo(core.x, core.y);
-            ctx.lineTo(conn.x, conn.y);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // Draw system node
-            ctx.fillStyle = color.replace('0.6', '0.8');
-            ctx.beginPath();
-            ctx.arc(conn.x, conn.y, 10 + pulse * 5, 0, Math.PI * 2);
+            ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw system icon
+            // Draw additional thin line for wave boundary
+            ctx.beginPath();
+            ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = wave.color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            // Create interaction effect when wave passes through element zones
+            this.applyWaveEffectsToZones(wave);
+        }
+    }
+
+    /**
+     * Apply coherence wave effects to scene elements
+     * @param {Object} wave - The coherence wave
+     */
+    applyWaveEffectsToZones(wave) {
+        // Get all zone positions
+        const zonePositions = this.calculateZonePositions();
+        
+        // Check for each zone if the wave is passing through it
+        for (const zone in zonePositions) {
+            const pos = zonePositions[zone];
+            const distToWave = Math.hypot(pos.x - wave.x, pos.y - wave.y);
+            const waveThickness = 30; // Thickness of the wave effect
+            
+            // If wave is passing through this zone
+            if (Math.abs(distToWave - wave.radius) < waveThickness) {
+                // Calculate effect intensity based on how close the wave center is to the zone
+                const effectIntensity = 1 - Math.abs(distToWave - wave.radius) / waveThickness;
+                
+                // Draw highlight effect
+                this.ctx.save();
+                this.ctx.globalAlpha = effectIntensity * 0.6;
+                this.ctx.fillStyle = wave.color;
+                this.ctx.beginPath();
+                this.ctx.arc(pos.x, pos.y, 20 * effectIntensity, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
+                
+                // Here we could also modify the behavior of elements based on wave effects
+                // For example, temporarily increasing amplitude of waves, adding energy to particles, etc.
+            }
+        }
+    }
+    
+    /**
+     * Draw prime number foundation pattern
+     */
+    drawPrimeFoundation() {
+        const { ctx } = this;
+        
+        // Draw a subtle prime spiral pattern across the entire canvas
+        ctx.save();
+        ctx.globalAlpha = 0.1;
+        ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Draw larger prime spiral
+        for (let i = 1; i < 100; i++) {
+            if (isPrime(i)) {
+                const angle = i * 0.1;
+                const radius = Math.sqrt(i) * 15;
+                const x = Math.cos(angle + this.time * 0.05) * radius;
+                const y = Math.sin(angle + this.time * 0.05) * radius;
+                
+                ctx.fillStyle = '#ff00ff';
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        ctx.restore();
+        
+        // Helper function to check if number is prime
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num <= 3) return true;
+            if (num % 2 === 0 || num % 3 === 0) return false;
+            for (let i = 5; i * i <= num; i += 6) {
+                if (num % i === 0 || num % (i + 2) === 0) return false;
+            }
+            return true;
+        }
+    }
+    
+    /**
+     * Draw scene elements in their respective zones
+     */
+    drawSceneElements() {
+        const { ctx } = this;
+        const zonePositions = this.calculateZonePositions();
+        
+        // Draw each element in its zone
+        this.drawWaveElement(zonePositions.waves);
+        this.drawAngleElement(zonePositions.angles);
+        this.drawBilliardElement(zonePositions.billiards);
+        this.drawBoundaryElement(zonePositions.boundary);
+        this.drawBodiesElement(zonePositions.bodies);
+        this.drawPrimeElement(zonePositions.primes);
+        this.drawBoidElement(zonePositions.boids);
+        this.drawGridElement(zonePositions.grid);
+        this.drawFluidElement(zonePositions.fluid);
+        this.drawFinancialElement(zonePositions.financial);
+    }
+    
+    /**
+     * Draw wave element (Scene 1)
+     */
+    drawWaveElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'waves';
+        const size = isActive ? 100 : 70;
+        
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(0, 100, 255, 0.2)' : 'rgba(0, 80, 200, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw wave
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        for (let i = 0; i < this.elements.waves.values.length; i++) {
+            const x = (i / this.elements.waves.values.length) * size * 2 - size;
+            const y = this.elements.waves.values[i];
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        
+        ctx.stroke();
+        
+        // Label
+        if (isActive) {
             ctx.fillStyle = '#ffffff';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            const icons = ['P', 'N', 'V', 'W', 'F'];
-            ctx.fillText(icons[conn.system], conn.x, conn.y);
-        });
-        
-        // Draw core glow
-        const glow = ctx.createRadialGradient(
-            core.x, core.y, 0,
-            core.x, core.y, core.radius * 1.5
-        );
-        glow.addColorStop(0, `rgba(0, 255, 136, ${0.2 + core.energy * 0.5})`);
-        glow.addColorStop(1, 'rgba(0, 255, 136, 0)');
-        
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(core.x, core.y, core.radius * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw core
-        ctx.fillStyle = `rgb(0, ${Math.floor(128 + core.energy * 127)}, 136)`;
-        ctx.beginPath();
-        ctx.arc(core.x, core.y, core.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw energy pulses emanating from the core
-        if (core.pulses && core.pulses.length > 0) {
-            core.pulses.forEach(pulse => {
-                // Create pulsing gradient
-                const pulseGradient = ctx.createRadialGradient(
-                    core.x, core.y, pulse.radius * 0.7,
-                    core.x, core.y, pulse.radius
-                );
-                
-                // Color based on system stats
-                const r = Math.floor(255 * (1 - this.systemStats.stability));
-                const g = Math.floor(255 * this.systemStats.efficiency);
-                const b = Math.floor(255 * this.systemStats.coherence);
-                
-                pulseGradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0)`);
-                pulseGradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${pulse.alpha * 0.3})`);
-                pulseGradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-                
-                // Draw pulse ring
-                ctx.fillStyle = pulseGradient;
-                ctx.beginPath();
-                ctx.arc(core.x, core.y, pulse.radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            ctx.fillText('Wave Interference', 0, size + 15);
         }
         
-        // Draw core texture
-        for (let i = 0; i < 3; i++) {
-            const ringRadius = core.radius * (0.5 + i * 0.2);
-            const ringRotation = core.rotation * (i % 2 === 0 ? 1 : -1);
-            
-            ctx.strokeStyle = `rgba(0, 255, 136, ${0.3 + i * 0.2 + this.sepCore.energy * 0.2})`;
-            ctx.lineWidth = 2;
+        ctx.restore();
+    }
+    
+    /**
+     * Draw angle element (Scene 2)
+     */
+    drawAngleElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'angles';
+        const size = isActive ? 100 : 70;
+        
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(255, 170, 0, 0.2)' : 'rgba(200, 150, 0, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw protractor
+        ctx.strokeStyle = '#aaaaaa';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw angle vectors
+        const v1 = this.elements.angles.vectors[0];
+        const v2 = this.elements.angles.vectors[1];
+        const scale = size * 0.8 / 40; // Scale to fit in the circle
+        
+        // First vector (fixed)
+        ctx.strokeStyle = '#ffaa00';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(v1.x * scale, v1.y * scale);
+        ctx.stroke();
+        
+        // Second vector (moving)
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(v2.x * scale, v2.y * scale);
+        ctx.stroke();
+        
+        // Draw angle arc
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, 0, 20, 0, this.elements.angles.value);
+        ctx.stroke();
+        
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Angle Classification', 0, size + 15);
+            ctx.fillText(this.elements.angles.classification, 0, size + 30);
+        }
+        
+        ctx.restore();
+    }
+    
+    /**
+     * Draw billiard element (Scene 3, 6)
+     */
+    drawBilliardElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'billiards';
+        const size = isActive ? 100 : 70;
+        
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(0, 150, 255, 0.2)' : 'rgba(0, 100, 200, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw boundary
+        ctx.strokeStyle = '#00a0ff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-size * 0.8, -size * 0.8, size * 1.6, size * 1.6);
+        
+        // Draw particles
+        const scale = size / 50;
+        for (const particle of this.elements.billiards.particles) {
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
+            ctx.arc(particle.x * scale, particle.y * scale, particle.radius * scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Billiard Collisions', 0, size + 15);
+            ctx.fillText(`Collisions: ${this.elements.billiards.collisionCount}`, 0, size + 30);
+        }
+        
+        ctx.restore();
+    }
+    
+    /**
+     * Draw boundary element (Scene 4)
+     */
+    drawBoundaryElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'boundary';
+        const size = isActive ? 100 : 70;
+        
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(120, 60, 240, 0.2)' : 'rgba(100, 50, 200, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw tangent curve
+        ctx.strokeStyle = '#7c3aed';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        for (let i = 0; i < this.elements.boundary.values.length; i++) {
+            // Clamp values to prevent drawing outside the circle
+            const value = Math.max(-size, Math.min(size, this.elements.boundary.values[i] * 10));
+            const x = (i / this.elements.boundary.values.length) * size * 2 - size;
+            const y = value;
             
-            for (let j = 0; j < 6; j++) {
-                const angle = (j / 6) * Math.PI * 2 + ringRotation;
-                const x = core.x + Math.cos(angle) * ringRadius;
-                const y = core.y + Math.sin(angle) * ringRadius;
-                
-                if (j === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
             }
-            
-            ctx.closePath();
-            ctx.stroke();
         }
         
-        // Reset text alignment
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
+        ctx.stroke();
+        
+        // Draw vertical line at 90°
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(0, size);
+        ctx.stroke();
+        
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Tangent Boundary', 0, size + 15);
+        }
+        
+        ctx.restore();
     }
     
     /**
-     * Draw expanding pulses
+     * Draw three-body element (Scene 5)
      */
-    drawPulses() {
-        const ctx = this.ctx;
+    drawBodiesElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'bodies';
+        const size = isActive ? 100 : 70;
         
-        for (const pulse of this.sepCore.pulses) {
-            ctx.strokeStyle = `${pulse.color}${Math.floor(pulse.alpha * 255).toString(16).padStart(2, '0')}`;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(pulse.x, pulse.y, pulse.radius, 0, Math.PI * 2);
-            ctx.stroke();
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(255, 170, 0, 0.2)' : 'rgba(200, 150, 0, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw trajectories
+        const scale = size / 50;
+        for (let i = 0; i < this.elements.bodies.trajectories.length; i++) {
+            const traj = this.elements.bodies.trajectories[i];
+            const colors = ['#ff0000', '#00ff00', '#0088ff'];
+            
+            if (traj.length > 1) {
+                ctx.strokeStyle = colors[i];
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                
+                for (let j = 0; j < traj.length; j++) {
+                    const point = traj[j];
+                    if (j === 0) {
+                        ctx.moveTo(point.x * scale, point.y * scale);
+                    } else {
+                        ctx.lineTo(point.x * scale, point.y * scale);
+                    }
+                }
+                
+                ctx.stroke();
+            }
         }
+        
+        // Draw bodies
+        for (let i = 0; i < this.elements.bodies.positions.length; i++) {
+            const body = this.elements.bodies.positions[i];
+            const colors = ['#ff5555', '#55ff55', '#5555ff'];
+            
+            ctx.fillStyle = colors[i];
+            ctx.beginPath();
+            ctx.arc(body.x * scale, body.y * scale, body.mass * scale * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Three-Body System', 0, size + 15);
+        }
+        
+        ctx.restore();
     }
     
     /**
-     * Draw detailed SEP core visualization
+     * Draw prime element (Scene 7)
      */
-    drawSepCoreDetailed() {
-        const ctx = this.ctx;
-        const core = this.sepCore;
+    drawPrimeElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'primes';
+        const size = isActive ? 100 : 70;
         
-        // Draw core components in detail
-        // This would show the internal structure of the SEP core
+        ctx.save();
+        ctx.translate(position.x, position.y);
         
-        // Draw energy flows
-        for (let i = 0; i < 20; i++) {
-            const angle = (i / 20) * Math.PI * 2 + this.time;
-            const innerRadius = core.radius * 0.3;
-            const outerRadius = core.radius * 0.9;
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(0, 255, 140, 0.2)' : 'rgba(0, 200, 100, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw prime spiral
+        const scale = size / 50;
+        
+        // Draw connecting lines
+        ctx.strokeStyle = 'rgba(0, 255, 100, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        
+        for (let i = 0; i < this.elements.primes.spiral.length; i++) {
+            const point = this.elements.primes.spiral[i];
+            if (i === 0) {
+                ctx.moveTo(point.x * scale, point.y * scale);
+            } else {
+                ctx.lineTo(point.x * scale, point.y * scale);
+            }
+        }
+        
+        ctx.stroke();
+        
+        // Draw prime points
+        for (let i = 0; i < this.elements.primes.spiral.length; i++) {
+            const point = this.elements.primes.spiral[i];
             
-            const innerX = core.x + Math.cos(angle) * innerRadius;
-            const innerY = core.y + Math.sin(angle) * innerRadius;
-            const outerX = core.x + Math.cos(angle) * outerRadius;
-            const outerY = core.y + Math.sin(angle) * outerRadius;
+            // Check if this prime is highlighted
+            const highlight = this.elements.primes.highlightedPrimes.find(h => h.index === i);
             
-            // Draw energy line
-            ctx.strokeStyle = `rgba(0, 255, 136, ${0.3 + Math.sin(angle + this.time * 3) * 0.3})`;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(innerX, innerY);
-            ctx.lineTo(outerX, outerY);
-            ctx.stroke();
-            
-            // Draw energy particle
-            const particlePos = (Math.sin(this.time * 2 + i) + 1) / 2;
-            const particleX = innerX + (outerX - innerX) * particlePos;
-            const particleY = innerY + (outerY - innerY) * particlePos;
+            if (highlight) {
+                const alpha = 1 - highlight.time;
+                ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(point.x * scale, point.y * scale, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
             
             ctx.fillStyle = '#00ff88';
             ctx.beginPath();
-            ctx.arc(particleX, particleY, 2, 0, Math.PI * 2);
+            ctx.arc(point.x * scale, point.y * scale, 3, 0, Math.PI * 2);
             ctx.fill();
         }
         
-        // Draw core layers
-        for (let i = 0; i < 5; i++) {
-            const radius = core.radius * (0.2 + i * 0.15);
-            const rotation = this.time * (i % 2 === 0 ? 0.2 : -0.2);
-            
-            ctx.strokeStyle = `rgba(0, ${150 + i * 20}, 136, ${0.5 + i * 0.1})`;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            
-            // Draw geometric pattern
-            const sides = 6 + i;
-            for (let j = 0; j < sides; j++) {
-                const angle = (j / sides) * Math.PI * 2 + rotation;
-                const x = core.x + Math.cos(angle) * radius;
-                const y = core.y + Math.sin(angle) * radius;
-                
-                if (j === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            
-            ctx.closePath();
-            ctx.stroke();
-        }
-        
-        // Draw energy stats around core
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        
-        const stats = [
-            { name: 'Efficiency', value: this.systemStats.efficiency },
-            { name: 'Coherence', value: this.systemStats.coherence },
-            { name: 'Emergence', value: this.systemStats.emergence },
-            { name: 'Stability', value: this.systemStats.stability }
-        ];
-        
-        stats.forEach((stat, index) => {
-            const angle = (index / stats.length) * Math.PI * 2;
-            const x = core.x + Math.cos(angle) * (core.radius * 2);
-            const y = core.y + Math.sin(angle) * (core.radius * 2);
-            
-            // Draw stat node
-            ctx.fillStyle = `rgba(0, 255, 136, ${stat.value.toFixed(2)})`;
-            ctx.beginPath();
-            ctx.arc(x, y, 30, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw stat text
+        // Label
+        if (isActive) {
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(stat.name, x, y - 7);
-            ctx.fillText(`${Math.floor(stat.value * 100)}%`, x, y + 12);
-        });
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Prime Spiral', 0, size + 15);
+        }
         
-        // Reset text alignment
-        ctx.textAlign = 'left';
+        ctx.restore();
     }
     
     /**
-     * Draw detailed neural network visualization
+     * Draw boid element (Scene 8)
      */
-    drawNeuralNetworkDetailed() {
-        // First draw the normal neural network
-        this.drawNeuralNetwork();
+    drawBoidElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'boids';
+        const size = isActive ? 100 : 70;
         
-        const ctx = this.ctx;
-        const layers = this.neuralNetwork.layers;
+        ctx.save();
+        ctx.translate(position.x, position.y);
         
-        // Draw activation patterns
-        ctx.fillStyle = 'rgba(0, 212, 255, 0.1)';
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(0, 100, 255, 0.2)' : 'rgba(0, 80, 200, 0.1)';
         ctx.beginPath();
-        
-        // Connect output layer activations with a spline
-        const outputLayer = layers[layers.length - 1];
-        ctx.moveTo(outputLayer[0].x, outputLayer[0].y);
-        
-        for (let i = 0; i < outputLayer.length; i++) {
-            const current = outputLayer[i];
-            const next = outputLayer[(i + 1) % outputLayer.length];
-            
-            const cp1x = current.x + (next.x - current.x) / 3;
-            const cp1y = current.y + (next.y - current.y) / 6 + Math.sin(this.time + i) * 50;
-            const cp2x = current.x + 2 * (next.x - current.x) / 3;
-            const cp2y = next.y - (next.y - current.y) / 6 + Math.sin(this.time + i + 1) * 50;
-            
-            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, next.x, next.y);
-        }
-        
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
         ctx.fill();
         
-        // Draw activation heat map
-        const width = 200;
-        const height = 100;
-        const x = 50;
-        const y = 50;
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(x, y, width, height);
-        
-        // Draw activation bars for each layer
-        const barWidth = width / layers.length;
-        
-        for (let i = 0; i < layers.length; i++) {
-            const layer = layers[i];
-            const layerX = x + i * barWidth;
-            
-            for (let j = 0; j < layer.length; j++) {
-                const neuron = layer[j];
-                const barHeight = (height / layer.length) * 0.8;
-                const barY = y + (j / layer.length) * height + barHeight * 0.5;
-                
-                // Draw activation bar
-                ctx.fillStyle = `rgb(${Math.floor(255 * (1 - neuron.activation))}, ${Math.floor(255 * neuron.activation)}, 255)`;
-                ctx.fillRect(layerX, barY, barWidth * neuron.activation, barHeight);
-                
-                // Draw bar outline
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.strokeRect(layerX, barY, barWidth, barHeight);
-            }
-        }
-        
-        // Draw layer labels
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        
-        ctx.fillText('Input', x + barWidth / 2, y + height + 15);
-        ctx.fillText('Hidden', x + width / 2, y + height + 15);
-        ctx.fillText('Output', x + width - barWidth / 2, y + height + 15);
-        
-        // Reset text alignment
-        ctx.textAlign = 'left';
-    }
-    
-    /**
-     * Draw detailed vector field visualization
-     */
-    drawVectorFieldDetailed() {
-        // First draw the normal vector field
-        this.drawVectorField();
-        
-        const ctx = this.ctx;
-        
-        // Draw flow streamlines
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        // Draw bounding box
+        ctx.strokeStyle = '#00a0ff';
         ctx.lineWidth = 1;
+        ctx.strokeRect(-size * 0.8, -size * 0.8, size * 1.6, size * 1.6);
         
-        // Start streamlines from random points
-        for (let i = 0; i < 20; i++) {
-            let x = Math.random() * this.canvas.width;
-            let y = Math.random() * this.canvas.height;
+        // Draw boids
+        const scale = size / 50;
+        for (const boid of this.elements.boids.flock) {
+            // Calculate heading angle
+            const angle = Math.atan2(boid.vy, boid.vx);
             
+            ctx.save();
+            ctx.translate(boid.x * scale, boid.y * scale);
+            ctx.rotate(angle);
+            
+            // Draw triangle for boid
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.moveTo(5, 0);
+            ctx.lineTo(-3, -2);
+            ctx.lineTo(-3, 2);
+            ctx.closePath();
+            ctx.fill();
             
-            // Follow vector field for streamline
-            for (let j = 0; j < 100; j++) {
-                // Find closest vector
-                let closestDist = Infinity;
-                let closestVector = null;
-                
-                for (const vector of this.vectorField.vectors) {
-                    const dist = Math.hypot(vector.x - x, vector.y - y);
-                    if (dist < closestDist) {
-                        closestDist = dist;
-                        closestVector = vector;
-                    }
-                }
-                
-                if (closestVector) {
-                    // Move along vector direction
-                    x += closestVector.dx * 5;
-                    y += closestVector.dy * 5;
-                    
-                    // Stop if out of bounds
-                    if (x < 0 || x > this.canvas.width || y < 0 || y > this.canvas.height) {
-                        break;
-                    }
-                    
-                    ctx.lineTo(x, y);
-                }
-            }
-            
-            ctx.stroke();
+            ctx.restore();
         }
         
-        // Draw curl map
-        const width = 200;
-        const height = 200;
-        const x = this.canvas.width - width - 50;
-        const y = this.canvas.height - height - 50;
+        // Draw alignment indicator
+        const alignmentColor = this.elements.boids.alignment > 0.7 ? '#00ff00' : '#ff0000';
+        ctx.strokeStyle = alignmentColor;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2 * this.elements.boids.alignment);
+        ctx.stroke();
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(x, y, width, height);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px Arial';
-        ctx.fillText('Vector Field Analysis', x + 10, y + 20);
-        
-        // Draw curl visualization
-        const cellSize = 10;
-        for (let i = 0; i < width / cellSize; i++) {
-            for (let j = 0; j < height / cellSize; j++) {
-                const fieldX = (i / (width / cellSize)) * this.canvas.width;
-                const fieldY = (j / (height / cellSize)) * this.canvas.height;
-                
-                // Find closest vector
-                let closestDist = Infinity;
-                let closestVector = null;
-                
-                for (const vector of this.vectorField.vectors) {
-                    const dist = Math.hypot(vector.x - fieldX, vector.y - fieldY);
-                    if (dist < closestDist) {
-                        closestDist = dist;
-                        closestVector = vector;
-                    }
-                }
-                
-                if (closestVector) {
-                    // Fake curl calculation (just for visualization)
-                    const curl = closestVector.dx * closestVector.dy * Math.sin(this.time + i + j);
-                    
-                    // Map curl to color
-                    let color;
-                    if (curl > 0) {
-                        color = `rgba(255, 0, 0, ${Math.min(1, Math.abs(curl))})`;
-                    } else {
-                        color = `rgba(0, 0, 255, ${Math.min(1, Math.abs(curl))})`;
-                    }
-                    
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x + i * cellSize, y + 30 + j * cellSize, cellSize, cellSize);
-                }
-            }
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Flocking System', 0, size + 15);
+            ctx.fillText(`Alignment: ${(this.elements.boids.alignment * 100).toFixed(0)}%`, 0, size + 30);
         }
         
-        // Draw legend
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillRect(x + 10, y + height - 40, 20, 10);
-        ctx.fillStyle = 'rgba(0, 0, 255, 0.7)';
-        ctx.fillRect(x + 10, y + height - 20, 20, 10);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('Clockwise', x + 40, y + height - 32);
-        ctx.fillText('Counter-clockwise', x + 40, y + height - 12);
+        ctx.restore();
     }
     
     /**
-     * Draw emergent patterns visualization
+     * Draw grid element (Scene 9)
      */
-    drawEmergentPatterns() {
-        const ctx = this.ctx;
-        const width = this.canvas.width;
-        const height = this.canvas.height;
+    drawGridElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'grid';
+        const size = isActive ? 100 : 70;
         
-        // Draw cellular automaton-like patterns
-        const cellSize = 20;
-        const cols = Math.ceil(width / cellSize);
-        const rows = Math.ceil(height / cellSize);
+        ctx.save();
+        ctx.translate(position.x, position.y);
         
-        // Generate pattern based on wave functions
-        for (let i = 0; i < cols; i++) {
-            for (let j = 0; j < rows; j++) {
-                const x = i * cellSize;
-                const y = j * cellSize;
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(0, 255, 140, 0.2)' : 'rgba(0, 200, 100, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw state grid
+        const grid = this.elements.grid.states;
+        const cellSize = size * 1.4 / grid.length;
+        const offset = -cellSize * grid.length / 2;
+        
+        for (let i = 0; i < grid.length; i++) {
+            for (let j = 0; j < grid[i].length; j++) {
+                const x = offset + i * cellSize;
+                const y = offset + j * cellSize;
                 
-                // Create pattern based on multiple wave interference
-                const wx = x / width;
-                const wy = y / height;
+                // Check if this cell has a rupture
+                const rupture = this.elements.grid.ruptures.find(r => r.i === i && r.j === j);
                 
-                const v1 = Math.sin(wx * 20 + this.time * 0.5) * Math.cos(wy * 20 + this.time * 0.3);
-                const v2 = Math.sin((wx + wy) * 15 + this.time * 0.2);
-                const v3 = Math.sin(Math.sqrt(wx*wx + wy*wy) * 30 - this.time * 0.4);
-                
-                const value = (v1 + v2 + v3) / 3;
-                
-                // Map value to color
-                let r, g, b;
-                if (value > 0.2) {
-                    r = 0;
-                    g = Math.floor(255 * Math.min(1, value));
-                    b = 136;
-                } else if (value < -0.2) {
-                    r = 255;
-                    g = 0;
-                    b = Math.floor(136 * Math.min(1, -value));
-                } else {
-                    r = 0;
-                    g = 0;
-                    b = 0;
+                if (rupture) {
+                    // Draw rupture effect
+                    const alpha = 1 - rupture.time;
+                    ctx.fillStyle = `rgba(255, 0, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(x + cellSize/2, y + cellSize/2, cellSize, 0, Math.PI * 2);
+                    ctx.fill();
                 }
                 
-                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                // Draw cell
+                ctx.fillStyle = grid[i][j] ? '#00ff88' : '#004022';
                 ctx.fillRect(x, y, cellSize, cellSize);
                 
-                // Draw cell border
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                // Draw border
+                ctx.strokeStyle = '#001a0d';
+                ctx.lineWidth = 1;
                 ctx.strokeRect(x, y, cellSize, cellSize);
             }
         }
         
-        // Draw particles on top
-        this.drawParticles();
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SEP Framework', 0, size + 15);
+        }
+        
+        ctx.restore();
     }
     
     /**
-     * Draw quantum harmonics visualization
+     * Draw fluid element (Scene 10)
      */
-    drawQuantumHarmonics() {
-        const ctx = this.ctx;
-        const width = this.canvas.width;
-        const height = this.canvas.height;
+    drawFluidElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'fluid';
+        const size = isActive ? 100 : 70;
         
-        // Draw quantum probability waves
-        ctx.strokeStyle = 'rgba(0, 212, 255, 0.5)';
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(120, 60, 240, 0.2)' : 'rgba(100, 50, 200, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw circular boundary
+        ctx.strokeStyle = '#7c3aed';
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
         
-        for (let i = 0; i < 5; i++) {
-            const yOffset = height / 2 + (i - 2) * 50;
-            const amplitude = 40 * Math.exp(-Math.abs(i - 2));
-            const frequency = 0.02 + i * 0.005;
+        // Draw fluid particles
+        const scale = size / 50;
+        for (const particle of this.elements.fluid.particles) {
+            // Color based on vorticity
+            const hue = (particle.vorticity > 0) ? 240 : 0;
+            const saturation = Math.min(100, Math.abs(particle.vorticity) * 100);
+            ctx.fillStyle = `hsl(${hue}, ${saturation}%, 70%)`;
             
+            // Draw particle
             ctx.beginPath();
+            ctx.arc(particle.x * scale, particle.y * scale, 3, 0, Math.PI * 2);
+            ctx.fill();
             
-            for (let x = 0; x < width; x++) {
-                const y = yOffset + Math.sin(x * frequency + this.time) * amplitude *
-                         Math.exp(-Math.pow((x - width/2) / (width/4), 2));
-                
-                if (x === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            
+            // Draw velocity vector
+            ctx.strokeStyle = `hsla(${hue}, ${saturation}%, 70%, 0.5)`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(particle.x * scale, particle.y * scale);
+            ctx.lineTo(
+                particle.x * scale + particle.vx * scale * 2,
+                particle.y * scale + particle.vy * scale * 2
+            );
             ctx.stroke();
         }
         
-        // Draw interference pattern
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
-        
-        for (let x = 0; x < width; x += 5) {
-            for (let y = 0; y < height; y += 5) {
-                const dx = x - width/2;
-                const dy = y - height/2;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                
-                const v1 = Math.sin(dist * 0.05 + this.time);
-                const v2 = Math.sin(dist * 0.03 - this.time * 0.7);
-                const interference = (v1 * v2) * 0.5 + 0.5;
-                
-                if (interference > 0.7) {
-                    ctx.fillRect(x, y, 4, 4);
-                }
-            }
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Fluid Dynamics', 0, size + 15);
+            const vorticityLabel = this.elements.fluid.vorticity > 0 ? 'Clockwise' : 'Counter-Clockwise';
+            ctx.fillText(`Vorticity: ${vorticityLabel}`, 0, size + 30);
         }
         
-        // Draw quantum particles
-        for (const p of this.particleSystem.particles) {
-            if (p.type === 4) {
-                // Only draw quantum particles
-                if (p.superposition) {
-                    // Superposition state
-                    ctx.globalAlpha = 0.7;
-                    ctx.fillStyle = 'rgba(0, 212, 255, 0.7)';
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // Draw probability cloud
-                    ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size * 4 + Math.sin(this.time + p.phase) * 5, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.globalAlpha = 1.0;
-                } else {
-                    // Collapsed state
-                    ctx.fillStyle = p.spin > 0 ? 'rgba(255, 0, 128, 0.9)' : 'rgba(0, 255, 128, 0.9)';
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // Draw spin indicator
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '10px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(p.spin > 0 ? '↑' : '↓', p.x, p.y);
-                }
-                
-                // Draw entanglement lines
-                if (p.entangled < this.particleSystem.particles.length) {
-                    const entangled = this.particleSystem.particles[p.entangled];
-                    
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                    ctx.setLineDash([5, 5]);
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(entangled.x, entangled.y);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                    
-                    // Draw entanglement indicator
-                    const midX = (p.x + entangled.x) / 2;
-                    const midY = (p.y + entangled.y) / 2;
-                    
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                    ctx.beginPath();
-                    ctx.arc(midX, midY, 3, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-        }
-        
-        // Reset text alignment
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
+        ctx.restore();
     }
-
+    
     /**
-     * Draw the information panel for normal mode
+     * Draw financial element (Scene 11)
      */
-    drawInfo() {
+    drawFinancialElement(position) {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'financial';
+        const size = isActive ? 100 : 70;
+        
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        
+        // Background
+        ctx.fillStyle = isActive ? 'rgba(255, 170, 0, 0.2)' : 'rgba(200, 150, 0, 0.1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw price surface as a grid of colored cells
+        const surface = this.elements.financial.surface;
+        const cellSize = size * 1.4 / surface.length;
+        const offset = -cellSize * surface.length / 2;
+        
+        for (let i = 0; i < surface.length; i++) {
+            for (let j = 0; j < surface[i].length; j++) {
+                const x = offset + i * cellSize;
+                const y = offset + j * cellSize;
+                const value = surface[i][j];
+                
+                // Normalize value
+                const normalizedValue = (value - 10) / 30; // Assuming range 10-40
+                
+                // Calculate color
+                const r = Math.floor(normalizedValue * 100);
+                const g = Math.floor(normalizedValue * 255);
+                const b = Math.floor(255 * (1 - normalizedValue) + 100);
+                
+                // Draw cell
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctx.fillRect(x, y, cellSize, cellSize);
+            }
+        }
+        
+        // Add SEP overlay
+        ctx.strokeStyle = 'rgba(255, 50, 50, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.4, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Financial Intelligence', 0, size + 15);
+            ctx.fillText('with SEP Overlay', 0, size + 30);
+        }
+        
+        ctx.restore();
+    }
+    
+    /**
+     * Draw SEP logo in the center
+     */
+    drawSEPLogo() {
+        const { ctx } = this;
+        const isActive = this.activeZone === 'logo';
+        
+        // Save context for rotation
+        ctx.save();
+        ctx.translate(this.logo.x, this.logo.y);
+        ctx.rotate(this.logo.rotation);
+        
+        // Pulsing effect
+        const pulse = 1 + Math.sin(this.logo.pulsePhase) * 0.1;
+        const size = this.logo.size * pulse;
+        
+        // Draw the logo using the generator
+        // We need to translate back to origin since the logo generator will draw at the specified x,y
+        ctx.translate(-this.logo.x, -this.logo.y);
+        this.logoGenerator.draw(ctx, this.logo.x, this.logo.y, size, {
+            color: isActive ? '#00ff88' : '#00cc66',
+            secondaryColor: isActive ? '#00d4ff' : '#0099cc',
+            accentColor: isActive ? '#ff00ff' : '#cc00cc'
+        });
+        
+        ctx.restore();
+        
+        // Label
+        if (isActive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Self-Emergent Processor', this.logo.x, this.logo.y + size + 20);
+            ctx.fillText('Reality\'s Code', this.logo.x, this.logo.y + size + 40);
+        }
+    }
+    
+    /**
+     * Draw information panel
+     */
+    drawInfoPanel() {
         const { ctx } = this;
         
+        // Draw info panel in top left
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(20, 20, 350, 180);
+        ctx.fillRect(20, 20, 300, 140);
         
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText('SEP Unified System', 30, 45);
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('Scene 12: Reality\'s Code', 30, 45);
         
         ctx.font = '14px Arial';
+        ctx.fillText('Unified Meta-Visualization', 30, 70);
+        ctx.fillText('Active Zone: ' + (this.activeZone || 'None'), 30, 95);
+        
         ctx.fillStyle = '#aaaaaa';
-        
-        // Show current visualization mode
-        ctx.fillStyle = '#00ff88';
-        ctx.fillText(`Mode: ${this.visualizationNames[this.activeVisualization]}`, 30, 70);
-        
-        // Show system stats
-        ctx.fillStyle = '#aaaaaa';
-        ctx.fillText(`Efficiency: ${Math.floor(this.systemStats.efficiency * 100)}%`, 30, 95);
-        ctx.fillText(`Coherence: ${Math.floor(this.systemStats.coherence * 100)}%`, 30, 115);
-        ctx.fillText(`Emergence: ${Math.floor(this.systemStats.emergence * 100)}%`, 30, 135);
-        ctx.fillText(`Stability: ${Math.floor(this.systemStats.stability * 100)}%`, 30, 155);
-        
-        // Show controls
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('Keys 1-6: Change visualization, Double-click: Pulse', 30, 180);
+        ctx.font = '12px Arial';
+        ctx.fillText('Keys: [C] Toggle Connections, [F] Toggle Foundation', 30, 120);
+        ctx.fillText('[R] Reset View, [W] Generate Wave', 30, 140);
     }
-
+    
     /**
-     * Draw minimal information for video recording mode
+     * Calculate positions for each element zone
+     * @returns {Object} Map of zone positions
      */
-    drawVideoInfo() {
-        const { ctx, canvas } = this;
+    calculateZonePositions() {
+        const positions = {};
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
         
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '18px Arial';
-        ctx.textAlign = 'right';
+        // Position elements in a circle around the logo
+        const zones = ['waves', 'angles', 'billiards', 'boundary', 'bodies', 
+                      'primes', 'boids', 'grid', 'fluid', 'financial'];
         
-        // Show current visualization mode
-        ctx.fillText(this.visualizationNames[this.activeVisualization], canvas.width - 20, 30);
+        for (let i = 0; i < zones.length; i++) {
+            const angle = (i / zones.length) * Math.PI * 2;
+            positions[zones[i]] = {
+                x: centerX + Math.cos(angle) * radius,
+                y: centerY + Math.sin(angle) * radius
+            };
+        }
         
-        // Show active systems count
-        let activeCount = 0;
-        if (this.particleSystem.active) activeCount++;
-        if (this.neuralNetwork.active) activeCount++;
-        if (this.vectorField.active) activeCount++;
-        if (this.waveSystem.active) activeCount++;
-        if (this.fractals.active) activeCount++;
-        
-        ctx.fillText(`Active Systems: ${activeCount}/5`, canvas.width - 20, 60);
-        
-        // Show system emergence
-        ctx.fillStyle = '#00ff88';
-        ctx.fillText(`Emergence: ${Math.floor(this.systemStats.emergence * 100)}%`, canvas.width - 20, 90);
-        
-        ctx.textAlign = 'left'; // Reset alignment
+        return positions;
     }
-
+    
     /**
      * Update scene settings when changed from the framework
      * @param {Object} newSettings - The new settings object
@@ -2020,284 +1586,15 @@ export default class Scene12 {
     updateSettings(newSettings) {
         Object.assign(this.settings, newSettings);
     }
-
+    
     /**
      * Clean up resources when scene is unloaded
      */
-   /**
-    * Add scene-specific controls to the interactive controller
-    */
-   addSceneSpecificControls() {
-       if (!this.controller || !this.controller.components.controlPanel) return;
-       
-       const panel = this.controller.components.controlPanel;
-       const utils = this.controller.interactiveUtils;
-       
-       // Add visualization mode selector
-       const visualizationSelector = utils.createDropdown({
-           id: 'visualization_selector',
-           x: panel.x + 15,
-           y: panel.y + 140,
-           width: panel.width - 30,
-           height: 30,
-           labelText: 'Visualization Mode',
-           options: this.visualizationNames,
-           selectedIndex: this.activeVisualization,
-           onChange: (index) => {
-               this.activeVisualization = index;
-           },
-           tooltip: 'Select different visualization modes to focus on specific aspects of the SEP system'
-       });
-       
-       panel.addChild(visualizationSelector);
-       this.controller.components.controls.push(visualizationSelector);
-       
-       // Add system component toggles
-       const componentLabels = ['Particles', 'Neural Network', 'Vector Field', 'Wave System', 'Fractals'];
-       const componentKeys = ['particleSystem', 'neuralNetwork', 'vectorField', 'waveSystem', 'fractals'];
-       
-       // Create toggle group header
-       const toggleHeader = utils.createLabel({
-           id: 'toggle_header',
-           x: panel.x + 15,
-           y: panel.y + 180,
-           width: panel.width - 30,
-           height: 20,
-           text: 'System Components',
-           color: utils.styles.secondary
-       });
-       
-       panel.addChild(toggleHeader);
-       this.controller.components.controls.push(toggleHeader);
-       
-       // Create toggles for each component
-       componentLabels.forEach((label, index) => {
-           const toggle = utils.createToggle({
-               id: `toggle_${componentKeys[index]}`,
-               x: panel.x + 15,
-               y: panel.y + 210 + (index * 35),
-               width: panel.width - 30,
-               height: 30,
-               labelText: label,
-               value: this[componentKeys[index]].active,
-               onChange: (value) => {
-                   this[componentKeys[index]].active = value;
-                   this.updateSystemStats(0.1); // Update stats with the new configuration
-               },
-               tooltip: `Toggle the ${label} subsystem on/off`
-           });
-           
-           panel.addChild(toggle);
-           this.controller.components.controls.push(toggle);
-       });
-       
-       // Add SEP core energy slider
-       const energySlider = utils.createSlider({
-           id: 'core_energy_slider',
-           x: panel.x + 15,
-           y: panel.y + 390,
-           width: panel.width - 30,
-           height: 30,
-           min: 0,
-           max: 1,
-           value: this.sepCore.energy,
-           step: 0.01,
-           labelText: 'Core Energy',
-           onChange: (value) => {
-               this.sepCore.energy = value;
-               this.updateSystemStats(0.1); // Update stats with the new energy level
-           },
-           tooltip: 'Adjust the energy level of the SEP core'
-       });
-       
-       panel.addChild(energySlider);
-       this.controller.components.controls.push(energySlider);
-       
-       // Add Pulse button
-       const pulseButton = utils.createButton({
-           id: 'pulse_button',
-           x: panel.x + 15,
-           y: panel.y + 430,
-           width: panel.width - 30,
-           height: 40,
-           text: 'Send Energy Pulse',
-           onClick: () => {
-               this.createEnergyPulse();
-           },
-           tooltip: 'Send an energy pulse through the system'
-       });
-       
-       panel.addChild(pulseButton);
-       this.controller.components.controls.push(pulseButton);
-       
-       // Add interactive elements to the scene
-       this.addInteractiveSceneElements();
-   }
-   
-   /**
-    * Add interactive elements directly to the scene (not in the control panel)
-    */
-   addInteractiveSceneElements() {
-       if (!this.controller) return;
-       
-       const utils = this.controller.interactiveUtils;
-       
-       // Create a draggable SEP core
-       const sepCoreDraggable = utils.createDraggable({
-           id: 'sep_core',
-           x: this.canvas.width / 2,
-           y: this.canvas.height / 2,
-           width: this.sepCore.radius * 2,
-           height: this.sepCore.radius * 2,
-           color: 'transparent',
-           draggable: true,
-           onDrag: (dx, dy, x, y) => {
-               this.sepCore.x = x;
-               this.sepCore.y = y;
-           },
-           tooltip: 'Drag to move the SEP core'
-       });
-       
-       this.controller.components.sceneElements.push(sepCoreDraggable);
-       
-       // Create interactive system stat nodes
-       const stats = [
-           { name: 'Efficiency', value: this.systemStats.efficiency, key: 'efficiency' },
-           { name: 'Coherence', value: this.systemStats.coherence, key: 'coherence' },
-           { name: 'Emergence', value: this.systemStats.emergence, key: 'emergence' },
-           { name: 'Stability', value: this.systemStats.stability, key: 'stability' }
-       ];
-       
-       stats.forEach((stat, index) => {
-           const angle = (index / stats.length) * Math.PI * 2;
-           const x = this.canvas.width / 2 + Math.cos(angle) * (this.sepCore.radius * 2);
-           const y = this.canvas.height / 2 + Math.sin(angle) * (this.sepCore.radius * 2);
-           
-           const statNode = utils.createDraggable({
-               id: `stat_node_${stat.key}`,
-               x: x,
-               y: y,
-               width: 60,
-               height: 60,
-               color: 'transparent',
-               draggable: true,
-               onDrag: (dx, dy, x, y) => {
-                   // Calculate new angle from SEP core to dragged position
-                   const newAngle = Math.atan2(y - this.sepCore.y, x - this.sepCore.x);
-                   // Calculate new distance from SEP core (clamped to reasonable range)
-                   const distance = Math.min(Math.max(
-                       this.math.distance(x, y, this.sepCore.x, this.sepCore.y),
-                       this.sepCore.radius * 1.5
-                   ), this.sepCore.radius * 3);
-                   
-                   // Update node position
-                   statNode.x = this.sepCore.x + Math.cos(newAngle) * distance;
-                   statNode.y = this.sepCore.y + Math.sin(newAngle) * distance;
-                   
-                   // Update system stats based on distance from center
-                   // Closer to the core = higher value
-                   const normalizedDistance = 1 - ((distance - this.sepCore.radius * 1.5) / (this.sepCore.radius * 1.5));
-                   this.systemStats[stat.key] = Math.max(0, Math.min(1, normalizedDistance));
-               },
-               tooltip: `Drag to adjust ${stat.name}`
-           });
-           
-           this.controller.components.sceneElements.push(statNode);
-       });
-   }
-   
-   /**
-    * Create an energy pulse from the SEP core
-    */
-   createEnergyPulse() {
-       const pulse = {
-           x: this.sepCore.x,
-           y: this.sepCore.y,
-           radius: this.sepCore.radius * 0.2,
-           maxRadius: this.sepCore.radius * 5,
-           alpha: 1,
-           speed: 2 + Math.random() * 2
-       };
-       
-       this.sepCore.pulses.push(pulse);
-       
-       // Boost system stats temporarily
-       Object.keys(this.systemStats).forEach(key => {
-           this.systemStats[key] = Math.min(1, this.systemStats[key] + 0.1);
-       });
-   }
-   
-   /**
-    * Handle keyboard input
-    * @param {KeyboardEvent} event - The keyboard event
-    */
-   handleKeyDown(event) {
-       // Number keys 1-6 to change visualization mode
-       if (event.key >= '1' && event.key <= '6') {
-           const mode = parseInt(event.key) - 1;
-           if (mode >= 0 && mode < this.visualizationNames.length) {
-               this.activeVisualization = mode;
-           }
-       }
-       
-       // Space bar to send an energy pulse
-       if (event.key === ' ' || event.key === 'Space') {
-           this.createEnergyPulse();
-       }
-   }
-   
-   /**
-    * Handle mouse movement
-    * @param {MouseEvent} event - The mouse event
-    */
-   handleMouseMove(event) {
-       // This handler is mostly for tracking mouse position
-       // The interactive controller handles component interactions
-       const rect = this.canvas.getBoundingClientRect();
-       this.mouseX = event.clientX - rect.left;
-       this.mouseY = event.clientY - rect.top;
-   }
-   
-   /**
-    * Handle mouse clicks
-    * @param {MouseEvent} event - The mouse event
-    */
-   handleMouseClick(event) {
-       const rect = this.canvas.getBoundingClientRect();
-       const x = event.clientX - rect.left;
-       const y = event.clientY - rect.top;
-       
-       // Double click detection
-       const now = Date.now();
-       const isDoubleClick = now - this.lastClickTime < 300;
-       this.lastClickTime = now;
-       
-       // Double click on the SEP core creates an energy pulse
-       if (isDoubleClick) {
-           const distance = this.math.distance(x, y, this.sepCore.x, this.sepCore.y);
-           if (distance <= this.sepCore.radius) {
-               this.createEnergyPulse();
-           }
-       }
-   }
-   
-   /**
-    * Clean up resources when scene is unloaded
-    */
-   cleanup() {
-       window.removeEventListener('keydown', this.handleKeyDown);
-       this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-       this.canvas.removeEventListener('click', this.handleMouseClick);
-       
-       // Clean up the interactive controller
-       if (this.controller) {
-           this.controller.cleanup();
-           this.controller = null;
-       }
-       
-       // Clear arrays to free memory
-       this.particleSystem.particles = [];
-       this.sepCore.connections = [];
-       this.sepCore.pulses = [];
-   }
+    cleanup() {
+        // Remove event listeners
+        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
+        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
+        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
+        window.removeEventListener('keydown', this.handleKeyDown);
+    }
 }
