@@ -227,7 +227,7 @@ export default class Scene4 {
         this.update(deltaTime * this.settings.speed);
         
         // Render the scene
-        this.draw();
+        this.draw(timestamp);
     }
 
     /**
@@ -264,7 +264,7 @@ export default class Scene4 {
     /**
      * Draw the scene - handles both normal and video modes
      */
-    draw() {
+    draw(timestamp) {
         const { ctx, canvas } = this;
         
         // Clear canvas
