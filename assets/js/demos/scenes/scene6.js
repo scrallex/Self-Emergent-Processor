@@ -59,6 +59,13 @@ export default class Scene6 {
                 max: 200,
                 step: 10,
                 label: 'Initial Velocity'
+            },
+            size: {
+                value: this.baseSize,
+                min: 20,
+                max: 80,
+                step: 5,
+                label: 'Block Size'
             }
         };
     }
@@ -84,7 +91,8 @@ export default class Scene6 {
             smallBlock: { dragging: false, hovered: false },
             largeBlock: { dragging: false, hovered: false },
             massSlider: { x: 50, y: 50, width: 150, height: 30, dragging: false, hovered: false },
-            speedSlider: { x: 50, y: 100, width: 150, height: 30, dragging: false, hovered: false }
+            speedSlider: { x: 50, y: 100, width: 150, height: 30, dragging: false, hovered: false },
+            sizeSlider: { x: 50, y: 150, width: 150, height: 30, dragging: false, hovered: false }
         };
         
         this.reset();
@@ -102,6 +110,8 @@ export default class Scene6 {
         this.isRunning = false;
         this.isComplete = false;
         this.collisionHistory = [];
+
+        this.controls.size.value = this.baseSize;
         
         // Set mass ratio based on intensity
         this.massRatio = Math.max(1, Math.floor(this.settings.intensity / 20)); // 1-5 based on intensity
@@ -215,6 +225,7 @@ export default class Scene6 {
     handleMouseUp() {
         this.controlPoints.massSlider.dragging = false;
         this.controlPoints.speedSlider.dragging = false;
+        this.controlPoints.sizeSlider.dragging = false;
     }
 
     /**
@@ -231,6 +242,7 @@ export default class Scene6 {
         this.controlPoints.largeBlock.hovered = false;
         this.controlPoints.massSlider.hovered = false;
         this.controlPoints.speedSlider.hovered = false;
+        this.controlPoints.sizeSlider.hovered = false;
         
         // Check if mouse is over blocks
         for (let i = 0; i < this.blocks.length; i++) {
@@ -279,6 +291,23 @@ export default class Scene6 {
                 }
             }
         }
+
+        // Check if mouse is over size slider
+        const sz = this.controlPoints.sizeSlider;
+        if (mouseX >= sz.x && mouseX <= sz.x + sz.width &&
+            mouseY >= sz.y && mouseY <= sz.y + sz.height) {
+            sz.hovered = true;
+
+            if (sz.dragging) {
+                const relativeX = mouseX - sz.x;
+                const size = 20 + (relativeX / sz.width) * 60;
+                if (Math.abs(size - this.baseSize) > 1) {
+                    this.baseSize = size;
+                    this.controls.size.value = size;
+                    this.reset();
+                }
+            }
+        }
     }
 
     /**
@@ -313,6 +342,17 @@ export default class Scene6 {
             // Add mouse up listener to end dragging
             const endDrag = () => {
                 this.controlPoints.speedSlider.dragging = false;
+                window.removeEventListener('mouseup', endDrag);
+            };
+            window.addEventListener('mouseup', endDrag);
+            return;
+        }
+
+        if (this.controlPoints.sizeSlider.hovered) {
+            this.controlPoints.sizeSlider.dragging = true;
+            this.handleMouseMove(e);
+            const endDrag = () => {
+                this.controlPoints.sizeSlider.dragging = false;
                 window.removeEventListener('mouseup', endDrag);
             };
             window.addEventListener('mouseup', endDrag);
@@ -1017,12 +1057,25 @@ export default class Scene6 {
             200,
             this.controlPoints.speedSlider.hovered || this.controlPoints.speedSlider.dragging
         );
+
+        this.drawSlider(
+            this.controlPoints.sizeSlider.x,
+            this.controlPoints.sizeSlider.y,
+            this.controlPoints.sizeSlider.width,
+            this.controlPoints.sizeSlider.height,
+            'Block Size',
+            this.baseSize,
+            20,
+            80,
+            this.controlPoints.sizeSlider.hovered || this.controlPoints.sizeSlider.dragging
+        );
         
         // Instructions
         ctx.fillStyle = '#aaaaaa';
         ctx.font = '12px Arial';
         ctx.fillText('Space: Play/Pause | R: Reset | 1-5: Set Mass Ratio', 20, 350);
         ctx.fillText('↑↓: Change Speed | Drag sliders to adjust parameters', 20, 370);
+        ctx.fillText('Block Size slider adjusts collision block dimensions', 20, 388);
     }
 
     /**
