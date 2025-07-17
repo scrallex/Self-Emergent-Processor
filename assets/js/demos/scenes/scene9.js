@@ -22,7 +22,7 @@ export default class Scene9 {
         this.time = 0;
         this.lastTime = 0;
         this.stateGrid = [];
-        this.stateSize = 8; // 8x8 grid = 64 bits
+        this.stateSize = settings.gridSize || 8; // Grid dimension
         this.cellSize = 0;
         this.pulses = [];
         this.ruptures = [];
@@ -99,6 +99,14 @@ export default class Scene9 {
                     }
                 }
                 break;
+            case '+':
+            case '=':
+                this.changeGridSize(this.stateSize + 1);
+                break;
+            case '-':
+            case '_':
+                this.changeGridSize(this.stateSize - 1);
+                break;
         }
     }
     
@@ -115,6 +123,19 @@ export default class Scene9 {
                 this.runQFH();
             }, 3000);
         }, 1000);
+    }
+
+    /**
+     * Change grid size and rebuild state grid
+     * @param {number} newSize - Desired grid dimension
+     */
+    changeGridSize(newSize) {
+        const size = Math.min(16, Math.max(2, Math.floor(newSize)));
+        if (size !== this.stateSize) {
+            this.stateSize = size;
+            if (this.settings) this.settings.gridSize = size;
+            this.reset();
+        }
     }
 
     /**
@@ -599,7 +620,7 @@ export default class Scene9 {
         
         // Draw help text
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(20, this.canvas.height - 130, 340, 110);
+        this.ctx.fillRect(20, this.canvas.height - 150, 340, 130);
         
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 14px Arial';
@@ -607,6 +628,7 @@ export default class Scene9 {
         
         this.ctx.font = '13px Arial';
         this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText('• Use +/- to change grid size', 30, this.canvas.height - 100);
         this.ctx.fillText('• Click on a cell to toggle its state', 30, this.canvas.height - 80);
         this.ctx.fillText('• Drag a cell to adjust its phase and energy', 30, this.canvas.height - 60);
         this.ctx.fillText('• Press Q to run QBSA (rupture detection)', 30, this.canvas.height - 40);
@@ -638,6 +660,9 @@ export default class Scene9 {
      * @param {Object} newSettings - The new settings object
      */
     updateSettings(newSettings) {
+        if (typeof newSettings.gridSize !== 'undefined') {
+            this.changeGridSize(newSettings.gridSize);
+        }
         Object.assign(this.settings, newSettings);
     }
 

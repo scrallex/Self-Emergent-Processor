@@ -64,6 +64,8 @@
         <div class="control-group">
             <label for="blockSizeSlider">Block Size: <span id="blockSizeValue">30</span></label>
             <input type="range" id="blockSizeSlider" min="10" max="60" value="30">
+            <label for="sizeSlider">Particle Size: <span id="sizeValue">3</span></label>
+            <input type="range" id="sizeSlider" min="1" max="10" value="3">
         </div>
 
         <div class="control-group">
@@ -147,7 +149,7 @@
             if (framework) framework.updateSettings({ speed });
         }
 
-            function updateIntensity() {
+        function updateIntensity() {
             const intensity = parseInt(document.getElementById('intensitySlider').value);
             document.getElementById('intensityValue').textContent = intensity + '%';
             if (framework) framework.updateSettings({ intensity });
@@ -157,6 +159,10 @@
             const blockSize = parseInt(document.getElementById('blockSizeSlider').value);
             document.getElementById('blockSizeValue').textContent = blockSize;
             if (framework) framework.updateSettings({ blockSize });
+        function updateSize() {
+            const size = parseInt(document.getElementById('sizeSlider').value);
+            document.getElementById('sizeValue').textContent = size;
+            if (framework) framework.updateSettings({ size });
         }
 
             function applyPreset() {
@@ -170,6 +176,10 @@
                 updateSpeed();
                 updateIntensity();
                 updateBlockSize();
+                document.getElementById('sizeSlider').value = settings.size;
+                updateSpeed();
+                updateIntensity();
+                updateSize();
             }
         }
 
@@ -242,6 +252,7 @@
                     document.getElementById('speedSlider').addEventListener('input', updateSpeed);
                     document.getElementById('intensitySlider').addEventListener('input', updateIntensity);
                     document.getElementById('blockSizeSlider').addEventListener('input', updateBlockSize);
+                    document.getElementById('sizeSlider').addEventListener('input', updateSize);
                     document.getElementById('presetSelect').addEventListener('change', applyPreset);
                     document.getElementById('resetBtn').addEventListener('click', resetToDefault);
                     document.getElementById('exportBtn').addEventListener('click', exportFrame);
