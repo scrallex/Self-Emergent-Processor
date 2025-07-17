@@ -49,6 +49,7 @@ export default class Scene10 {
         // Display options
         this.showGrid = true;
         this.showHud = true;
+        this.showHelp = false;
         this.colorMode = 'age'; // 'binary', 'age', 'heatmap'
         
         // Cell history for visualization
@@ -122,6 +123,32 @@ export default class Scene10 {
                 [1, 1, 0, 0],
                 [0, 0, 1, 1],
                 [0, 0, 1, 1]
+            ],
+            'pulsar': [
+                [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0]
+            ],
+            'lwss': [ // Lightweight spaceship
+                [0, 1, 1, 1, 1],
+                [1, 0, 0, 0, 1],
+                [0, 0, 0, 0, 1],
+                [1, 0, 0, 1, 0]
+            ],
+            'pentadecathlon': [
+                [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+                [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 0, 0, 0, 0, 1, 0, 0]
             ],
             'glider_gun': [
                 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
@@ -207,6 +234,10 @@ export default class Scene10 {
                 // H to toggle HUD display
                 this.showHud = !this.showHud;
                 break;
+            case '?':
+                // ? to toggle help panel
+                this.showHelp = !this.showHelp;
+                break;
             case 'n':
                 // N to step a single generation
                 if (!this.isRunning) {
@@ -219,7 +250,14 @@ export default class Scene10 {
                 const currentIndex = modes.indexOf(this.colorMode);
                 this.colorMode = modes[(currentIndex + 1) % modes.length];
                 break;
+            case 's':
+                // S to change simulation speed
+                this.stepInterval = this.stepInterval === 100 ? 50 :
+                                   this.stepInterval === 50 ? 25 :
+                                   this.stepInterval === 25 ? 10 : 100;
+                break;
             case '1': case '2': case '3': case '4': case '5':
+            case '6': case '7': case '8':
                 // Number keys for preset patterns
                 const patternKeys = Object.keys(this.presets);
                 const patternIndex = parseInt(e.key) - 1;
@@ -497,6 +535,11 @@ export default class Scene10 {
         // Draw HUD info if enabled
         if (this.showHud && !this.settings.videoMode) {
             this.drawInfo();
+            
+            // Draw help panel if enabled
+            if (this.showHelp) {
+                this.drawHelp();
+            }
         } else if (this.settings.videoMode) {
             this.drawVideoInfo();
         }
@@ -608,7 +651,7 @@ export default class Scene10 {
     drawInfo() {
         // Background for info panel
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(20, 20, 270, 180);
+        this.ctx.fillRect(20, 20, 300, 210);
         
         // Title
         this.ctx.fillStyle = '#ffffff';
@@ -621,13 +664,93 @@ export default class Scene10 {
         this.ctx.fillStyle = '#cccccc';
         this.ctx.fillText(`Generation: ${this.generation}`, 30, 70);
         this.ctx.fillText(`Population: ${this.populationCount}`, 30, 90);
-        this.ctx.fillText(`Mode: ${this.colorMode}`, 30, 110);
+        this.ctx.fillText(`Visualization: ${this.colorMode}`, 30, 110);
         this.ctx.fillText(`Brush Size: ${this.brushSize}`, 30, 130);
         this.ctx.fillText(`Status: ${this.isRunning ? 'Running' : 'Paused'}`, 30, 150);
+        this.ctx.fillText(`Speed: ${Math.round(1000/this.stepInterval)} gen/sec`, 30, 170);
         
-        // Controls help
-        this.ctx.fillText('Space: Play/Pause | C: Clear | R: Random', 30, 180);
-        this.ctx.fillText('N: Step | 1-5: Patterns | M: Color Mode', 30, 200);
+        // Controls hint
+        this.ctx.fillStyle = '#00ff88';
+        this.ctx.fillText('Press ? for help', 30, 200);
+        
+        // Current tool display
+        this.ctx.fillStyle = this.drawMode === 1 ? '#00ff88' : '#ff3333';
+        this.ctx.fillText(`Tool: ${this.drawMode === 1 ? 'Draw' : 'Erase'}`, 30, 225);
+    }
+    
+    /**
+     * Draw comprehensive help panel
+     */
+    drawHelp() {
+        // Overlay with semi-transparent background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        this.ctx.fillRect(this.canvas.width / 2 - 280, 50, 560, this.canvas.height - 100);
+        
+        // Title
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 20px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText("Game of Life Controls", this.canvas.width / 2, 80);
+        
+        this.ctx.font = '14px monospace';
+        this.ctx.textAlign = 'left';
+        const startX = this.canvas.width / 2 - 250;
+        let y = 120;
+        const lineHeight = 22;
+        
+        // Draw two columns of controls
+        this.ctx.fillStyle = '#00ff88'; // Headers
+        this.ctx.fillText("Simulation Controls:", startX, y); y += lineHeight;
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText("Space - Play/Pause simulation", startX, y); y += lineHeight;
+        this.ctx.fillText("N - Step one generation (when paused)", startX, y); y += lineHeight;
+        this.ctx.fillText("C - Clear the grid", startX, y); y += lineHeight;
+        this.ctx.fillText("R - Random cell population", startX, y); y += lineHeight;
+        this.ctx.fillText("S - Cycle simulation speed", startX, y); y += lineHeight;
+        
+        y += 10;
+        this.ctx.fillStyle = '#00ff88'; // Headers
+        this.ctx.fillText("Display Controls:", startX, y); y += lineHeight;
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText("G - Toggle grid lines", startX, y); y += lineHeight;
+        this.ctx.fillText("H - Toggle info panel", startX, y); y += lineHeight;
+        this.ctx.fillText("M - Cycle color modes", startX, y); y += lineHeight;
+        this.ctx.fillText("? - Toggle this help screen", startX, y); y += lineHeight;
+        
+        // Right column
+        y = 120;
+        const rightX = this.canvas.width / 2 + 20;
+        
+        this.ctx.fillStyle = '#00ff88'; // Headers
+        this.ctx.fillText("Drawing Controls:", rightX, y); y += lineHeight;
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText("Left Click - Draw/erase cells", rightX, y); y += lineHeight;
+        this.ctx.fillText("Right Click - Switch draw/erase mode", rightX, y); y += lineHeight;
+        this.ctx.fillText("+ / - - Adjust brush size", rightX, y); y += lineHeight;
+        
+        y += 10;
+        this.ctx.fillStyle = '#00ff88'; // Headers
+        this.ctx.fillText("Patterns (press number key):", rightX, y); y += lineHeight;
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText("1 - Glider", rightX, y); y += lineHeight;
+        this.ctx.fillText("2 - Blinker", rightX, y); y += lineHeight;
+        this.ctx.fillText("3 - Block", rightX, y); y += lineHeight;
+        this.ctx.fillText("4 - Toad", rightX, y); y += lineHeight;
+        this.ctx.fillText("5 - Beacon", rightX, y); y += lineHeight;
+        this.ctx.fillText("6 - Pulsar", rightX, y); y += lineHeight;
+        this.ctx.fillText("7 - Lightweight spaceship", rightX, y); y += lineHeight;
+        this.ctx.fillText("8 - Gosper's Glider Gun", rightX, y); y += lineHeight;
+        
+        // Rules of Conway's Game of Life
+        y += 20;
+        this.ctx.fillStyle = '#ffaa00'; // Rules header
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText("Rules of Conway's Game of Life:", this.canvas.width / 2, y); y += lineHeight;
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText("1. Any live cell with fewer than 2 live neighbors dies (underpopulation)", this.canvas.width / 2, y); y += lineHeight;
+        this.ctx.fillText("2. Any live cell with 2 or 3 live neighbors survives", this.canvas.width / 2, y); y += lineHeight;
+        this.ctx.fillText("3. Any live cell with more than 3 live neighbors dies (overpopulation)", this.canvas.width / 2, y); y += lineHeight;
+        this.ctx.fillText("4. Any dead cell with exactly 3 live neighbors becomes alive (reproduction)", this.canvas.width / 2, y); y += lineHeight;
     }
     
     /**

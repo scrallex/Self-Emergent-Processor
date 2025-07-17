@@ -47,13 +47,74 @@ export default class Scene9 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
+        // Add event listeners
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
         this.canvas.addEventListener('mouseup', this.handleMouseUp);
         this.canvas.addEventListener('click', this.handleMouseClick);
         
+        // Add keyboard event handler
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        window.addEventListener('keydown', this.handleKeyDown);
+        
         this.reset();
+        
+        // Run a brief demo after initialization
+        setTimeout(() => this.runDemoSequence(), 1500);
+        
         return Promise.resolve();
+    }
+    
+    /**
+     * Handle keyboard input for algorithm control
+     * @param {KeyboardEvent} e - The keyboard event
+     */
+    handleKeyDown(e) {
+        switch(e.key.toLowerCase()) {
+            case 'q':
+                // Run QBSA algorithm
+                this.runQBSA();
+                break;
+            case 'f':
+                // Run QFH algorithm
+                this.runQFH();
+                break;
+            case 'r':
+                // Reset the scene
+                this.reset();
+                break;
+            case 's':
+                // Toggle state of cell under mouse
+                if (this.mouseX && this.mouseY) {
+                    for (let i = 0; i < this.stateSize; i++) {
+                        for (let j = 0; j < this.stateSize; j++) {
+                            const cell = this.stateGrid[i][j];
+                            const dist = Math.hypot(this.mouseX - cell.x, this.mouseY - cell.y);
+                            
+                            if (dist < this.cellSize / 2) {
+                                cell.state = 1 - cell.state;
+                                return;
+                            }
+                        }
+                    }
+                }
+                break;
+        }
+    }
+    
+    /**
+     * Run a demonstration sequence to showcase the capabilities
+     */
+    runDemoSequence() {
+        // First show QBSA after 1 second
+        setTimeout(() => {
+            this.runQBSA();
+            
+            // Then show QFH after 3 more seconds
+            setTimeout(() => {
+                this.runQFH();
+            }, 3000);
+        }, 1000);
     }
 
     /**
@@ -494,8 +555,9 @@ export default class Scene9 {
      * Draw the information panel for normal mode
      */
     drawInfo() {
+        // Main info panel
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(20, 20, 300, 120);
+        this.ctx.fillRect(20, 20, 300, 160);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 16px Arial';
@@ -517,6 +579,7 @@ export default class Scene9 {
         this.ctx.fillText(`State Vector: ${stateVector}`, 30, 70);
         this.ctx.fillText(`Coherence: ${this.coherenceLevel.toFixed(3)}`, 30, 95);
         this.ctx.fillText(`Ruptures Detected: ${this.ruptures.length}`, 30, 120);
+        this.ctx.fillText(`Active Pulses: ${this.pulses.length}`, 30, 145);
         
         // Draw algorithm indicator if active
         if (this.activeAlgorithm) {
@@ -526,6 +589,21 @@ export default class Scene9 {
             this.ctx.fillText(`${this.activeAlgorithm} Running`, this.canvas.width - 30, 40);
             this.ctx.textAlign = 'left';
         }
+        
+        // Draw help text
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(20, this.canvas.height - 130, 340, 110);
+        
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 14px Arial';
+        this.ctx.fillText('Controls:', 30, this.canvas.height - 105);
+        
+        this.ctx.font = '13px Arial';
+        this.ctx.fillStyle = '#cccccc';
+        this.ctx.fillText('• Click on a cell to toggle its state', 30, this.canvas.height - 80);
+        this.ctx.fillText('• Drag a cell to adjust its phase and energy', 30, this.canvas.height - 60);
+        this.ctx.fillText('• Press Q to run QBSA (rupture detection)', 30, this.canvas.height - 40);
+        this.ctx.fillText('• Press F to run QFH (harmonic analysis)', 30, this.canvas.height - 20);
     }
 
     /**
@@ -564,6 +642,7 @@ export default class Scene9 {
         this.canvas.removeEventListener('mousemove', this.handleMouseMove);
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);
         this.canvas.removeEventListener('click', this.handleMouseClick);
+        window.removeEventListener('keydown', this.handleKeyDown);
         
         this.stateGrid = [];
         this.pulses = [];

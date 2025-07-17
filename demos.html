@@ -181,17 +181,21 @@
         let lastTime = performance.now();
             let frames = 0;
             function updateFPS() {
-            const currentTime = performance.now();
-            const deltaTime = currentTime - lastTime;
-            frames++;
-            
-            if (deltaTime >= 1000) {
-                document.getElementById('fpsCounter').textContent = frames;
-                frames = 0;
-                lastTime = currentTime;
-            }
-                    requestAnimationFrame(updateFPS);
+                const currentTime = performance.now();
+                const deltaTime = currentTime - lastTime;
+                frames++;
+                
+                if (deltaTime >= 1000) {
+                    document.getElementById('fpsCounter').textContent = frames;
+                    frames = 0;
+                    lastTime = currentTime;
                 }
+            }
+            
+            function animate() {
+                updateFPS();
+                requestAnimationFrame(animate);
+            }
 
                 // --- Dynamic Content Generation ---
                 function populateDemoGrid() {
@@ -240,7 +244,7 @@
                     populateDemoGrid();
                     setupEventListeners();
                     hideLoading();
-                    requestAnimationFrame(updateFPS);
+                    animate();
         }
 
             main().catch(console.error);
