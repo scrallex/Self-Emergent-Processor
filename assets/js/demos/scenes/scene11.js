@@ -5,7 +5,7 @@
  * demonstrating how self-emergent processors can accelerate complex
  * calculations in options pricing and risk management.
  */
-import sepPathLearningSurface from '../../../../_sep/testbed/sepSurface.js';
+import sepPathLearningSurface from '../utils/sep-surface.js';
 export default class Scene11 {
     /**
      * Constructor for the scene
