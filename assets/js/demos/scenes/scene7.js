@@ -27,7 +27,7 @@ export default class Scene7 {
         this.composites = [];
         
         // Grid parameters
-        this.gridSize = 30; // Size of each cell
+        this.gridSize = settings.blockSize || 30; // Size of each cell
         this.gridCenter = { x: 0, y: 0 };
         this.gridOffset = { x: 0, y: 0 };
         this.spiralMaxN = 400; // Maximum number in spiral
@@ -1241,6 +1241,9 @@ export default class Scene7 {
      * @param {Object} newSettings - The new settings object
      */
     updateSettings(newSettings) {
+        if (typeof newSettings.blockSize !== 'undefined') {
+            this.gridSize = newSettings.blockSize;
+        }
         Object.assign(this.settings, newSettings);
     }
 
