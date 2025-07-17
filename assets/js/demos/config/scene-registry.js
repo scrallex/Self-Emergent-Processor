@@ -187,8 +187,8 @@ export const SCENES = {
     8: { 
         id: 8,
         name: "Multi-Perspective Coherence",
-        description: "Trigonometric Flocking Behavior",
-        longDescription: "Enhanced flocking simulation with trigonometric rules where birds avoid orthogonal collisions. Observe cosine-based alignment forces creating coherent clusters and emergent rotational patterns.",
+        description: "Cosine-Based Flocking System",
+        longDescription: "Boids simulation using cosine-weighted alignment and obtuse-angle dispersion. Birds form coherent groups when headings agree and split apart on opposing angles, creating dynamic rotational patterns.",
         status: STATUS.READY,  
         type: 'wave',
         color: SCENE_COLORS.WAVE,
