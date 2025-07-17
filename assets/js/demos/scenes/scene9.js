@@ -29,6 +29,14 @@ export default class Scene9 {
         this.coherenceLevel = 1.0;
         this.activeAlgorithm = null;
         
+        // For QFH spectral analysis
+        this.spectralData = {
+            harmonics: [1, 2, 3, 5, 8, 13, 21],
+            amplitudes: [],
+            phases: [],
+            maxAmplitude: 0
+        };
+        
         // Grid center and interaction
         this.gridCenter = { x: 0, y: 0 };
         this.selectedCell = null;
@@ -181,6 +189,18 @@ export default class Scene9 {
         this.activeAlgorithm = 'QBSA';
         this.ruptures = [];
         
+        // Create a global flash effect when QBSA starts
+        this.pulses.push({
+            x: this.gridCenter.x,
+            y: this.gridCenter.y,
+            radius: 5,
+            maxRadius: Math.max(this.canvas.width, this.canvas.height) * 0.6,
+            hue: 30, // Orange hue for QBSA
+            opacity: 0.7,
+            harmonic: 0,
+            isRuptureFlash: true
+        });
+        
         // Calculate quantum boundary strengths between adjacent cells
         const threshold = 1.0;
 
@@ -216,11 +236,24 @@ export default class Scene9 {
                                     x: (cell.x + neighbor.x) / 2,
                                     y: (cell.y + neighbor.y) / 2,
                                     strength,
-                                    time: this.time
+                                    time: this.time,
+                                    direction: Math.atan2(neighbor.y - cell.y, neighbor.x - cell.x)
                                 });
 
                                 cell.rupture = true;
                                 neighbor.rupture = true;
+                                
+                                // Create localized rupture flash
+                                this.pulses.push({
+                                    x: (cell.x + neighbor.x) / 2,
+                                    y: (cell.y + neighbor.y) / 2,
+                                    radius: 2,
+                                    maxRadius: this.cellSize * 3,
+                                    hue: 30, // Orange hue for QBSA
+                                    opacity: 0.9,
+                                    harmonic: 0,
+                                    isRuptureFlash: true
+                                });
 
                                 this.coherenceLevel = Math.max(0, this.coherenceLevel - 0.05);
                             }
@@ -237,9 +270,27 @@ export default class Scene9 {
     runQFH() {
         this.activeAlgorithm = 'QFH';
         
-        const harmonics = [1, 2, 3, 5, 8, 13, 21];
+        // Create a global pulse effect when QFH starts
+        this.pulses.push({
+            x: this.gridCenter.x,
+            y: this.gridCenter.y,
+            radius: 5,
+            maxRadius: Math.max(this.canvas.width, this.canvas.height) * 0.6,
+            hue: 180, // Cyan hue for QFH
+            opacity: 0.7,
+            harmonic: 0,
+            isQFHFlash: true
+        });
+        
+        const harmonics = this.spectralData.harmonics;
         const cellCount = this.stateSize * this.stateSize;
+        
+        // Reset spectral data
+        this.spectralData.amplitudes = [];
+        this.spectralData.phases = [];
+        this.spectralData.maxAmplitude = 0;
 
+        // Calculate spectral components for each harmonic
         for (let h of harmonics) {
             let real = 0;
             let imag = 0;
@@ -253,8 +304,19 @@ export default class Scene9 {
             }
 
             const amplitude = Math.sqrt(real * real + imag * imag) / cellCount;
+            const phase = Math.atan2(imag, real);
+            
+            // Store spectral data
+            this.spectralData.amplitudes.push(amplitude);
+            this.spectralData.phases.push(phase);
+            
+            // Track maximum amplitude for normalization
+            if (amplitude > this.spectralData.maxAmplitude) {
+                this.spectralData.maxAmplitude = amplitude;
+            }
 
             if (amplitude > 0.6) {
+                // Create harmonic pulse
                 this.pulses.push({
                     x: this.gridCenter.x,
                     y: this.gridCenter.y,
@@ -262,7 +324,8 @@ export default class Scene9 {
                     maxRadius: this.cellSize * (h + 2),
                     hue: 180 + h * 20,
                     opacity: 1,
-                    harmonic: h
+                    harmonic: h,
+                    isQFHPulse: true
                 });
 
                 // Nudge phases toward alignment
@@ -460,6 +523,11 @@ export default class Scene9 {
         // Draw ruptures
         this.drawRuptures();
         
+        // Draw QFH spectral analysis if active
+        if (this.activeAlgorithm === 'QFH' && this.spectralData.amplitudes.length > 0) {
+            this.drawSpectralAnalysis();
+        }
+        
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
             this.drawInfo();
@@ -576,7 +644,154 @@ export default class Scene9 {
             this.ctx.beginPath();
             this.ctx.arc(rupture.x, rupture.y, 3, 0, Math.PI * 2);
             this.ctx.fill();
+            
+            // Draw directional lightning-like rupture effects
+            if (rupture.direction !== undefined && opacity > 0.5) {
+                this.ctx.strokeStyle = `rgba(255, 220, 50, ${opacity})`;
+                this.ctx.lineWidth = 2;
+                
+                // Draw lightning branches
+                const branches = 3;
+                for (let i = 0; i < branches; i++) {
+                    const angleOffset = (Math.random() - 0.5) * Math.PI / 4;
+                    const angle = rupture.direction + angleOffset;
+                    const length = this.cellSize * (0.7 + Math.random() * 0.6);
+                    
+                    // Draw jagged line
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(rupture.x, rupture.y);
+                    
+                    let x = rupture.x;
+                    let y = rupture.y;
+                    const segments = 3;
+                    
+                    for (let j = 0; j < segments; j++) {
+                        const segLength = length / segments;
+                        const jitter = this.cellSize * 0.15;
+                        
+                        x += Math.cos(angle + (Math.random() - 0.5) * 0.5) * segLength;
+                        y += Math.sin(angle + (Math.random() - 0.5) * 0.5) * segLength;
+                        
+                        this.ctx.lineTo(
+                            x + (Math.random() - 0.5) * jitter,
+                            y + (Math.random() - 0.5) * jitter
+                        );
+                    }
+                    
+                    this.ctx.stroke();
+                }
+            }
         });
+    }
+    
+    /**
+     * Draw QFH spectral analysis bars
+     */
+    drawSpectralAnalysis() {
+        const barWidth = 30;
+        const barSpacing = 10;
+        const maxHeight = 120;
+        const startX = 20;
+        const startY = this.canvas.height - 20;
+        
+        // Draw background panel
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        const panelWidth = this.spectralData.harmonics.length * (barWidth + barSpacing) + barSpacing;
+        this.ctx.fillRect(
+            startX - 10,
+            startY - maxHeight - 40,
+            panelWidth + 20,
+            maxHeight + 50
+        );
+        
+        // Draw title
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 14px Arial';
+        this.ctx.fillText(
+            'QFH Spectral Analysis',
+            startX,
+            startY - maxHeight - 15
+        );
+        
+        // Draw harmonics label
+        this.ctx.fillStyle = '#aaaaaa';
+        this.ctx.font = '12px Arial';
+        this.ctx.fillText(
+            'Frequency Harmonics',
+            startX,
+            startY - maxHeight - 2
+        );
+        
+        // Normalize amplitudes and draw bars
+        const maxAmp = Math.max(0.1, this.spectralData.maxAmplitude);
+        
+        this.spectralData.harmonics.forEach((h, index) => {
+            const amplitude = this.spectralData.amplitudes[index] || 0;
+            const phase = this.spectralData.phases[index] || 0;
+            
+            // Calculate normalized height
+            const normHeight = (amplitude / maxAmp) * maxHeight;
+            
+            // Calculate position
+            const x = startX + index * (barWidth + barSpacing);
+            const y = startY - normHeight;
+            
+            // Draw bar with gradient based on harmonic
+            const gradient = this.ctx.createLinearGradient(x, startY, x, y);
+            const hue = 180 + h * 20; // Cyan to blue range
+            
+            gradient.addColorStop(0, `hsla(${hue}, 80%, 50%, 0.3)`);
+            gradient.addColorStop(1, `hsla(${hue}, 100%, 60%, 0.9)`);
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(x, y, barWidth, normHeight);
+            
+            // Draw border
+            this.ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.7)`;
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(x, y, barWidth, normHeight);
+            
+            // Add harmonic label
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`f${h}`, x + barWidth/2, startY + 15);
+            
+            // Add amplitude value
+            if (amplitude > 0.2) {
+                this.ctx.fillText(
+                    amplitude.toFixed(2),
+                    x + barWidth/2,
+                    y - 5
+                );
+            }
+            
+            // Draw phase indicator
+            if (amplitude > 0.4) {
+                const phaseX = x + barWidth/2;
+                const phaseY = y + normHeight * 0.3;
+                const phaseRadius = barWidth * 0.3;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(phaseX, phaseY, phaseRadius, 0, Math.PI * 2);
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                this.ctx.fill();
+                
+                // Draw phase arrow
+                this.ctx.beginPath();
+                this.ctx.moveTo(phaseX, phaseY);
+                this.ctx.lineTo(
+                    phaseX + Math.cos(phase) * phaseRadius * 0.8,
+                    phaseY + Math.sin(phase) * phaseRadius * 0.8
+                );
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
+        });
+        
+        // Reset text alignment
+        this.ctx.textAlign = 'left';
     }
 
     /**
@@ -609,12 +824,57 @@ export default class Scene9 {
         this.ctx.fillText(`Ruptures Detected: ${this.ruptures.length}`, 30, 120);
         this.ctx.fillText(`Active Pulses: ${this.pulses.length}`, 30, 145);
         
+        // Draw spectral information if QFH was run
+        if (this.spectralData.amplitudes.length > 0) {
+            // Find dominant frequency
+            let maxIndex = 0;
+            let maxAmp = 0;
+            
+            this.spectralData.amplitudes.forEach((amp, i) => {
+                if (amp > maxAmp) {
+                    maxAmp = amp;
+                    maxIndex = i;
+                }
+            });
+            
+            // Show dominant frequency
+            if (maxAmp > 0) {
+                const dominantHarmonic = this.spectralData.harmonics[maxIndex];
+                this.ctx.fillStyle = '#00d4ff';
+                this.ctx.fillText(
+                    `Dominant Frequency: f${dominantHarmonic} (${maxAmp.toFixed(3)})`,
+                    30,
+                    170
+                );
+            }
+        }
+        
         // Draw algorithm indicator if active
         if (this.activeAlgorithm) {
             this.ctx.fillStyle = this.activeAlgorithm === 'QBSA' ? '#ffaa00' : '#00ff88';
             this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'right';
             this.ctx.fillText(`${this.activeAlgorithm} Running`, this.canvas.width - 30, 40);
+            
+            // Add algorithm-specific info
+            if (this.activeAlgorithm === 'QBSA') {
+                this.ctx.fillStyle = '#ffaa00';
+                this.ctx.fillText(`Rupture Detection Active`, this.canvas.width - 30, 65);
+                
+                if (this.ruptures.length > 0) {
+                    const latestRupture = this.ruptures[this.ruptures.length - 1];
+                    const age = ((this.time - latestRupture.time) / 1000).toFixed(1);
+                    this.ctx.fillText(`Last Rupture: ${age}s ago`, this.canvas.width - 30, 90);
+                }
+            } else if (this.activeAlgorithm === 'QFH') {
+                this.ctx.fillStyle = '#00ff88';
+                this.ctx.fillText(`Harmonic Analysis Active`, this.canvas.width - 30, 65);
+                
+                // Show number of active harmonics
+                const activeHarmonics = this.spectralData.amplitudes.filter(a => a > 0.4).length;
+                this.ctx.fillText(`Active Harmonics: ${activeHarmonics}`, this.canvas.width - 30, 90);
+            }
+            
             this.ctx.textAlign = 'left';
         }
         
@@ -650,6 +910,28 @@ export default class Scene9 {
         if (this.activeAlgorithm) {
             this.ctx.fillStyle = this.activeAlgorithm === 'QBSA' ? '#ffaa00' : '#00ff88';
             this.ctx.fillText(`${this.activeAlgorithm}`, this.canvas.width - 20, 60);
+            
+            // Show algorithm-specific info
+            if (this.activeAlgorithm === 'QBSA') {
+                this.ctx.fillText(`Ruptures: ${this.ruptures.length}`, this.canvas.width - 20, 90);
+            } else if (this.activeAlgorithm === 'QFH' && this.spectralData.amplitudes.length > 0) {
+                // Find dominant frequency
+                let maxIndex = 0;
+                let maxAmp = 0;
+                
+                this.spectralData.amplitudes.forEach((amp, i) => {
+                    if (amp > maxAmp) {
+                        maxAmp = amp;
+                        maxIndex = i;
+                    }
+                });
+                
+                // Show dominant frequency
+                if (maxAmp > 0) {
+                    const dominantHarmonic = this.spectralData.harmonics[maxIndex];
+                    this.ctx.fillText(`f${dominantHarmonic}: ${maxAmp.toFixed(2)}`, this.canvas.width - 20, 90);
+                }
+            }
         }
         
         this.ctx.textAlign = 'left'; // Reset alignment
