@@ -62,6 +62,11 @@
         </div>
 
         <div class="control-group">
+            <label for="sizeSlider">Particle Size: <span id="sizeValue">3</span></label>
+            <input type="range" id="sizeSlider" min="1" max="10" value="3">
+        </div>
+
+        <div class="control-group">
             <label>Preset</label>
             <select id="presetSelect" class="btn btn-secondary" style="width:100%;">
                 <option value="default">Default</option>
@@ -140,10 +145,16 @@
             if (framework) framework.updateSettings({ speed });
         }
 
-            function updateIntensity() {
+        function updateIntensity() {
             const intensity = parseInt(document.getElementById('intensitySlider').value);
             document.getElementById('intensityValue').textContent = intensity + '%';
             if (framework) framework.updateSettings({ intensity });
+        }
+
+        function updateSize() {
+            const size = parseInt(document.getElementById('sizeSlider').value);
+            document.getElementById('sizeValue').textContent = size;
+            if (framework) framework.updateSettings({ size });
         }
 
             function applyPreset() {
@@ -153,8 +164,10 @@
                 const settings = framework.settings;
                 document.getElementById('speedSlider').value = settings.speed;
                 document.getElementById('intensitySlider').value = settings.intensity;
+                document.getElementById('sizeSlider').value = settings.size;
                 updateSpeed();
                 updateIntensity();
+                updateSize();
             }
         }
 
@@ -226,6 +239,7 @@
                     document.getElementById('qualitySelect').addEventListener('change', updateQuality);
                     document.getElementById('speedSlider').addEventListener('input', updateSpeed);
                     document.getElementById('intensitySlider').addEventListener('input', updateIntensity);
+                    document.getElementById('sizeSlider').addEventListener('input', updateSize);
                     document.getElementById('presetSelect').addEventListener('change', applyPreset);
                     document.getElementById('resetBtn').addEventListener('click', resetToDefault);
                     document.getElementById('exportBtn').addEventListener('click', exportFrame);

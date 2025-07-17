@@ -37,7 +37,7 @@ export default class Scene1 {
         this.frequency = 3; // Default frequency value
         this.interference = 'Constructive';
         this.waveValues = [];
-        this.waveAmplitude = this.settings.intensity || 50;
+        this.waveAmplitude = this.settings.intensity ?? 50;
         this.spectrum = null; // Fourier Transform results
         
         // Interactive controller (initialized in init)
@@ -80,7 +80,7 @@ export default class Scene1 {
         this.waveValues = new Array(this.canvas.width).fill(0);
         this.frequency = 3;
         this.wavePhaseOffsets = [0, Math.PI / 3, 2 * Math.PI / 3];
-        this.waveAmplitude = this.settings.intensity || 50;
+        this.waveAmplitude = this.settings.intensity ?? 50;
         this.spectrum = null;
     }
     
@@ -214,7 +214,7 @@ export default class Scene1 {
         this.lastTime = timestamp;
         
         // Use generic settings from the framework's control panel
-        this.waveAmplitude = this.settings.intensity || 50;
+        this.waveAmplitude = this.settings.intensity ?? 50;
         const speed = this.settings.speed || 1.0;
         
         // Update scene state
