@@ -74,6 +74,8 @@ export default class Scene6 {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         
         this.canvas.addEventListener('click', this.handleMouseClick);
+        this.canvas.addEventListener('mousedown', this.handleMouseDown);
+        this.canvas.addEventListener('mouseup', this.handleMouseUp);
         window.addEventListener('keydown', this.handleKeyDown);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
         
@@ -196,6 +198,23 @@ export default class Scene6 {
                 this.reset();
                 break;
         }
+    }
+
+    /**
+     * Handle mouse down event for initiating drags
+     * @param {MouseEvent} e - The mouse event
+     */
+    handleMouseDown(e) {
+        this.handleMouseMove(e);
+        this.handleMouseClick(e);
+    }
+
+    /**
+     * Handle mouse up event to end drags
+     */
+    handleMouseUp() {
+        this.controlPoints.massSlider.dragging = false;
+        this.controlPoints.speedSlider.dragging = false;
     }
 
     /**
