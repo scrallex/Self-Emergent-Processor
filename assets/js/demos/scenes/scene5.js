@@ -36,6 +36,10 @@ export default class Scene5 {
         this.systemStability = 'Analyzing...';
         this.systemEnergy = 0;
         
+        // Perspective settings
+        this.activePerspective = -1; // -1 = global view, 0,1,2 = body index
+        this.showRelativeVectors = true;
+        
         // Body interaction angles
         this.angles = [
             { bodies: [0, 1, 2], angle: 0, type: 'Unknown', color: '#ffffff' },
@@ -146,6 +150,28 @@ export default class Scene5 {
                     if (!value) {
                         this.bodies.forEach(b => b.trail = []);
                     }
+                }
+            },
+            {
+                id: 'perspective_cycle',
+                type: 'button',
+                label: this.getPerspectiveLabel(),
+                onClick: () => {
+                    this.cyclePerspective();
+                    // Update button label
+                    const button = this.controller.getControlById('perspective_cycle');
+                    if (button) {
+                        button.text = this.getPerspectiveLabel();
+                    }
+                }
+            },
+            {
+                id: 'show_vectors',
+                type: 'toggle',
+                label: 'Show Relative Vectors',
+                value: this.showRelativeVectors,
+                onChange: (value) => {
+                    this.showRelativeVectors = value;
                 }
             },
             {
@@ -445,13 +471,63 @@ export default class Scene5 {
      * Draw the scene - handles both normal and video modes
      * @param {number} timestamp - The current timestamp from requestAnimationFrame
      */
+    /**
+     * Get the label for the perspective button
+     * @returns {string} Button label
+     */
+    getPerspectiveLabel() {
+        if (this.activePerspective === -1) {
+            return 'Global View';
+        } else {
+            return `Body ${this.activePerspective + 1} Perspective`;
+        }
+    }
+    
+    /**
+     * Cycle through different perspectives
+     */
+    cyclePerspective() {
+        this.activePerspective = (this.activePerspective + 1) % 4 - (this.activePerspective === 2 ? 0 : 0);
+        // Clear trails when switching perspective
+        if (this.showTrails) {
+            this.bodies.forEach(b => b.trail = []);
+        }
+    }
+    
+    /**
+     * Convert global coordinates to perspective-relative coordinates
+     * @param {number} x - Global x coordinate
+     * @param {number} y - Global y coordinate
+     * @returns {Object} Transformed coordinates {x, y}
+     */
+    transformToPerspective(x, y) {
+        if (this.activePerspective === -1) {
+            // Global perspective - no transformation
+            return { x, y };
+        }
+        
+        // Get the reference body
+        const refBody = this.bodies[this.activePerspective];
+        
+        // Transform to be relative to the reference body
+        return {
+            x: x - refBody.x + this.canvas.width / 2,
+            y: y - refBody.y + this.canvas.height / 2
+        };
+    }
+    
     draw(timestamp) {
         // Clear canvas with semi-transparent background for trail effect
         this.ctx.fillStyle = `rgba(10, 10, 10, ${this.showTrails ? 0.15 : 1.0})`;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw reference grid
+        // Draw reference grid from current perspective
         this.drawGrid();
+        
+        // Draw perspective indicator
+        if (this.activePerspective !== -1) {
+            this.drawPerspectiveIndicator();
+        }
         
         // Draw connection lines between bodies
         this.drawConnectionLines();
@@ -467,6 +543,11 @@ export default class Scene5 {
         // Draw angles
         this.drawAngles();
         
+        // Draw relative velocity vectors if enabled
+        if (this.showRelativeVectors && this.activePerspective !== -1) {
+            this.drawRelativeVectors();
+        }
+        
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
             if (this.controller) {
@@ -481,6 +562,7 @@ export default class Scene5 {
                     'System Energy': this.systemEnergy.toFixed(1),
                     'Escaping Bodies': escaping,
                     'G Constant': this.G.toFixed(2),
+                    'Perspective': this.getPerspectiveLabel(),
                     'Angles': this.angles.map(a =>
                         `Body ${a.bodies[0] + 1}: ${a.type} (${a.angle.toFixed(1)}°)`
                     ).join('\n'),
@@ -500,9 +582,18 @@ export default class Scene5 {
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         this.ctx.lineWidth = 1;
         
+        // Adjust grid offset based on perspective
+        let offsetX = 0, offsetY = 0;
+        
+        if (this.activePerspective !== -1) {
+            const refBody = this.bodies[this.activePerspective];
+            offsetX = (refBody.x % 50);
+            offsetY = (refBody.y % 50);
+        }
+        
         // Draw vertical grid lines
         const gridSize = 50;
-        for (let x = gridSize; x < this.canvas.width; x += gridSize) {
+        for (let x = offsetX; x < this.canvas.width; x += gridSize) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
             this.ctx.lineTo(x, this.canvas.height);
@@ -510,10 +601,23 @@ export default class Scene5 {
         }
         
         // Draw horizontal grid lines
-        for (let y = gridSize; y < this.canvas.height; y += gridSize) {
+        for (let y = offsetY; y < this.canvas.height; y += gridSize) {
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.stroke();
+        }
+        
+        // Draw origin crosshair when in perspective view
+        if (this.activePerspective !== -1) {
+            const center = this.transformToPerspective(0, 0);
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(center.x - 20, center.y);
+            this.ctx.lineTo(center.x + 20, center.y);
+            this.ctx.moveTo(center.x, center.y - 20);
+            this.ctx.lineTo(center.x, center.y + 20);
             this.ctx.stroke();
         }
     }
@@ -521,11 +625,102 @@ export default class Scene5 {
     /**
      * Draw connection lines between bodies
      */
+    /**
+     * Draw indicator showing which body's perspective is active
+     */
+    drawPerspectiveIndicator() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const radius = 100;
+        
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.strokeStyle = this.bodies[this.activePerspective].color;
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+        
+        // Add perspective label
+        this.ctx.fillStyle = this.bodies[this.activePerspective].color;
+        this.ctx.font = '14px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`Body ${this.activePerspective + 1} Perspective`, centerX, centerY - radius - 10);
+        this.ctx.textAlign = 'left';
+    }
+    
+    /**
+     * Draw relative velocity vectors for each body
+     */
+    drawRelativeVectors() {
+        const refBody = this.bodies[this.activePerspective];
+        
+        for (let i = 0; i < this.bodies.length; i++) {
+            if (i === this.activePerspective) continue;
+            
+            const body = this.bodies[i];
+            const transformed = this.transformToPerspective(body.x, body.y);
+            
+            // Calculate relative velocity
+            const relVx = body.vx - refBody.vx;
+            const relVy = body.vy - refBody.vy;
+            const relSpeed = Math.sqrt(relVx * relVx + relVy * relVy);
+            const scaleFactor = body.m * 0.05;
+            
+            // Draw relative velocity vector
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(transformed.x, transformed.y);
+            this.ctx.lineTo(
+                transformed.x + relVx * scaleFactor,
+                transformed.y + relVy * scaleFactor
+            );
+            this.ctx.stroke();
+            
+            // Add arrowhead
+            const angle = Math.atan2(relVy, relVx);
+            this.ctx.beginPath();
+            this.ctx.moveTo(transformed.x + relVx * scaleFactor, transformed.y + relVy * scaleFactor);
+            this.ctx.lineTo(
+                transformed.x + relVx * scaleFactor - 10 * Math.cos(angle - Math.PI / 6),
+                transformed.y + relVy * scaleFactor - 10 * Math.sin(angle - Math.PI / 6)
+            );
+            this.ctx.lineTo(
+                transformed.x + relVx * scaleFactor - 10 * Math.cos(angle + Math.PI / 6),
+                transformed.y + relVy * scaleFactor - 10 * Math.sin(angle + Math.PI / 6)
+            );
+            this.ctx.closePath();
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            this.ctx.fill();
+            
+            // Add relative speed label
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(
+                `${relSpeed.toFixed(1)} u/s`,
+                transformed.x + relVx * scaleFactor / 2,
+                transformed.y + relVy * scaleFactor / 2 - 5
+            );
+            this.ctx.textAlign = 'left';
+        }
+    }
+    
     drawConnectionLines() {
         // Draw lines connecting the bodies
         for (let i = 0; i < this.bodies.length; i++) {
             const body1 = this.bodies[i];
             const body2 = this.bodies[(i + 1) % this.bodies.length];
+            
+            // Transform coordinates based on perspective
+            const pos1 = this.transformToPerspective(body1.x, body1.y);
+            const pos2 = this.transformToPerspective(body2.x, body2.y);
             
             // Get angle information for this pair
             const angleInfo = this.angles.find(a =>
@@ -538,8 +733,8 @@ export default class Scene5 {
             this.ctx.setLineDash([5, 5]);
             
             this.ctx.beginPath();
-            this.ctx.moveTo(body1.x, body1.y);
-            this.ctx.lineTo(body2.x, body2.y);
+            this.ctx.moveTo(pos1.x, pos1.y);
+            this.ctx.lineTo(pos2.x, pos2.y);
             this.ctx.stroke();
             this.ctx.setLineDash([]);
         }
@@ -556,9 +751,14 @@ export default class Scene5 {
             this.ctx.lineWidth = 2;
             this.ctx.beginPath();
             
-            this.ctx.moveTo(body.trail[0].x, body.trail[0].y);
+            // Transform the first point
+            const firstPoint = this.transformToPerspective(body.trail[0].x, body.trail[0].y);
+            this.ctx.moveTo(firstPoint.x, firstPoint.y);
+            
+            // Transform and draw the rest of the trail
             for (let i = 1; i < body.trail.length; i++) {
-                this.ctx.lineTo(body.trail[i].x, body.trail[i].y);
+                const point = this.transformToPerspective(body.trail[i].x, body.trail[i].y);
+                this.ctx.lineTo(point.x, point.y);
             }
             
             this.ctx.stroke();
@@ -569,40 +769,67 @@ export default class Scene5 {
      * Draw celestial bodies
      */
     drawBodies() {
-        this.bodies.forEach(body => {
+        this.bodies.forEach((body, index) => {
+            // Transform coordinates based on perspective
+            const pos = this.transformToPerspective(body.x, body.y);
+            
             // Draw glow effect
             const gradient = this.ctx.createRadialGradient(
-                body.x, body.y, 0,
-                body.x, body.y, body.m * 1.5
+                pos.x, pos.y, 0,
+                pos.x, pos.y, body.m * 1.5
             );
             const bodyColor = body.isEscaping ? '#ff4444' : body.color;
-            gradient.addColorStop(0, bodyColor);
+            
+            // Make the active perspective body brighter
+            const alpha = (index === this.activePerspective) ? '95' : '';
+            
+            gradient.addColorStop(0, bodyColor + alpha);
             gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
             
             this.ctx.fillStyle = gradient;
             this.ctx.beginPath();
-            this.ctx.arc(body.x, body.y, body.m * 1.5, 0, Math.PI * 2);
+            this.ctx.arc(pos.x, pos.y, body.m * 1.5, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Draw body
-            this.ctx.fillStyle = bodyColor;
+            this.ctx.fillStyle = bodyColor + alpha;
             this.ctx.beginPath();
-            this.ctx.arc(body.x, body.y, body.m * 0.7, 0, Math.PI * 2);
+            this.ctx.arc(pos.x, pos.y, body.m * 0.7, 0, Math.PI * 2);
             this.ctx.fill();
             
-            // Draw velocity vector
-            if (!body.isDragging) {
+            // Add indicator for perspective body
+            if (index === this.activePerspective) {
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(pos.x, pos.y, body.m * 1.0, 0, Math.PI * 2);
+                this.ctx.stroke();
+            }
+            
+            // Draw velocity vector (only in global view or for other bodies in perspective view)
+            if (!body.isDragging && (this.activePerspective === -1 || index !== this.activePerspective)) {
                 const speed = Math.sqrt(body.vx * body.vx + body.vy * body.vy);
                 const scaleFactor = body.m * 0.05;
                 
                 this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
                 this.ctx.lineWidth = 2;
                 this.ctx.beginPath();
-                this.ctx.moveTo(body.x, body.y);
-                this.ctx.lineTo(
-                    body.x + body.vx * scaleFactor,
-                    body.y + body.vy * scaleFactor
-                );
+                this.ctx.moveTo(pos.x, pos.y);
+                
+                // In global view, show absolute velocity. In perspective view, show relative to reference frame
+                if (this.activePerspective === -1) {
+                    this.ctx.lineTo(
+                        pos.x + body.vx * scaleFactor,
+                        pos.y + body.vy * scaleFactor
+                    );
+                } else {
+                    // Show velocity relative to reference body
+                    const refBody = this.bodies[this.activePerspective];
+                    this.ctx.lineTo(
+                        pos.x + (body.vx - refBody.vx) * scaleFactor,
+                        pos.y + (body.vy - refBody.vy) * scaleFactor
+                    );
+                }
                 this.ctx.stroke();
             }
 
@@ -610,9 +837,15 @@ export default class Scene5 {
                 this.ctx.fillStyle = '#ff4444';
                 this.ctx.font = '12px Arial';
                 this.ctx.textAlign = 'center';
-                this.ctx.fillText('Escaping', body.x, body.y - body.m * 2);
+                this.ctx.fillText('Escaping', pos.x, pos.y - body.m * 2);
                 this.ctx.textAlign = 'left';
             }
+            
+            // Label bodies with numbers
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '14px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`${index + 1}`, pos.x, pos.y + 5);
         });
     }
     
@@ -625,11 +858,16 @@ export default class Scene5 {
             const body1 = this.bodies[angleInfo.bodies[1]];
             const body2 = this.bodies[angleInfo.bodies[2]];
             
-            // Vectors from center to each body
-            const v1x = body1.x - centerBody.x;
-            const v1y = body1.y - centerBody.y;
-            const v2x = body2.x - centerBody.x;
-            const v2y = body2.y - centerBody.y;
+            // Transform coordinates based on perspective
+            const centerPos = this.transformToPerspective(centerBody.x, centerBody.y);
+            const pos1 = this.transformToPerspective(body1.x, body1.y);
+            const pos2 = this.transformToPerspective(body2.x, body2.y);
+            
+            // Vectors from center to each body in transformed coordinates
+            const v1x = pos1.x - centerPos.x;
+            const v1y = pos1.y - centerPos.y;
+            const v2x = pos2.x - centerPos.x;
+            const v2y = pos2.y - centerPos.y;
             
             // Calculate angles for arc drawing
             const angle1 = Math.atan2(v1y, v1x);
@@ -642,13 +880,13 @@ export default class Scene5 {
             
             // Arc radius based on body mass
             const arcRadius = centerBody.m * 1.5;
-            this.ctx.arc(centerBody.x, centerBody.y, arcRadius, angle1, angle2);
+            this.ctx.arc(centerPos.x, centerPos.y, arcRadius, angle1, angle2);
             this.ctx.stroke();
             
             // Add angle label
             const midAngle = (angle1 + angle2) / 2;
-            const labelX = centerBody.x + arcRadius * 1.5 * Math.cos(midAngle);
-            const labelY = centerBody.y + arcRadius * 1.5 * Math.sin(midAngle);
+            const labelX = centerPos.x + arcRadius * 1.5 * Math.cos(midAngle);
+            const labelY = centerPos.y + arcRadius * 1.5 * Math.sin(midAngle);
             
             this.ctx.fillStyle = angleInfo.color;
             this.ctx.font = '12px Arial';

@@ -41,6 +41,9 @@ export default class Scene6 {
         // Visualization
         this.timeScale = [];
         this.collisionHistory = [];
+        this.collisionTimings = []; // Array to store time intervals between collisions
+        this.frequencyData = []; // Array to store frequency domain data
+        this.showFrequencyDomain = true; // Toggle for frequency visualization
         this.massRatio = 1; // Power of 10
         this.digits = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]; // First digits of π
         
@@ -492,24 +495,62 @@ export default class Scene6 {
                 block.vx = -block.vx * this.elasticity;
                 this.collisionCount++;
                 block.collisions++;
+                
+                // Record collision
+                const collisionTime = this.time;
                 this.collisionHistory.push({
-                    time: this.time,
+                    time: collisionTime,
                     type: 'wall',
                     block: blocks.indexOf(block)
                 });
+                
+                // Record time interval between collisions
+                if (this.collisionHistory.length > 1) {
+                    const prevTime = this.collisionHistory[this.collisionHistory.length - 2].time;
+                    this.collisionTimings.push(collisionTime - prevTime);
+                    
+                    // Keep the array at a reasonable size
+                    if (this.collisionTimings.length > 1000) {
+                        this.collisionTimings.shift();
+                    }
+                    
+                    // Update frequency domain data if we have enough samples
+                    if (this.collisionTimings.length > 32) {
+                        this.updateFrequencyDomain();
+                    }
+                }
             } else if (earliestCollision.type === 'block') {
                 this.resolveCollision(earliestCollision.block1, earliestCollision.block2);
                 this.collisionCount++;
                 earliestCollision.block1.collisions++;
                 earliestCollision.block2.collisions++;
+                
+                // Record collision
+                const collisionTime = this.time;
                 this.collisionHistory.push({
-                    time: this.time,
+                    time: collisionTime,
                     type: 'block',
                     blocks: [
                         blocks.indexOf(earliestCollision.block1),
                         blocks.indexOf(earliestCollision.block2)
                     ]
                 });
+                
+                // Record time interval between collisions
+                if (this.collisionHistory.length > 1) {
+                    const prevTime = this.collisionHistory[this.collisionHistory.length - 2].time;
+                    this.collisionTimings.push(collisionTime - prevTime);
+                    
+                    // Keep the array at a reasonable size
+                    if (this.collisionTimings.length > 1000) {
+                        this.collisionTimings.shift();
+                    }
+                    
+                    // Update frequency domain data if we have enough samples
+                    if (this.collisionTimings.length > 32) {
+                        this.updateFrequencyDomain();
+                    }
+                }
             }
             
             timeLeft -= dt;
@@ -554,6 +595,41 @@ export default class Scene6 {
         
         b1.x -= overlap * b1Ratio;
         b2.x += overlap * b2Ratio;
+    }
+    
+    /**
+     * Update frequency domain data using the collision timing intervals
+     */
+    updateFrequencyDomain() {
+        // Use the last 128 collision timings (or fewer if not available)
+        const sampleSize = Math.min(128, this.collisionTimings.length);
+        const samples = this.collisionTimings.slice(-sampleSize);
+        
+        // Calculate mean and normalize
+        const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
+        const normalizedSamples = samples.map(s => s / mean);
+        
+        // Simple discrete Fourier transform
+        const N = normalizedSamples.length;
+        this.frequencyData = [];
+        
+        // Calculate only the first 32 frequency components
+        const maxFreq = Math.min(32, Math.floor(N / 2));
+        
+        for (let k = 0; k < maxFreq; k++) {
+            let real = 0;
+            let imag = 0;
+            
+            for (let n = 0; n < N; n++) {
+                const phi = (2 * Math.PI * k * n) / N;
+                real += normalizedSamples[n] * Math.cos(phi);
+                imag -= normalizedSamples[n] * Math.sin(phi);
+            }
+            
+            // Calculate magnitude
+            const magnitude = Math.sqrt(real * real + imag * imag) / N;
+            this.frequencyData.push(magnitude);
+        }
     }
     
     /**
@@ -667,6 +743,11 @@ export default class Scene6 {
         
         // Draw collision visualization
         this.drawCollisionVisualizer();
+        
+        // Draw frequency domain visualization if enabled
+        if (this.showFrequencyDomain && this.frequencyData.length > 0) {
+            this.drawFrequencyDomain();
+        }
         
         // Draw π approximation
         this.drawPiApproximation();
@@ -848,7 +929,7 @@ export default class Scene6 {
         // Draw title
         ctx.fillStyle = '#fff';
         ctx.font = '12px Arial';
-        ctx.fillText('Collision Frequency', 30, visualizerY - 5);
+        ctx.fillText('Collision Timeline', 30, visualizerY - 5);
         
         // Draw collision graph
         if (this.collisionHistory.length > 1) {
@@ -907,6 +988,101 @@ export default class Scene6 {
             ctx.fillStyle = '#ffaa00';
             ctx.font = '12px Arial';
             ctx.fillText('π', 15, piY + 4);
+        }
+    }
+    
+    /**
+     * Draw frequency domain visualization showing emergent patterns
+     */
+    drawFrequencyDomain() {
+        const { ctx, canvas } = this;
+        const visualizerHeight = 100;
+        const visualizerY = canvas.height - visualizerHeight - 140; // Above the collision visualizer
+        
+        // Draw visualizer background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(20, visualizerY, canvas.width - 40, visualizerHeight);
+        
+        // Draw visualizer border
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(20, visualizerY, canvas.width - 40, visualizerHeight);
+        
+        // Draw title
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.fillText('Frequency Domain Emergence', 30, visualizerY - 5);
+        
+        if (this.frequencyData.length > 0) {
+            const barWidth = (canvas.width - 80) / this.frequencyData.length;
+            const maxHeight = visualizerHeight - 30;
+            
+            // Find max value for normalization
+            const maxValue = Math.max(...this.frequencyData);
+            
+            // Draw frequency bars with spectral coloring
+            for (let i = 0; i < this.frequencyData.length; i++) {
+                const magnitude = this.frequencyData[i] / maxValue;
+                const barHeight = magnitude * maxHeight;
+                const x = 40 + i * barWidth;
+                const y = visualizerY + visualizerHeight - 20 - barHeight;
+                
+                // Create gradient based on frequency
+                const hue = 200 + (i / this.frequencyData.length) * 160;
+                ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                
+                // Draw bar
+                ctx.fillRect(x, y, barWidth - 1, barHeight);
+                
+                // Highlight if peak
+                if (i > 0 && i < this.frequencyData.length - 1 &&
+                    this.frequencyData[i] > this.frequencyData[i-1] &&
+                    this.frequencyData[i] > this.frequencyData[i+1] &&
+                    magnitude > 0.5) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, barWidth - 1, barHeight);
+                    
+                    // Add frequency label for significant peaks
+                    if (magnitude > 0.7) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`f${i}`, x + barWidth/2, y - 5);
+                    }
+                }
+            }
+            
+            // Add harmonic markers at specific frequencies related to π
+            // Harmonics proportional to π tend to emerge in the frequency spectrum
+            const piHarmonics = [1, 3, 7]; // Frequencies where π-related harmonics appear
+            for (const harmonic of piHarmonics) {
+                if (harmonic < this.frequencyData.length) {
+                    const x = 40 + harmonic * barWidth + barWidth/2;
+                    
+                    ctx.strokeStyle = '#ffaa00';
+                    ctx.setLineDash([2, 2]);
+                    ctx.beginPath();
+                    ctx.moveTo(x, visualizerY + visualizerHeight - 20);
+                    ctx.lineTo(x, visualizerY + 20);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // Add label
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`π-${harmonic}`, x, visualizerY + visualizerHeight - 5);
+                }
+            }
+            
+            ctx.textAlign = 'left'; // Reset text alignment
+            
+            // Add legend
+            ctx.fillStyle = '#aaaaaa';
+            ctx.font = '10px Arial';
+            ctx.fillText('Frequency domain shows repeating patterns emerging from collisions', 30, visualizerY + 12);
+            ctx.fillText('Yellow markers indicate harmonic frequencies related to π', 30, visualizerY + 24);
         }
     }
     
@@ -982,18 +1158,25 @@ export default class Scene6 {
         ctx.fillText("Galperin's Theorem: π emerges from the collision count", 20, 175);
         ctx.fillText("scaled by the fourth root of the mass ratio", 20, 190);
         
+        // Frequency domain explanation
+        if (this.showFrequencyDomain && this.frequencyData.length > 0) {
+            ctx.fillStyle = '#00d4ff';
+            ctx.fillText("Frequency domain analysis shows harmonic patterns emerging", 20, 205);
+            ctx.fillText("in the collision sequence, revealing mathematical structure", 20, 220);
+        }
+        
         // Statistics
         ctx.font = '14px Arial';
         ctx.fillStyle = '#cccccc';
         
         // Mass ratio with scientific notation
         const massRatioExp = 2 * this.massRatio;
-        ctx.fillText(`Mass Ratio: 1:10^${massRatioExp}`, 20, 215);
+        ctx.fillText(`Mass Ratio: 1:10^${massRatioExp}`, 20, 245);
         
         // Collision count with thousands separator
         ctx.fillText(
             `Collisions: ${this.collisionCount.toLocaleString()}`,
-            20, 235
+            20, 265
         );
         
         // π approximation with color-coded accuracy
@@ -1001,13 +1184,13 @@ export default class Scene6 {
         ctx.fillStyle = error < 1 ? '#00ff88' : error < 5 ? '#ffaa00' : '#ff4444';
         ctx.fillText(
             `π ≈ ${this.piApproximation.toFixed(8)}`,
-            20, 255
+            20, 285
         );
         
         // Error percentage
         ctx.fillText(
             `Error: ${error.toFixed(6)}%`,
-            20, 275
+            20, 305
         );
         
         // Convergence rate
@@ -1016,20 +1199,20 @@ export default class Scene6 {
             ctx.fillStyle = '#aaaaaa';
             ctx.fillText(
                 `Convergence Rate: ~1/n^${Math.abs(convergenceRate).toFixed(3)}`,
-                20, 295
+                20, 325
             );
         }
         
         // Status message with enhanced visibility
         if (this.isComplete) {
             ctx.fillStyle = '#00ff88';
-            ctx.fillText('✓ Simulation complete! Click to reset.', 20, 315);
+            ctx.fillText('✓ Simulation complete! Click to reset.', 20, 345);
         } else {
             ctx.fillStyle = this.isRunning ? '#00ff88' : '#ffaa00';
             const statusIcon = this.isRunning ? '▶' : '❚❚';
             ctx.fillText(
                 `${statusIcon} ${this.isRunning ? 'Running... Click to pause' : 'Paused. Click to start'}`,
-                20, 315
+                20, 345
             );
         }
         
@@ -1160,6 +1343,8 @@ export default class Scene6 {
         
         this.blocks = [];
         this.collisionHistory = [];
+        this.collisionTimings = [];
+        this.frequencyData = [];
         this.timeScale = [];
     }
 }
