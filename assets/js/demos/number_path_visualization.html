@@ -3,36 +3,611 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Number Path Visualization</title>
+    <title>SEP Dynamics - Prime Trajectory Visualization</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0a0a0a; }
-        canvas { display: block; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+        }
+
         #controls {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+            max-width: 300px;
+        }
+
+        #controls h2 {
+            color: #00ff88;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00ff88;
+            font-size: 0.9em;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #fff;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        button {
+            width: 100%;
             padding: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            max-width: 400px;
+        }
+
+        #legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .legend-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+
+        #stats {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
+    <canvas id="canvas"></canvas>
     <div id="controls">
-        <label for="numberInput">Enter Number:</label>
-        <input type="number" id="numberInput" value="12">
-        <button id="visualizeBtn">Visualize</button>
-        <br>
-        <label for="viewMode">View Mode:</label>
-        <select id="viewMode">
-            <option value="grid">Grid</option>
-            <option value="spiral">Spiral</option>
-            <option value="sphere">Sphere</option>
-        </select>
-    </div>
-    <canvas id="mainCanvas"></canvas>
+        <h2>Prime Trajectory Controls</h2>
+        <div class="control-group">
+            <label for="numberInput">Target Number (1-500)</label>
+            <input type="number" id="numberInput" min="1" max="500" value="100">
+        </div>
+        <div class="control-group">
+            <label for="viewMode">Visualization Mode</label>
+            <select id="viewMode">
+                <option value="3d">3D Prime Space</option>
+                <option value="spiral">Ulam Spiral</option>
+                <option value="sphere">Spherical Projection</option>
+                <option value="hilbert">Hilbert Curve</option>
+                </select>
+                </div>
+        <div class="control-group">
+            <label for="speedSlider">Animation Speed</label>
+            <input type="range" id="speedSlider" min="1" max="20" value="10">
+        </div>
+        <button id="visualizeBtn">Generate Trajectory</button>
+        <button id="pauseBtn">Pause/Resume</button>
+        <button id="resetBtn">Reset View</button>
+        </div>
+        
+        <div id="info">
+            <strong>Prime Trajectory Visualization</strong><br>
+            <small>Part of SEP Dynamics quantum-inspired framework. Each number's position is determined by its prime
+                factorization, creating emergent patterns through recursive phase relationships.</small>
+        </div>
+        
+        <div id="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff0066;"></div>
+                <span>Prime Numbers</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #00ff88;"></div>
+                <span>Composite Path</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #0099ff;"></div>
+                <span>Current Position</span>
+            </div>
+        </div>
+        
+        <div id="stats">
+            <div>Current: <span id="currentNumber">1</span></div>
+            <div>Primes Found: <span id="primeCount">0</span></div>
+            <div>Path Length: <span id="pathLength">0</span></div>
+            <div>Coherence: <span id="coherence">0.00</span></div>
+        </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="number_path_visualization.js"></script>
+    <script>
+        class PrimeTrajectoryVisualizer {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+
+                this.currentNumber = 1;
+                this.targetNumber = 100;
+                this.primes = [];
+                this.path = [];
+                this.coordinates = {};
+                this.viewMode = '3d';
+                this.animationSpeed = 10;
+                this.isPaused = false;
+                this.currentFrame = 0;
+
+                this.init();
+                this.setupEventListeners();
+            }
+
+            init() {
+                // Setup renderer
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setClearColor(0x0a0a0a);
+
+                // Setup camera
+                this.camera.position.set(30, 30, 30);
+                this.camera.lookAt(0, 0, 0);
+
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                directionalLight.position.set(1, 1, 1);
+                this.scene.add(directionalLight);
+
+                // Add coordinate system
+                this.addCoordinateSystem();
+
+                // Generate initial visualization
+                this.generateVisualization();
+
+                // Start animation
+                this.animate();
+            }
+
+            addCoordinateSystem() {
+                // Grid helper
+                const gridHelper = new THREE.GridHelper(50, 50, 0x00ff88, 0x003322);
+                this.scene.add(gridHelper);
+
+                // Axes
+                const axesHelper = new THREE.AxesHelper(25);
+                this.scene.add(axesHelper);
+            }
+
+            generatePrimes(limit) {
+                const sieve = new Array(limit + 1).fill(true);
+                sieve[0] = sieve[1] = false;
+
+                for (let i = 2; i * i <= limit; i++) {
+                    if (sieve[i]) {
+                        for (let j = i * i; j <= limit; j += i) {
+                            sieve[j] = false;
+                        }
+                    }
+                }
+
+                this.primes = [];
+                for (let i = 2; i <= limit; i++) {
+                    if (sieve[i]) this.primes.push(i);
+                }
+
+                // Create prime index map
+                this.primeIndex = new Map();
+                this.primes.forEach((p, i) => this.primeIndex.set(p, i + 1));
+            }
+
+            getPrimeFactors(n) {
+                const factors = [];
+                let num = n;
+
+                for (const prime of this.primes) {
+                    if (prime * prime > num) break;
+                    while (num % prime === 0) {
+                        factors.push(prime);
+                        num /= prime;
+                    }
+                }
+
+                if (num > 1) factors.push(num);
+                return factors.sort((a, b) => b - a);
+            }
+
+            getCoordinates(n, viewMode) {
+                const factors = this.getPrimeFactors(n);
+
+                switch (viewMode) {
+                    case '3d':
+                        return this.get3DCoordinates(n, factors);
+                    case 'spiral':
+                        return this.getSpiralCoordinates(n);
+                    case 'sphere':
+                        return this.getSphericalCoordinates(n, factors);
+                    case 'hilbert':
+                        return this.getHilbertCoordinates(n);
+                    default:
+                        return { x: 0, y: 0, z: 0 };
+                }
+            }
+
+            get3DCoordinates(n, factors) {
+                if (n === 1) return { x: 0, y: 0, z: 0 };
+
+                if (factors.length === 1) {
+                    // Prime number - place on x-axis
+                    const idx = this.primeIndex.get(n);
+                    return { x: idx * 2, y: 0, z: 0 };
+                } else if (factors.length === 2) {
+                    // 2D composite
+                    const idx1 = this.primeIndex.get(factors[0]);
+                    const idx2 = this.primeIndex.get(factors[1]);
+                    return { x: idx1 * 2, y: idx2 * 2, z: 0 };
+                } else {
+                    // 3D or higher
+                    let x = this.primeIndex.get(factors[0]) * 2;
+                    let y = factors[1] ? this.primeIndex.get(factors[1]) * 2 : 0;
+                    let z = factors[2] ? this.primeIndex.get(factors[2]) * 2 : 0;
+
+                    // Fold higher dimensions
+                    for (let i = 3; i < factors.length; i++) {
+                        const idx = this.primeIndex.get(factors[i]);
+                        if (i % 3 === 0) x += idx;
+                        else if (i % 3 === 1) y += idx;
+                        else z += idx;
+                    }
+
+                    return { x, y, z };
+                }
+            }
+
+            getSpiralCoordinates(n) {
+                // Ulam spiral mapping
+                let x = 0, y = 0;
+                let dx = 0, dy = -1;
+
+                for (let i = 1; i <= n; i++) {
+                    if ((-0.5 < x && x <= 0.5) && (-0.5 < y && y <= 0.5) ||
+                        (x > 0 && x === -y) || (x < 0 && x === y)) {
+                        [dx, dy] = [-dy, dx];
+                    }
+                    if (i === n) break;
+                    x += dx;
+                    y += dy;
+                }
+
+                return { x: x * 2, y: y * 2, z: 0 };
+            }
+
+            getSphericalCoordinates(n, factors) {
+                // Map to sphere based on prime factorization
+                const phi = (n / this.targetNumber) * Math.PI;
+                const theta = (factors.length / 10) * Math.PI * 2;
+                const radius = 10 + factors.length * 2;
+
+                return {
+                    x: radius * Math.sin(phi) * Math.cos(theta),
+                    y: radius * Math.cos(phi),
+                    z: radius * Math.sin(phi) * Math.sin(theta)
+                };
+            }
+
+            getHilbertCoordinates(n) {
+                // Simple Hilbert curve approximation
+                const order = Math.ceil(Math.log2(Math.sqrt(this.targetNumber)));
+                const size = Math.pow(2, order);
+                const scale = 40 / size;
+
+                // Convert n to Hilbert curve position (simplified)
+                const t = n / this.targetNumber;
+                const angle = t * Math.PI * 4;
+
+                return {
+                    x: Math.cos(angle) * t * 20,
+                    y: Math.sin(angle) * t * 20,
+                    z: t * 10
+                };
+            }
+
+            generatePath() {
+                this.path = [];
+                this.coordinates = {};
+
+                for (let n = 1; n <= this.targetNumber; n++) {
+                    const coord = this.getCoordinates(n, this.viewMode);
+                    this.coordinates[n] = coord;
+
+                    // Interpolate between points
+                    if (n > 1) {
+                        const prevCoord = this.coordinates[n - 1];
+                        const steps = 10;
+
+                        for (let i = 0; i <= steps; i++) {
+                            const t = i / steps;
+                            this.path.push({
+                                x: prevCoord.x + (coord.x - prevCoord.x) * t,
+                                y: prevCoord.y + (coord.y - prevCoord.y) * t,
+                                z: prevCoord.z + (coord.z - prevCoord.z) * t,
+                                number: n - 1 + t
+                            });
+                        }
+                    } else {
+                        this.path.push({ ...coord, number: 1 });
+                    }
+                }
+            }
+
+            generateVisualization() {
+                // Clear existing objects
+                while (this.scene.children.length > 3) {
+                    this.scene.remove(this.scene.children[3]);
+                }
+
+                // Generate primes and path
+                this.generatePrimes(this.targetNumber * 2);
+                this.generatePath();
+
+                // Create path line
+                const pathGeometry = new THREE.BufferGeometry();
+                const pathMaterial = new THREE.LineBasicMaterial({
+                    color: 0x00ff88,
+                    linewidth: 2
+                });
+                this.pathLine = new THREE.Line(pathGeometry, pathMaterial);
+                this.scene.add(this.pathLine);
+
+                // Create current position marker
+                const markerGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const markerMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x0099ff,
+                    emissive: 0x0099ff,
+                    emissiveIntensity: 0.5
+                });
+                this.marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                this.scene.add(this.marker);
+
+                // Add prime markers
+                this.addPrimeMarkers();
+
+                // Reset animation
+                this.currentFrame = 0;
+                this.updateStats();
+            }
+
+            addPrimeMarkers() {
+                const primeGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const primeMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xff0066,
+                    emissive: 0xff0066,
+                    emissiveIntensity: 0.3
+                });
+
+                for (let i = 1; i <= this.targetNumber; i++) {
+                    if (this.primes.includes(i)) {
+                        const coord = this.coordinates[i];
+                        if (coord) {
+                            const primeMesh = new THREE.Mesh(primeGeometry, primeMaterial);
+                            primeMesh.position.set(coord.x, coord.y, coord.z);
+                            this.scene.add(primeMesh);
+                        }
+                    }
+                }
+            }
+
+            updateVisualization() {
+                if (this.isPaused || !this.path.length) return;
+
+                // Update frame based on speed
+                this.currentFrame += this.animationSpeed / 10;
+                if (this.currentFrame >= this.path.length) {
+                    this.currentFrame = 0;
+                }
+
+                const frameIndex = Math.floor(this.currentFrame);
+                const currentPoint = this.path[frameIndex];
+
+                // Update current number
+                this.currentNumber = Math.floor(currentPoint.number);
+
+                // Update path line
+                const positions = [];
+                for (let i = 0; i <= frameIndex; i++) {
+                    positions.push(this.path[i].x, this.path[i].y, this.path[i].z);
+                }
+
+                this.pathLine.geometry.setAttribute(
+                    'position',
+                    new THREE.Float32BufferAttribute(positions, 3)
+                );
+
+                // Update marker position
+                this.marker.position.set(currentPoint.x, currentPoint.y, currentPoint.z);
+
+                // Add glow effect
+                const scale = 1 + Math.sin(Date.now() * 0.005) * 0.2;
+                this.marker.scale.set(scale, scale, scale);
+
+                // Update stats
+                this.updateStats();
+            }
+
+            updateStats() {
+                document.getElementById('currentNumber').textContent = this.currentNumber;
+
+                const primeCount = this.primes.filter(p => p <= this.currentNumber).length;
+                document.getElementById('primeCount').textContent = primeCount;
+
+                const pathLength = Math.floor(this.currentFrame);
+                document.getElementById('pathLength').textContent = pathLength;
+
+                // Calculate coherence (simplified quantum-inspired metric)
+                const coherence = this.calculateCoherence();
+                document.getElementById('coherence').textContent = coherence.toFixed(2);
+            }
+
+            calculateCoherence() {
+                // Simplified coherence calculation based on prime density
+                const windowSize = Math.min(10, this.currentNumber);
+                const start = Math.max(1, this.currentNumber - windowSize);
+                let primeCount = 0;
+
+                for (let i = start; i <= this.currentNumber; i++) {
+                    if (this.primes.includes(i)) primeCount++;
+                }
+
+                // Add phase component
+                const phase = Math.sin(this.currentNumber * 0.1) * 0.5 + 0.5;
+                return (primeCount / windowSize) * phase;
+            }
+
+            setupEventListeners() {
+                // Controls
+                document.getElementById('visualizeBtn').addEventListener('click', () => {
+                    this.targetNumber = parseInt(document.getElementById('numberInput').value);
+                    this.viewMode = document.getElementById('viewMode').value;
+                    this.generateVisualization();
+                });
+
+                document.getElementById('pauseBtn').addEventListener('click', () => {
+                    this.isPaused = !this.isPaused;
+                });
+
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.camera.position.set(30, 30, 30);
+                    this.camera.lookAt(0, 0, 0);
+                });
+
+                document.getElementById('speedSlider').addEventListener('input', (e) => {
+                    this.animationSpeed = parseInt(e.target.value);
+                });
+
+                document.getElementById('viewMode').addEventListener('change', (e) => {
+                    this.viewMode = e.target.value;
+                    this.generateVisualization();
+                });
+
+                // Mouse controls
+                let mouseDown = false;
+                let mouseX = 0, mouseY = 0;
+
+                this.canvas.addEventListener('mousedown', (e) => {
+                    mouseDown = true;
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                });
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (!mouseDown) return;
+
+                    const deltaX = e.clientX - mouseX;
+                    const deltaY = e.clientY - mouseY;
+
+                    // Rotate camera around origin
+                    const spherical = new THREE.Spherical();
+                    spherical.setFromVector3(this.camera.position);
+                    spherical.theta -= deltaX * 0.01;
+                    spherical.phi += deltaY * 0.01;
+                    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+                    this.camera.position.setFromSpherical(spherical);
+                    this.camera.lookAt(0, 0, 0);
+
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                });
+
+                this.canvas.addEventListener('mouseup', () => {
+                    mouseDown = false;
+                });
+
+                // Scroll for zoom
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const scale = e.deltaY > 0 ? 1.1 : 0.9;
+                    this.camera.position.multiplyScalar(scale);
+                });
+
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                this.updateVisualization();
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // Initialize visualizer
+        const visualizer = new PrimeTrajectoryVisualizer();
+    </script>
 </body>
 </html>
