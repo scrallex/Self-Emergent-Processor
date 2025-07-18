@@ -498,6 +498,22 @@
             left: 0;
             color: var(--accent);
         }
+
+        .founder-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 3rem;
+            align-items: center;
+            margin-bottom: 4rem;
+        }
+
+        .founder-image {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 50%;
+            border: 5px solid var(--secondary);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
         
         /* About Page */
         .about-content {
@@ -717,6 +733,7 @@
     
     <!-- Particles Background -->
     <div class="particles" id="particles"></div>
+    
     <!-- Home Page -->
     <div id="home" class="page active">
         <!-- Hero Section -->
@@ -731,30 +748,31 @@
                     <a href="#" class="btn btn-primary" onclick="showPage('get-involved')">Partner With Us</a>
                     <a href="#proofs" class="btn btn-secondary">View Proven Results</a>
                 </div>
-                </div>
-                </section>
-                
-                <!-- Stats Section -->
-                <section class="stats">
-                    <div class="stats-container">
-                        <div class="stat-card">
-                            <div class="stat-number">1.0000</div>
-                            <div class="stat-label">Perfect Coherence Score</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">7.8 MB/s</div>
-                            <div class="stat-label">Processing Speed</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">0.0015</div>
-                            <div class="stat-label">Metric Stability Error</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">30%+</div>
-                            <div class="stat-label">Target Annual Returns</div>
-                        </div>
+            </div>
+            </section>
+            
+            <!-- Stats Section -->
+            <section class="stats">
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number">1.0000</div>
+                        <div class="stat-label">Perfect Coherence Score</div>
                     </div>
-                </section>
+                    <div class="stat-card">
+                        <div class="stat-number">7.8 MB/s</div>
+                        <div class="stat-label">Processing Speed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">0.0015</div>
+                        <div class="stat-label">Metric Stability Error</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">30%+</div>
+                        <div class="stat-label">Target Annual Returns</div>
+                    </div>
+                </div>
+            </section>
+        
         <!-- Proofs Section -->
         <section class="proofs" id="proofs">
             <div class="section-header">
@@ -804,10 +822,10 @@
                     <p>Correlating coherence signals with volatility regimes</p>
                     <span class="patent-badge">Results Confidential</span>
                 </div>
-                </div>
-                </section>
-                
-                <!-- Technology Section -->
+            </div>
+            </section>
+            
+            <!-- Technology Section -->
         <section class="technology">
             <div class="section-header">
                 <h2>Revolutionary Technology Stack</h2>
@@ -829,8 +847,9 @@
                     <h3>Streaming Architecture</h3>
                     <p>Process infinite data streams with constant memory usage and microsecond latency</p>
                 </div>
-                </div>
-                </section>
+            </div>
+            </section>
+        
         <!-- CTA Section -->
         <section class="cta">
             <h2>Ready to Revolutionize Your Trading?</h2>
@@ -840,14 +859,15 @@
                 <a href="#" class="btn btn-secondary" onclick="showPage('about')">Learn More</a>
             </div>
         </section>
-        </div>
+    </div>
+    
     <!-- Get Involved Page -->
     <div id="get-involved" class="page">
         <section class="page-hero">
             <h1>Partner With SEP Dynamics</h1>
             <p class="hero-subtitle">Multiple paths to participate in the quantum finance revolution</p>
         </section>
-    
+        
         <section class="involvement-options">
             <div class="option-card">
                 <h2>🚀 For Investors</h2>
@@ -861,6 +881,7 @@
                 </ul>
                 <a href="mailto:invest@sepdynamics.com" class="btn btn-primary">Contact Investment Team</a>
             </div>
+            
             <div class="option-card">
                 <h2>🏢 For Institutions</h2>
                 <p>License our technology to enhance your quantitative capabilities</p>
@@ -873,6 +894,7 @@
                 </ul>
                 <a href="mailto:partners@sepdynamics.com" class="btn btn-primary">Request Enterprise Demo</a>
             </div>
+            
             <div class="option-card">
                 <h2>💼 For Traders</h2>
                 <p>Trade with next-generation market intelligence</p>
@@ -885,6 +907,7 @@
                 </ul>
                 <a href="mailto:traders@sepdynamics.com" class="btn btn-primary">Apply to Trade</a>
             </div>
+            
             <div class="option-card">
                 <h2>🔬 For Researchers</h2>
                 <p>Push the boundaries of quantum-inspired computing</p>
@@ -899,35 +922,45 @@
             </div>
         </section>
     </div>
+    
     <!-- About/Technology Page -->
     <div id="about" class="page">
         <section class="page-hero">
             <h1>The Technology Behind SEP Dynamics</h1>
             <p class="hero-subtitle">A fundamentally new approach to market analysis</p>
         </section>
+        
         <section class="about-content">
             <div class="founder-section">
-                <div class="founder-image"></div>
+                <img src="data/images/ajn_paris.jpg" alt="Alexander J Nagy" class="founder-image">
                 <div>
                     <h2>Founded by Alexander Nagy</h2>
                     <p>B.S. Mechanical Engineering, University of Oklahoma (2019)</p>
-                    <p>Alexander combines deep physics knowledge with proven execution in high-stakes engineering. From
-                        developing control systems for Mark Rober to mission-critical automation at Apple/Flex, he brings a
-                        unique perspective to quantitative finance.</p>
-                    <p><strong>The insight:</strong> Markets behave like complex thermodynamic systems. Traditional models fail
-                        because they assume equilibrium. The SEP Engine measures disequilibrium—the real source of alpha.</p>
+                    <p>Alexander combines deep physics knowledge with proven execution in high-stakes engineering. From developing control
+                        systems for Mark Rober to mission-critical automation at Apple/Flex, he brings a unique perspective to quantitative
+                        finance.</p>
+                    <p><strong>The insight:</strong> Markets behave like complex thermodynamic systems. Traditional models fail because they
+                        assume equilibrium. The SEP Engine measures disequilibrium—the real source of alpha.</p>
                 </div>
             </div>
             
             <h2>Development Timeline</h2>
             <div class="timeline">
                 <div class="timeline-item">
-                    <div class="timeline-date">2023</div>
-                    <p>Initial concept: Quantum-inspired pattern recognition</p>
+                    <div class="timeline-date">Present - Early 2025</div>
+                    <p>Continue development and refinement of the SEP engine and its theoretical underpinnings while employed at Apple (Flex).</p>
                 </div>
                 <div class="timeline-item">
-                    <div class="timeline-date">2024</div>
-                    <p>Core algorithm development: QBSA and QFH kernels</p>
+                    <div class="timeline-date">Early 2025</div>
+                    <p>Achieve a functional and compelling demo of the SEP engine.</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Mid 2025</div>
+                    <p>Transition to full-time dedication to the SEP project.</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">July 2025</div>
+                    <p>Formally establish the LLC for the project and have the core engine built and verified.</p>
                 </div>
                 <div class="timeline-item">
                     <div class="timeline-date">Early 2025</div>
@@ -941,7 +974,8 @@
                     <div class="timeline-date">Q4 2025</div>
                     <p>Launch proprietary trading operations</p>
                 </div>
-                </div>
+            </div>
+            
             <h2>Core Innovation: Information Coherence</h2>
             <p>While others try to predict prices, we measure the <strong>quality of information</strong> in market data:</p>
             <ul style="list-style: none; padding: 2rem 0;">
@@ -962,6 +996,7 @@
                 <li style="padding: 0.5rem 0;">✓ Results correlate with market volatility regimes</li>
             </ul>
         </section>
+        
         <section class="cta">
             <h2>See It In Action</h2>
             <div class="hero-buttons">
@@ -978,54 +1013,62 @@
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Service</a>
             <a href="#">Patents</a>
-            </div>
+        </div>
         <p>&copy; 2025 SEP Dynamics. All rights reserved. Patent pending technologies.</p>
     </footer>
     
     <script>
         // Page navigation
-        function show            l('.page');
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('.page');
             const navLinks = document.querySelectorAll('.nav-links a');
-            
+
             pages.forEach(page => {
-              ;
-            
-                       ve('active');
+                page.classList.remove('active');
             });
-            
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+            });
+
             document.getElementById(pageId).classList.add('active');
-        
-            const active                textContent.toLowerCase().includes(pageId,                           );
-                     f (activeLink) {
-                               ink.classList.add('active');
+
+            const activeLink = Array.from(navLinks).find(link => link.textContent.toLowerCase().includes(pageId));
+            if (activeLink) {
+                activeLink.classList.add('active');
             }
-            
+
             // Close mobile menu
-            document.getElementBy').classList.remove('active');
-            
+            document.getElementById('navLinks').classList.remove('active');
+
             // Scroll to top
             window.scrollTo(0, 0);
         }
-        
+
         // Mobile menu toggle
         function toggleMobileMenu() {
-            const navLint.getElementById('navLinks');
-            navLinks.classList.toggle('a     }
-        
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
         // Create particles
-        function creaeParticles() {
+        function createParticles() {
             const particlesContainer = document.getElementById('particles');
+            if (!particlesContainer) return;
             const particleCount = 30;
-        
-            for (let i = 0; i < parti                    +)                     particle = document.c                    ('div');
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
                 particle.className = 'particle';
-      r                    left = Math.rando                    '%';
-                pa                tyt                 = Math.random() * 20                                particle.style.                    ation = 20 + Math.random() * 10 + 's';
-                                   ntainer.appendChild(particle);
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDuration = 20 + Math.random() * 10 + 's';
+                particlesContainer.appendChild(particle);
             }
-          
-        // Smooth sc             anchor links
-        documen                stener('click', function(e) {
+        }
+        
+        // Smooth scroll for anchor links
+        document.addEventListener('click', function(e) {
             if (e.target.matches('a[href^="#"]')) {
                 e.preventDefault();
                 const targetId = e.target.getAttribute('href').substring(1);
@@ -1035,16 +1078,20 @@
                 }
             }
         });
-        
+
         // Initialize
         createParticles();
-        
-        // Add                    o navigation
-        window.addEventListen                 f            )              st nav = document.querySelector('n                      if (window.scrollY > 50) {
-                             e.background = 'rgba(10, 10, 10, 0.98)';                     nav.style.boxShadow                    gba(0, 0, 0, 0.5)';
+        showPage('home');
+
+        // Add shadow to navigation on scroll
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(10, 10, 10, 0.98)';
+                nav.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.5)';
             } else {
-                nav.                     = 'rgba(10, 10, 10, 0.95)';
-                nav.style.bo                    ;
+                nav.style.background = 'rgba(10, 10, 10, 0.95)';
+                nav.style.boxShadow = 'none';
             }
         });
     </script>

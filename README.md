@@ -2,7 +2,7 @@
 **Recursive Identity and Phase Alignment in Infinite-Dimensional Quantum Information Systems**
 ### Alexander J Nagy
 
-*Hosted at [iamsep.com](https://iamsep.com) • [GitHub Repo](https://github.com/scrallex/Self-Emergent-Processor)*
+*Hosted at [sepdynamics.com](https://sepdynamics.com) • [GitHub Repo](https://github.com/scrallex/Self-Emergent-Processor)*
 
 ---
 
@@ -77,15 +77,6 @@ _(Primary Hosting & User-friendly Explanations)_
 
 👉 **[SEP GitHub Repository](https://github.com/scrallex/Self-Emergent-Processor)**  
 _(Raw research notes, ongoing experiments, and full technical depth)_
-
----
-
-## 🚀 **Development Timeline**
-
-- **Present - Early 2025:** Continue development and refinement of the SEP engine and its theoretical underpinnings while employed at Apple (Flex).
-- **Early 2025:** Achieve a functional and compelling demo of the SEP engine.
-- **Mid 2025:** Transition to full-time dedication to the SEP project.
-- **July 2025:** Formally establish the LLC for the project and have the core engine built and verified.
 
 ---
 
