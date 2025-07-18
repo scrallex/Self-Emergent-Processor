@@ -9,6 +9,8 @@ import RenderPipeline from './render-pipeline.js';
 import VideoController from './video-controller.js';
 import EventEmitter from './event-emitter.js';
 import { SCENE_IDS, ALL_SCENES, DEFAULT_SCENE } from '../config/scene-registry.js';
+import Physics from '../utils/physics.js';
+import MathLib from '../utils/math-lib.js';
 
 class AppFramework {
     constructor(canvas, options = {}) {
@@ -31,6 +33,8 @@ class AppFramework {
         this.state = null;         // State management
         this.renderer = null;      // Rendering pipeline
         this.videoController = null; // Video recording and playback
+        this.physics = null;       // Physics engine
+        this.math = null;          // Math library
         
         // Scene management
         this.scenes = new Map();
@@ -112,6 +116,11 @@ class AppFramework {
         this.renderer.createLayer('effects', 20);
         this.renderer.createLayer('ui', 30);
         this.renderer.createLayer('debug', 100, { visible: this.options.debug });
+
+        // Initialize physics and math libraries
+        this.physics = new Physics();
+        await this.physics.init();
+        this.math = new MathLib();
         
         // Create video controller if recording is enabled
         if (this.options.recordingEnabled) {
@@ -156,10 +165,10 @@ class AppFramework {
      * @param {string} modulePath - Path to the scene module
      * @returns {Promise} - Resolves when the scene is loaded
      */
-    async loadScene(sceneId, modulePath) {
+    async loadScene(sceneId, moduleInfo) {
         try {
             // Import the scene module dynamically
-            const module = await import(modulePath);
+            const module = await moduleInfo();
             const SceneClass = module.default;
             
             // Instantiate the scene with all required dependencies
