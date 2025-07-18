@@ -9,6 +9,8 @@
  * cosine and sine series terms. The spectrum updates live as the angle changes.
 */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene2 {
     /**
      * Constructor for the scene
@@ -16,11 +18,14 @@ export default class Scene2 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.angle = 45;
@@ -31,7 +36,8 @@ export default class Scene2 {
         this.angleType = 'Acute';
         this.angleColor = '#00d4ff';
         this.cosineValue = Math.cos(this.angle * Math.PI / 180);
-        
+        this.spectrumTerms = 5;
+
         // Vectors for dragging
         this.vectors = {
             fixed: { x: 1, y: 0 }, // Unit vector along x-axis
@@ -41,11 +47,10 @@ export default class Scene2 {
         // Dragging state
         this.isDragging = false;
         
-        // Bind event handlers to maintain 'this' context
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseClick = this.handleMouseClick.bind(this);
+        // Interactive controller (initialized in init)
+        this.controller = null;
+        this.interactiveElements = [];
+        this.angleHandle = null;
     }
 
     /**
@@ -53,12 +58,19 @@ export default class Scene2 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
-        
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
         this.reset();
+        return Promise.resolve();
+    }
         return Promise.resolve();
     }
 
@@ -69,6 +81,90 @@ export default class Scene2 {
         this.time = 0;
         this.lastTime = 0;
         this.updateAngle(this.settings.intensity * 1.8); // 0-100 mapped to 0-180
+    }
+n    /**
+     * Create interactive elements specific to this scene
+     * @param {InteractiveUtils} utils - Interactive utilities instance
+     * @returns {Array} Array of interactive elements
+     */
+    createInteractiveElements(utils) {
+        const elements = [];
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.3;
+        const size = 12;
+
+        this.angleHandle = utils.createDraggable({
+            id: "angle_handle",
+            x: centerX + radius * this.vectors.movable.x - size / 2,
+            y: centerY + radius * this.vectors.movable.y - size / 2,
+            width: size,
+            height: size,
+            shape: "circle",
+            color: this.angleColor,
+            tooltip: "Drag to adjust angle",
+            onDragStart: () => { this.isDragging = true; },
+            onDrag: (dx, dy, x, y) => {
+                const vx = x + size / 2 - centerX;
+                const vy = y + size / 2 - centerY;
+                let rad = Math.atan2(vy, vx);
+                if (rad < 0) rad += 2 * Math.PI;
+                const ang = Math.min(180, rad * 180 / Math.PI);
+                this.targetAngle = ang;
+                this.updateAngle(ang);
+            },
+            onDragEnd: () => { this.isDragging = false; }
+        });
+        elements.push(this.angleHandle);
+
+        const toggleBtn = utils.createButton({
+            id: "toggle_anim",
+            x: this.canvas.width / 2 - 60,
+            y: this.canvas.height - 60,
+            width: 120,
+            height: 36,
+            text: "Toggle Animation",
+            onClick: () => { this.isAnimating = !this.isAnimating; }
+        });
+        elements.push(toggleBtn);
+
+        return elements;
+    }
+
+    // Mouse handlers removed as they're replaced by InteractiveController
+
+    /**
+     * Provide custom controls for the control panel
+     * @returns {Array} Array of control configurations
+     */
+    getCustomControls() {
+        return [
+            {
+                id: 'angle_slider',
+                type: 'slider',
+                label: 'Angle',
+                min: 0,
+                max: 180,
+                value: this.angle,
+                step: 1,
+                onChange: (value) => {
+                    this.targetAngle = value;
+                    this.updateAngle(value);
+                }
+            },
+            {
+                id: 'spectrum_terms',
+                type: 'slider',
+                label: 'Spectrum Terms',
+                min: 1,
+                max: 10,
+                value: this.spectrumTerms,
+                step: 1,
+                onChange: (value) => {
+                    this.spectrumTerms = value;
+                }
+            }
+        ];
     }
 
     /**
@@ -99,6 +195,15 @@ export default class Scene2 {
         
         // Update cosine
         this.cosineValue = Math.cos(angleRad);
+
+        if (this.angleHandle) {
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const radius = Math.min(this.canvas.width, this.canvas.height) * 0.3;
+            this.angleHandle.x = centerX + radius * this.vectors.movable.x - this.angleHandle.width / 2;
+            this.angleHandle.y = centerY + radius * this.vectors.movable.y - this.angleHandle.height / 2;
+            this.angleHandle.color = this.angleColor;
+        }
     }
 
     /**
@@ -183,6 +288,14 @@ export default class Scene2 {
         
         // Render the scene
         this.draw();
+
+        if (this.controller) {
+            this.controller.updateInfoPanel({
+                'Angle': this.angle.toFixed(1) + '°',
+                'Cosine': this.cosineValue.toFixed(3)
+            });
+            this.controller.render(timestamp);
+        }
     }
 
     /**
@@ -365,7 +478,7 @@ export default class Scene2 {
     drawFourierDecomposition(centerX, centerY, radius) {
         const { ctx } = this;
         const theta = this.angle * Math.PI / 180;
-        const terms = 5;
+        const terms = this.spectrumTerms;
         const magnitudes = [];
         for (let k = 1; k <= terms; k++) {
             const a = Math.sin(k * theta) / k;
@@ -461,9 +574,10 @@ export default class Scene2 {
      * Clean up resources when scene is unloaded
      */
     cleanup() {
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('click', this.handleMouseClick);
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+        this.interactiveElements = [];
     }
 }
