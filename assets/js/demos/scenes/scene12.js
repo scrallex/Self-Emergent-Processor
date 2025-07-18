@@ -8,6 +8,7 @@
 
 // Import utilities and elements from other scenes for reuse
 import LogoGenerator from '../utils/logo-generator.js';
+import InteractiveController from '../controllers/interactive-controller.js';
 
 export default class Scene12 {
     /**
@@ -16,11 +17,16 @@ export default class Scene12 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Animation state
         this.time = 0;
@@ -93,12 +99,29 @@ export default class Scene12 {
         
         // Coherence waves
         this.coherenceWaves = [];
-        
+
         // View settings
         this.activeZone = null;
         this.zoomLevel = 1;
         this.showConnections = true;
         this.highlightFoundation = false;
+
+        // Interactive controller
+        this.controller = null;
+
+        // Visibility toggles for subsystems
+        this.subsystems = {
+            waves: true,
+            angles: true,
+            billiards: true,
+            boundary: true,
+            bodies: true,
+            primes: true,
+            boids: true,
+            grid: true,
+            fluid: true,
+            financial: true
+        };
         
         // Mouse interaction
         this.mouseX = 0;
@@ -117,6 +140,16 @@ export default class Scene12 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
         // Set up event listeners
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
@@ -561,6 +594,32 @@ export default class Scene12 {
                       'primes', 'boids', 'grid', 'fluid', 'financial'];
         this.activeZone = zones[sector];
     }
+
+    /**
+     * Provide custom controls for interactive panel
+     */
+    getCustomControls() {
+        const labels = {
+            waves: 'Waves',
+            angles: 'Angles',
+            billiards: 'Billiards',
+            boundary: 'Boundary',
+            bodies: 'Bodies',
+            primes: 'Primes',
+            boids: 'Boids',
+            grid: 'Grid',
+            fluid: 'Fluid',
+            financial: 'Financial'
+        };
+
+        return Object.keys(labels).map(key => ({
+            id: `toggle_${key}`,
+            type: 'toggle',
+            label: labels[key],
+            value: this.subsystems[key],
+            onChange: value => { this.subsystems[key] = value; }
+        }));
+    }
     
     /**
      * Main animation loop - called by the framework on each frame
@@ -608,17 +667,17 @@ export default class Scene12 {
             }
         }
         
-        // Update elements from previous scenes
-        this.updateWaves(dt);
-        this.updateAngles(dt);
-        this.updateBilliards(dt);
-        this.updateBoundary(dt);
-        this.updateBodies(dt);
-        this.updatePrimes(dt);
-        this.updateBoids(dt);
-        this.updateGrid(dt);
-        this.updateFluid(dt);
-        this.updateFinancial(dt);
+        // Update elements from previous scenes based on visibility
+        if (this.subsystems.waves) this.updateWaves(dt);
+        if (this.subsystems.angles) this.updateAngles(dt);
+        if (this.subsystems.billiards) this.updateBilliards(dt);
+        if (this.subsystems.boundary) this.updateBoundary(dt);
+        if (this.subsystems.bodies) this.updateBodies(dt);
+        if (this.subsystems.primes) this.updatePrimes(dt);
+        if (this.subsystems.boids) this.updateBoids(dt);
+        if (this.subsystems.grid) this.updateGrid(dt);
+        if (this.subsystems.fluid) this.updateFluid(dt);
+        if (this.subsystems.financial) this.updateFinancial(dt);
     }
     
     /**
@@ -1077,17 +1136,17 @@ export default class Scene12 {
         const { ctx } = this;
         const zonePositions = this.calculateZonePositions();
         
-        // Draw each element in its zone
-        this.drawWaveElement(zonePositions.waves);
-        this.drawAngleElement(zonePositions.angles);
-        this.drawBilliardElement(zonePositions.billiards);
-        this.drawBoundaryElement(zonePositions.boundary);
-        this.drawBodiesElement(zonePositions.bodies);
-        this.drawPrimeElement(zonePositions.primes);
-        this.drawBoidElement(zonePositions.boids);
-        this.drawGridElement(zonePositions.grid);
-        this.drawFluidElement(zonePositions.fluid);
-        this.drawFinancialElement(zonePositions.financial);
+        // Draw each element in its zone if enabled
+        if (this.subsystems.waves) this.drawWaveElement(zonePositions.waves);
+        if (this.subsystems.angles) this.drawAngleElement(zonePositions.angles);
+        if (this.subsystems.billiards) this.drawBilliardElement(zonePositions.billiards);
+        if (this.subsystems.boundary) this.drawBoundaryElement(zonePositions.boundary);
+        if (this.subsystems.bodies) this.drawBodiesElement(zonePositions.bodies);
+        if (this.subsystems.primes) this.drawPrimeElement(zonePositions.primes);
+        if (this.subsystems.boids) this.drawBoidElement(zonePositions.boids);
+        if (this.subsystems.grid) this.drawGridElement(zonePositions.grid);
+        if (this.subsystems.fluid) this.drawFluidElement(zonePositions.fluid);
+        if (this.subsystems.financial) this.drawFinancialElement(zonePositions.financial);
     }
     
     /**
@@ -1782,5 +1841,10 @@ export default class Scene12 {
         this.canvas.removeEventListener('mousedown', this.handleMouseDown);
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('keydown', this.handleKeyDown);
+
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
     }
 }

@@ -387,10 +387,97 @@
             animation: float 6s ease-in-out infinite;
         }
 
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 1001;
+        }
+
+        .mobile-menu-toggle span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: var(--light);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
             .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 80%;
+                max-width: 300px;
+                height: 100vh;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: flex-start;
+                padding: 80px 2rem 2rem;
+                transition: right 0.3s ease;
+                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+                z-index: 999;
+            }
+
+            .nav-links.active {
+                right: 0;
+            }
+
+            .nav-links a {
+                width: 100%;
+                padding: 1rem 0;
+                font-size: 1.1rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            }
+
+            .nav-links .cta-button {
+                margin-top: 1rem;
+                width: 100%;
+                text-align: center;
+            }
+
+            /* Overlay */
+            .mobile-overlay {
                 display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 998;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .mobile-overlay.active {
+                display: block;
+                opacity: 1;
             }
             
             .hero h1 {
@@ -400,6 +487,10 @@
             .section-header h2 {
                 font-size: 2rem;
             }
+
+            .cta-section {
+                padding: 2rem;
+            }
         }
     </style>
 </head>
@@ -408,7 +499,12 @@
     <nav>
         <div class="nav-container">
             <div class="logo">SEP Dynamics</div>
-            <div class="nav-links">
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle mobile menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
                 <a href="#technology">Technology</a>
                 <a href="architecture.html">Architecture</a>
                 <a href="demos.html">Demos</a>
@@ -417,6 +513,9 @@
             </div>
         </div>
     </nav>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -553,13 +652,51 @@
     </footer>
 
     <script>
+        // Mobile menu functionality
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navLinks = document.getElementById('navLinks');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        const body = document.body;
+
+        function toggleMobileMenu() {
+            mobileMenuToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+            mobileOverlay.classList.toggle('active');
+            body.style.overflow = body.style.overflow === 'hidden' ? '' : 'hidden';
+        }
+
+        function closeMobileMenu() {
+            mobileMenuToggle.classList.remove('active');
+            navLinks.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            body.style.overflow = '';
+        }
+
+        // Toggle menu on button click
+        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+
+        // Close menu on overlay click
+        mobileOverlay.addEventListener('click', closeMobileMenu);
+
+        // Close menu when clicking on a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    closeMobileMenu();
+                }
+            });
+        });
+
         // Add smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
             });
         });
 
@@ -567,7 +704,20 @@
         window.addEventListener('scroll', () => {
             const scrolled = window.pageYOffset;
             const parallax = document.querySelector('.hero-bg');
-            parallax.style.transform = `translateY(${scrolled * 0.5}px)`;
+            if (parallax) {
+                parallax.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+
+        // Handle window resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (window.innerWidth > 768) {
+                    closeMobileMenu();
+                }
+            }, 250);
         });
     </script>
     <script src="assets/js/lava-lamp.js"></script>

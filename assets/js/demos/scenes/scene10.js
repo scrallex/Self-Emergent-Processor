@@ -4,11 +4,16 @@
  * Particle-based fluid demonstration showing vorticity colouring
  * and boundary induced rotation.
  */
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene10 {
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
 
         this.particles = [];
         this.numParticles = 300;
@@ -16,6 +21,16 @@ export default class Scene10 {
         this.boundaryPadding = 10;
         this.mouse = { x: 0, y: 0, down: false };
         this.animation = true;
+
+        // Fluid parameters
+        this.viscosity = 0.99;
+        this.swirlIntensity = 50;
+
+        // Interaction helpers
+        this.activePlaneIndex = null;
+
+        // Interactive controller (initialized in init)
+        this.controller = null;
 
         // Timing values for update loop
         this.time = 0;
@@ -68,17 +83,71 @@ export default class Scene10 {
             showLatticeConnections: true,
             trailLength: 10
         };
-
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
     }
 
     init() {
         this.initParticles();
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
+
+        // Initialize interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
+        // Register input handlers via the event manager
+        this.unregisterHandlers = [
+            this.eventManager.on('mouse', 'down', ({ x, y }) => {
+                this.mouse.down = true;
+                this.mouse.x = x;
+                this.mouse.y = y;
+            }),
+            this.eventManager.on('mouse', 'up', () => {
+                this.mouse.down = false;
+                if (this.activePlaneIndex !== null) {
+                    this.noPlaneConstraint.planes[this.activePlaneIndex].active = false;
+                }
+                this.activePlaneIndex = null;
+            }),
+            this.eventManager.on('mouse', 'move', ({ x, y }) => {
+                this.mouse.x = x;
+                this.mouse.y = y;
+
+                if (this.mouse.down && this.noPlaneConstraint.enabled) {
+                    for (let i = 0; i < this.noPlaneConstraint.planes.length; i++) {
+                        const plane = this.noPlaneConstraint.planes[i];
+                        const distToPlane = this.distanceToLine(
+                            x, y,
+                            plane.x1, plane.y1, plane.x2, plane.y2
+                        );
+
+                        if (distToPlane < 20) {
+                            plane.active = true;
+                            this.activePlaneIndex = i;
+
+                            const midX = (plane.x1 + plane.x2) / 2;
+                            const midY = (plane.y1 + plane.y2) / 2;
+                            const dx = x - midX;
+                            const dy = y - midY;
+
+                            plane.x1 += dx * 0.05;
+                            plane.y1 += dy * 0.05;
+                            plane.x2 += dx * 0.05;
+                            plane.y2 += dy * 0.05;
+
+                            break;
+                        } else {
+                            plane.active = false;
+                            this.activePlaneIndex = null;
+                        }
+                    }
+                }
+            })
+        ];
+
         return Promise.resolve();
     }
 
@@ -115,50 +184,7 @@ export default class Scene10 {
         this.noPlaneConstraint.planes[1].y2 = centerY + this.canvas.height * 0.4;
     }
 
-    handleMouseDown(e) {
-        this.mouse.down = true;
-        this.mouse.x = e.offsetX;
-        this.mouse.y = e.offsetY;
-    }
 
-    handleMouseUp() {
-        this.mouse.down = false;
-    }
-
-    handleMouseMove(e) {
-        this.mouse.x = e.offsetX;
-        this.mouse.y = e.offsetY;
-        
-        // Check if mouse is near a plane and activate it for dragging
-        if (this.mouse.down && this.noPlaneConstraint.enabled) {
-            for (const plane of this.noPlaneConstraint.planes) {
-                const distToPlane = this.distanceToLine(
-                    this.mouse.x, this.mouse.y,
-                    plane.x1, plane.y1, plane.x2, plane.y2
-                );
-                
-                if (distToPlane < 20) {
-                    plane.active = true;
-                    
-                    // Update plane position based on mouse movement
-                    const midX = (plane.x1 + plane.x2) / 2;
-                    const midY = (plane.y1 + plane.y2) / 2;
-                    const dx = this.mouse.x - midX;
-                    const dy = this.mouse.y - midY;
-                    
-                    // Update plane coordinates
-                    plane.x1 += dx * 0.05;
-                    plane.y1 += dy * 0.05;
-                    plane.x2 += dx * 0.05;
-                    plane.y2 += dy * 0.05;
-                    
-                    break;
-                } else {
-                    plane.active = false;
-                }
-            }
-        }
-    }
     
     /**
      * Calculate distance from point to line segment
@@ -245,7 +271,7 @@ export default class Scene10 {
                 const r2 = 80 * 80;
                 if (dist2 < r2 && dist2 > 0) {
                     const dist = Math.sqrt(dist2);
-                    const force = (1 - dist / 80) * 50;
+                    const force = (1 - dist / 80) * this.swirlIntensity;
                     p.vx += (-dy / dist) * force * dt;
                     p.vy += (dx / dist) * force * dt;
                 }
@@ -377,8 +403,8 @@ export default class Scene10 {
             }
             
             // Apply drag and update position
-            p.vx *= 0.99;
-            p.vy *= 0.99;
+            p.vx *= this.viscosity;
+            p.vy *= this.viscosity;
             p.x += p.vx * dt * 60;
             p.y += p.vy * dt * 60;
         }
@@ -692,6 +718,48 @@ export default class Scene10 {
         
         this.ctx.textAlign = 'left';
     }
+
+    getCustomControls() {
+        return [
+            {
+                id: 'particle_count',
+                type: 'slider',
+                label: 'Particles',
+                min: 50,
+                max: 1000,
+                value: this.numParticles,
+                step: 10,
+                onChange: (value) => {
+                    this.numParticles = Math.round(value);
+                    this.initParticles();
+                }
+            },
+            {
+                id: 'viscosity',
+                type: 'slider',
+                label: 'Viscosity',
+                min: 0.9,
+                max: 1.0,
+                value: this.viscosity,
+                step: 0.005,
+                onChange: (value) => {
+                    this.viscosity = value;
+                }
+            },
+            {
+                id: 'swirl_intensity',
+                type: 'slider',
+                label: 'Swirl Intensity',
+                min: 10,
+                max: 100,
+                value: this.swirlIntensity,
+                step: 1,
+                onChange: (value) => {
+                    this.swirlIntensity = value;
+                }
+            }
+        ];
+    }
     
     updateSettings(newSettings) {
         this.settings = { ...this.settings, ...newSettings };
@@ -720,9 +788,16 @@ export default class Scene10 {
     }
 
     cleanup() {
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+
+        if (this.unregisterHandlers) {
+            this.unregisterHandlers.forEach(off => off());
+            this.unregisterHandlers = [];
+        }
+
         this.particles = [];
     }
 }

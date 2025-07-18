@@ -11,8 +11,9 @@ const canvas = {
 const ctx = { fillStyle:'', fillRect(){}, beginPath(){}, moveTo(){}, lineTo(){}, stroke(){}, fill(){}, arc(){}, closePath(){}, strokeRect(){}, fillText(){}, textAlign:'', font:'', setLineDash() {} };
 
 global.window = { addEventListener() {}, removeEventListener() {} };
+const eventManager = { on() { return () => {}; } };
 
-const scene = new Scene6(canvas, ctx, { speed: 1, intensity: 50 });
+const scene = new Scene6(canvas, ctx, { speed: 1, intensity: 50 }, eventManager, null, null);
 await scene.init();
 scene.handleMouseMove({ clientX: 100, clientY: 160 });
 scene.handleMouseClick({ clientX: 100, clientY: 160 });

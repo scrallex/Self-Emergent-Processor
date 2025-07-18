@@ -5,6 +5,8 @@
  * Features QBSA rupture detection and QFH spectral analysis with real-time angle modulation effects.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene9 {
     /**
      * Constructor for the scene
@@ -12,11 +14,14 @@ export default class Scene9 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.time = 0;
@@ -28,6 +33,8 @@ export default class Scene9 {
         this.ruptures = [];
         this.coherenceLevel = 1.0;
         this.activeAlgorithm = null;
+        this.ruptureDetectionEnabled = settings.ruptureDetectionEnabled !== false;
+        this.analysisSpeed = settings.analysisSpeed || 1.0;
         
         // For QFH spectral analysis
         this.spectralData = {
@@ -43,6 +50,9 @@ export default class Scene9 {
         this.mouseX = 0;
         this.mouseY = 0;
         
+        // Interactive controller (initialized in init)
+        this.controller = null;
+
         // Bind event handlers to maintain 'this' context
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -55,15 +65,32 @@ export default class Scene9 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        // Add event listeners
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
-        
-        // Add keyboard event handler
-        this.handleKeyDown = this.handleKeyDown.bind(this);
-        window.addEventListener('keydown', this.handleKeyDown);
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
+        // Register event listeners through the event manager if available
+        if (this.eventManager) {
+            this.unsubMouseDown = this.eventManager.on('mouse', 'down', this.handleMouseDown);
+            this.unsubMouseMove = this.eventManager.on('mouse', 'move', this.handleMouseMove);
+            this.unsubMouseUp = this.eventManager.on('mouse', 'up', this.handleMouseUp);
+            this.unsubMouseClick = this.eventManager.on('mouse', 'click', this.handleMouseClick);
+            this.unsubKeyDown = this.eventManager.on('keyboard', 'down', this.handleKeyDown);
+        } else {
+            // Fallback to direct listeners
+            this.canvas.addEventListener('mousedown', this.handleMouseDown);
+            this.canvas.addEventListener('mousemove', this.handleMouseMove);
+            this.canvas.addEventListener('mouseup', this.handleMouseUp);
+            this.canvas.addEventListener('click', this.handleMouseClick);
+            this.handleKeyDown = this.handleKeyDown.bind(this);
+            window.addEventListener('keydown', this.handleKeyDown);
+        }
         
         this.reset();
         
@@ -134,6 +161,42 @@ export default class Scene9 {
     }
 
     /**
+     * Provide custom controls for the control panel
+     * @returns {Array} Array of control configurations
+     */
+    getCustomControls() {
+        return [
+            {
+                id: 'grid_size',
+                type: 'slider',
+                label: 'Grid Size',
+                min: 2,
+                max: 16,
+                step: 1,
+                value: this.stateSize,
+                onChange: (v) => this.changeGridSize(v)
+            },
+            {
+                id: 'rupture_toggle',
+                type: 'toggle',
+                label: 'Rupture Detection',
+                value: this.ruptureDetectionEnabled,
+                onChange: (v) => { this.ruptureDetectionEnabled = v; }
+            },
+            {
+                id: 'analysis_speed',
+                type: 'slider',
+                label: 'Analysis Speed',
+                min: 0.1,
+                max: 2,
+                step: 0.1,
+                value: this.analysisSpeed,
+                onChange: (v) => { this.analysisSpeed = v; }
+            }
+        ];
+    }
+
+    /**
      * Change grid size and rebuild state grid
      * @param {number} newSize - Desired grid dimension
      */
@@ -186,6 +249,8 @@ export default class Scene9 {
      * Run the QBSA (Quantum Boundary Strength Analysis) algorithm
      */
     runQBSA() {
+        if (!this.ruptureDetectionEnabled) return;
+
         this.activeAlgorithm = 'QBSA';
         this.ruptures = [];
         
@@ -332,7 +397,7 @@ export default class Scene9 {
                 for (let i = 0; i < this.stateSize; i++) {
                     for (let j = 0; j < this.stateSize; j++) {
                         const cell = this.stateGrid[i][j];
-                        cell.phase = (cell.phase + amplitude * h) % (Math.PI * 2);
+                        cell.phase = (cell.phase + amplitude * h * this.analysisSpeed) % (Math.PI * 2);
                     }
                 }
             }
@@ -346,9 +411,8 @@ export default class Scene9 {
      * @param {MouseEvent} e - The mouse event
      */
     handleMouseClick(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        const mouseX = e.x !== undefined ? e.x : e.clientX - this.canvas.getBoundingClientRect().left;
+        const mouseY = e.y !== undefined ? e.y : e.clientY - this.canvas.getBoundingClientRect().top;
         
         // Toggle cell state on click
         for (let i = 0; i < this.stateSize; i++) {
@@ -383,9 +447,8 @@ export default class Scene9 {
      * @param {MouseEvent} e - The mouse event
      */
     handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouseX = e.clientX - rect.left;
-        this.mouseY = e.clientY - rect.top;
+        this.mouseX = e.x !== undefined ? e.x : e.clientX - this.canvas.getBoundingClientRect().left;
+        this.mouseY = e.y !== undefined ? e.y : e.clientY - this.canvas.getBoundingClientRect().top;
         
         // Check if a cell is selected
         for (let i = 0; i < this.stateSize; i++) {
@@ -407,9 +470,8 @@ export default class Scene9 {
      * @param {MouseEvent} e - The mouse event
      */
     handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouseX = e.clientX - rect.left;
-        this.mouseY = e.clientY - rect.top;
+        this.mouseX = e.x !== undefined ? e.x : e.clientX - this.canvas.getBoundingClientRect().left;
+        this.mouseY = e.y !== undefined ? e.y : e.clientY - this.canvas.getBoundingClientRect().top;
         
         // Update cell phase based on mouse movement if a cell is selected
         if (this.selectedCell) {
@@ -530,7 +592,16 @@ export default class Scene9 {
         
         // Draw info panel if not in video mode
         if (!this.settings.videoMode) {
-            this.drawInfo();
+            if (this.controller) {
+                this.controller.updateInfoPanel({
+                    'Coherence': this.coherenceLevel.toFixed(3),
+                    'Ruptures Detected': this.ruptures.length,
+                    'Active Pulses': this.pulses.length
+                });
+                this.controller.render(this.time);
+            } else {
+                this.drawInfo();
+            }
         } else {
             this.drawVideoInfo();
         }
@@ -945,6 +1016,12 @@ export default class Scene9 {
         if (typeof newSettings.gridSize !== 'undefined') {
             this.changeGridSize(newSettings.gridSize);
         }
+        if (typeof newSettings.ruptureDetectionEnabled !== 'undefined') {
+            this.ruptureDetectionEnabled = newSettings.ruptureDetectionEnabled;
+        }
+        if (typeof newSettings.analysisSpeed !== 'undefined') {
+            this.analysisSpeed = newSettings.analysisSpeed;
+        }
         Object.assign(this.settings, newSettings);
     }
 
@@ -952,6 +1029,12 @@ export default class Scene9 {
      * Clean up resources when scene is unloaded
      */
     cleanup() {
+        if (this.unsubMouseDown) this.unsubMouseDown();
+        if (this.unsubMouseMove) this.unsubMouseMove();
+        if (this.unsubMouseUp) this.unsubMouseUp();
+        if (this.unsubMouseClick) this.unsubMouseClick();
+        if (this.unsubKeyDown) this.unsubKeyDown();
+
         this.canvas.removeEventListener('mousedown', this.handleMouseDown);
         this.canvas.removeEventListener('mousemove', this.handleMouseMove);
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);

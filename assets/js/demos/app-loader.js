@@ -57,6 +57,18 @@ async function initializeApp() {
             canvas.height = appContainer.clientHeight;
         }
         
+        // Determine initial scene from query string
+        const params = new URLSearchParams(window.location.search);
+        const sceneParam = params.get('scene');
+        let initialScene = DEFAULT_SCENE;
+
+        if (sceneParam) {
+            const match = Object.values(SCENE_IDS).find(id => id.toString() === sceneParam);
+            if (match) {
+                initialScene = match;
+            }
+        }
+
         // Initialize the framework
         const sceneId = getSceneFromURL() || DEFAULT_SCENE;
         const app = new AppFramework(canvas, {

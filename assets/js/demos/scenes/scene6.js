@@ -6,6 +6,8 @@
  * superior predictive analytics for options pricing and risk management.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene6 {
     /**
      * Constructor for the scene
@@ -13,12 +15,20 @@ export default class Scene6 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings, interactiveController = null) {
+    constructor(canvas, ctx, settings, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
-        this.interactiveController = interactiveController;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
+
+        // Interactive controller (initialized in init)
+        this.controller = null;
+
+        // Event unsubscribe functions
+        this.eventUnsubs = [];
         
         // Scene-specific state
         this.time = 0;
@@ -96,11 +106,25 @@ export default class Scene6 {
      * Initialize the scene
      */
     init() {
-        // Add event listeners
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('click', this.handleMouseClick);
-        window.addEventListener('keydown', this.handleKeyDown);
-        
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
+        // Register input handlers via EventManager
+        if (this.eventManager) {
+            this.eventUnsubs.push(
+                this.eventManager.on('mouse', 'move', (e) => this.handleMouseMove(e)),
+                this.eventManager.on('mouse', 'down', (e) => this.handleMouseClick(e)),
+                this.eventManager.on('keyboard', 'down', (e) => this.handleKeyDown(e))
+            );
+        }
+
         // Initialize market data
         this.generateMarketData();
         
@@ -311,6 +335,51 @@ export default class Scene6 {
                 color: 'rgba(0, 212, 255, 0.5)'
             });
         }
+    }
+
+    /**
+     * Provide custom controls for the interactive controller
+     * @returns {Array} Array of control configurations
+     */
+    getCustomControls() {
+        return [
+            {
+                id: 'noise_level',
+                type: 'slider',
+                label: 'Noise Level',
+                min: 0,
+                max: 100,
+                step: 5,
+                value: this.controls.noiseLevel.value,
+                onChange: (val) => {
+                    this.controls.noiseLevel.value = val;
+                    this.generateMarketData();
+                }
+            },
+            {
+                id: 'coherence_threshold',
+                type: 'slider',
+                label: 'Coherence Threshold',
+                min: 50,
+                max: 95,
+                step: 5,
+                value: this.controls.coherenceThreshold.value,
+                onChange: (val) => {
+                    this.controls.coherenceThreshold.value = val;
+                    this.analyzeCoherence();
+                }
+            },
+            {
+                id: 'view_mode_cycle',
+                type: 'button',
+                label: `View: ${this.viewMode}`,
+                onClick: () => {
+                    this.cycleViewMode();
+                    const btn = this.controller?.interactiveUtils.components.get('custom_view_mode_cycle');
+                    if (btn) btn.text = `View: ${this.viewMode}`;
+                }
+            }
+        ];
     }
 
     /**
@@ -778,11 +847,12 @@ export default class Scene6 {
      */
     handleMouseMove(event) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        
+        const x = (event.x !== undefined ? event.x : event.clientX - rect.left);
+        const y = (event.y !== undefined ? event.y : event.clientY - rect.top);
+        const shift = event.shiftKey || (event.modifiers && event.modifiers.shift);
+
         // Update particle attraction to mouse
-        if (event.shiftKey) {
+        if (shift) {
             for (let particle of this.particles) {
                 const dx = x - particle.x;
                 const dy = y - particle.y;
@@ -801,8 +871,8 @@ export default class Scene6 {
      */
     handleMouseClick(event) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const x = (event.x !== undefined ? event.x : event.clientX - rect.left);
+        const y = (event.y !== undefined ? event.y : event.clientY - rect.top);
         
         // Create coherence wave at click point
         this.coherenceWaves.push({
@@ -827,7 +897,8 @@ export default class Scene6 {
      * Handle keyboard input
      */
     handleKeyDown(event) {
-        switch (event.key.toLowerCase()) {
+        const key = (event.key || event.keyCode || event.code || '').toLowerCase();
+        switch (key) {
             case ' ':
                 this.animateExtraction = !this.animateExtraction;
                 break;
@@ -880,11 +951,26 @@ export default class Scene6 {
     }
 
     /**
+     * Cycle through available view modes
+     */
+    cycleViewMode() {
+        const modes = ['raw', 'noise', 'signal', 'coherence', 'combined'];
+        const idx = modes.indexOf(this.viewMode);
+        this.viewMode = modes[(idx + 1) % modes.length];
+    }
+
+    /**
      * Clean up resources
      */
     cleanup() {
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('click', this.handleMouseClick);
-        window.removeEventListener('keydown', this.handleKeyDown);
+        // Remove event subscriptions
+        this.eventUnsubs.forEach((unsub) => unsub());
+        this.eventUnsubs = [];
+
+        // Cleanup controller
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
     }
 }

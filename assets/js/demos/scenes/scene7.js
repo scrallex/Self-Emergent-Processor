@@ -6,6 +6,8 @@
  * numbers form multi-path configurations.
  */
 
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene7 {
     /**
      * Constructor for the scene
@@ -13,11 +15,14 @@ export default class Scene7 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Scene-specific state
         this.time = 0;
@@ -47,6 +52,12 @@ export default class Scene7 {
         this.impactEffects = [];
         this.latticePoints = [];
         this.showLatticeConnections = true;
+
+        // Trajectory animation flag
+        this.animateTrajectories = true;
+
+        // Interactive controller (initialized in init)
+        this.controller = null;
         
         // Statistics
         this.primeCount = 0;
@@ -66,18 +77,21 @@ export default class Scene7 {
      * @return {Promise} A promise that resolves when initialization is complete
      */
     init() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mousemove', this.handleMouseMove);
-        this.canvas.addEventListener('mouseup', this.handleMouseUp);
-        this.canvas.addEventListener('click', this.handleMouseClick);
-        this.canvas.addEventListener('wheel', this.handleWheel);
-        window.addEventListener('keydown', this.handleKeyDown);
-        
+        // Initialize the interactive controller
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
         this.gridCenter = {
             x: this.canvas.width / 2,
             y: this.canvas.height / 2
         };
-        
+
         this.reset();
         return Promise.resolve();
     }
@@ -105,6 +119,50 @@ export default class Scene7 {
         
         // Calculate statistics
         this.calculateStatistics();
+    }
+
+    /**
+     * Provide custom controls for the control panel
+     * @returns {Array} Array of control configurations
+     */
+    getCustomControls() {
+        return [
+            {
+                id: 'spiral_range',
+                type: 'slider',
+                label: 'Spiral Range',
+                min: 5,
+                max: 20,
+                value: this.spiralRange,
+                step: 1,
+                onChange: (value) => {
+                    const range = Math.round(value);
+                    this.spiralMaxN = Math.pow(2 * range + 1, 2);
+                    this.reset();
+                }
+            },
+            {
+                id: 'zoom_level',
+                type: 'slider',
+                label: 'Zoom',
+                min: 0.5,
+                max: 5,
+                value: this.zoom,
+                step: 0.1,
+                onChange: (value) => {
+                    this.zoom = value;
+                }
+            },
+            {
+                id: 'traj_anim',
+                type: 'toggle',
+                label: 'Animate Trajectories',
+                value: this.animateTrajectories,
+                onChange: (value) => {
+                    this.animateTrajectories = value;
+                }
+            }
+        ];
     }
 
     /**
@@ -488,61 +546,63 @@ export default class Scene7 {
         // Update animation phase
         this.animationPhase += dt * 0.5;
         
-        // Activate trajectories based on time
-        const numTrajectories = Math.floor(this.settings.intensity / 10);
-        const activeTrajectories = this.trajectories.filter(t => t.active);
-        
-        if (activeTrajectories.length < numTrajectories) {
-            // Activate some trajectories
-            const inactiveTrajectories = this.trajectories.filter(t => !t.active);
-            if (inactiveTrajectories.length > 0) {
-                const toActivate = Math.min(
-                    numTrajectories - activeTrajectories.length,
-                    Math.ceil(inactiveTrajectories.length * 0.05)
-                );
-                
-                for (let i = 0; i < toActivate; i++) {
-                    const idx = Math.floor(Math.random() * inactiveTrajectories.length);
-                    if (idx < inactiveTrajectories.length) {
-                        inactiveTrajectories[idx].active = true;
-                        inactiveTrajectories[idx].progress = 0;
-                        
-                        // Create particles for the trajectory
-                        const numParticles = 5 + Math.floor(Math.random() * 5);
-                        inactiveTrajectories[idx].particles = [];
-                        
-                        for (let j = 0; j < numParticles; j++) {
-                            inactiveTrajectories[idx].particles.push({
-                                progress: Math.random() * 0.3,
-                                speed: 0.2 + Math.random() * 0.3,
-                                size: 2 + Math.random() * 3
-                            });
+        if (this.animateTrajectories) {
+            // Activate trajectories based on time
+            const numTrajectories = Math.floor(this.settings.intensity / 10);
+            const activeTrajectories = this.trajectories.filter(t => t.active);
+
+            if (activeTrajectories.length < numTrajectories) {
+                // Activate some trajectories
+                const inactiveTrajectories = this.trajectories.filter(t => !t.active);
+                if (inactiveTrajectories.length > 0) {
+                    const toActivate = Math.min(
+                        numTrajectories - activeTrajectories.length,
+                        Math.ceil(inactiveTrajectories.length * 0.05)
+                    );
+
+                    for (let i = 0; i < toActivate; i++) {
+                        const idx = Math.floor(Math.random() * inactiveTrajectories.length);
+                        if (idx < inactiveTrajectories.length) {
+                            inactiveTrajectories[idx].active = true;
+                            inactiveTrajectories[idx].progress = 0;
+
+                            // Create particles for the trajectory
+                            const numParticles = 5 + Math.floor(Math.random() * 5);
+                            inactiveTrajectories[idx].particles = [];
+
+                            for (let j = 0; j < numParticles; j++) {
+                                inactiveTrajectories[idx].particles.push({
+                                    progress: Math.random() * 0.3,
+                                    speed: 0.2 + Math.random() * 0.3,
+                                    size: 2 + Math.random() * 3
+                                });
+                            }
                         }
                     }
                 }
             }
-        }
-        
-        // Update active trajectories
-        for (const trajectory of this.trajectories) {
-            if (trajectory.active) {
-                // Update progress
-                trajectory.progress += dt * 0.3;
-                
-                // Update particles
-                for (const particle of trajectory.particles) {
-                    particle.progress += dt * particle.speed;
-                    
-                    // Reset particle if it reaches the end
-                    if (particle.progress >= 1) {
-                        particle.progress = 0;
+
+            // Update active trajectories
+            for (const trajectory of this.trajectories) {
+                if (trajectory.active) {
+                    // Update progress
+                    trajectory.progress += dt * 0.3;
+
+                    // Update particles
+                    for (const particle of trajectory.particles) {
+                        particle.progress += dt * particle.speed;
+
+                        // Reset particle if it reaches the end
+                        if (particle.progress >= 1) {
+                            particle.progress = 0;
+                        }
                     }
-                }
-                
-                // Deactivate if completed
-                if (trajectory.progress >= 1.5) {
-                    trajectory.active = false;
-                    trajectory.effectsCreated = false; // Reset for next activation
+
+                    // Deactivate if completed
+                    if (trajectory.progress >= 1.5) {
+                        trajectory.active = false;
+                        trajectory.effectsCreated = false; // Reset for next activation
+                    }
                 }
             }
         }
@@ -1336,13 +1396,11 @@ export default class Scene7 {
      * Clean up resources when scene is unloaded
      */
     cleanup() {
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('click', this.handleMouseClick);
-        this.canvas.removeEventListener('wheel', this.handleWheel);
-        window.removeEventListener('keydown', this.handleKeyDown);
-        
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+
         this.numbers = [];
         this.primes = [];
         this.composites = [];

@@ -35,6 +35,22 @@ export const DEMO_NAMES = {
     META_VISUALIZATION: 'Meta Visualization'
 };
 
+// Mapping of human-readable keys to scene IDs
+export const SCENE_IDS = {
+    THE_HIDDEN_CODE: 1,
+    IDENTITY_THROUGH_DISTINCTION: 2,
+    COSINE_ALIGNMENT: 3,
+    SINE_DEVIATION: 4,
+    ANGLE_REALITY_CLASSIFICATION: 5,
+    BOUNDARY_ENFORCEMENT: 6,
+    PRIME_UNIQUENESS: 7,
+    MULTI_PERSPECTIVE_COHERENCE: 8,
+    SEP_OPERATIONALIZATION: 9,
+    PARTICLE_FLUID: 10,
+    DERIVATIVE_APPLICATIONS: 11,
+    REALITYS_CODE: 12
+};
+
 // Complete scene registry
 export const SCENES = {
     1: { 

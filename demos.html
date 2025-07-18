@@ -684,12 +684,9 @@
 
             if (demo.status === 'ready') {
                 showLoading();
-                // Simulate loading time
                 setTimeout(() => {
                     window.location.href = `assets/js/demos/demo_runner.html?scene=${demoId}`;
                 }, 1000);
-            } else {
-                alert(`${demo.name} is currently ${demo.status}. Coming soon!`);
             }
         }
 
