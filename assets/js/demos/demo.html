@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEP Demo</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        #demo-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+        .loading-screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 102, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00d4ff;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="loading-screen active" id="loadingScreen">
+        <div>
+            <div class="loading-spinner"></div>
+            <p>Loading SEP Dynamics...</p>
+        </div>
+    </div>
+    <canvas id="demo-canvas"></canvas>
+    <script type="module">
+        import { initializeApp } from './app-loader.js';
+
+        const hideLoading = () => {
+            document.getElementById('loadingScreen').classList.remove('active');
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const sceneParam = params.get('scene');
+
+        const start = async () => {
+            await initializeApp();
+            const wait = setInterval(() => {
+                if (window.sepApp) {
+                    if (sceneParam) {
+                        window.sepApp.changeScene(sceneParam);
+                    }
+                    hideLoading();
+                    clearInterval(wait);
+                }
+            }, 50);
+        };
+
+        start();
+    </script>
+</body>
+</html>
