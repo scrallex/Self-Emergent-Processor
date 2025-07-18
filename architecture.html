@@ -3,287 +3,503 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEP Dynamics - System Architecture</title>
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="assets/css/main.css">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <!-- Mermaid -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    
+    <title>SEP Engine Architecture - SEP Dynamics</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0066ff;
+            --secondary: #00d4ff;
+            --dark: #0a0a0a;
+            --light: #ffffff;
+            --gray: #888;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
         body {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
         }
-        
-        .architecture-page {
-            flex: 1;
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
+
+        /* Navigation (same as homepage) */
+        nav {
+            position: fixed;
+            top: 0;
             width: 100%;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 10, 0.8);
+            z-index: 1000;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
-        .page-header {
-            text-align: center;
-            margin-bottom: 3rem;
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        .page-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
-        .page-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-        }
-        
-        .mermaid-full {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 2rem;
-            overflow-x: auto;
-        }
-        
-        .mermaid {
+
+        .nav-links {
             display: flex;
-            justify-content: center;
-        }
-        
-        .back-link {
-            display: inline-flex;
+            gap: 2rem;
             align-items: center;
-            gap: 0.5rem;
-            color: var(--accent-primary);
+        }
+
+        .nav-links a {
+            color: var(--light);
             text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding-top: 120px;
+            padding-bottom: 80px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-header p {
+            color: var(--gray);
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .architecture-svg {
+            width: 100%;
+            height: auto;
+            max-height: 600px;
+        }
+
+        /* Layer Sections */
+        .layer-section {
+            margin-bottom: 4rem;
+        }
+
+        .layer-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             margin-bottom: 2rem;
-            transition: color 0.3s ease;
         }
-        
-        .back-link:hover {
-            color: var(--accent-secondary);
-        }
-        
-        .architecture-description {
-            margin-top: 3rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+
+        .layer-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient);
             border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .layer-header h2 {
+            font-size: 2rem;
+        }
+
+        .layer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-left: 66px; /* Align with header text */
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
             padding: 2rem;
+            transition: all 0.3s;
         }
-        
-        .architecture-description h2 {
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 102, 255, 0.3);
+            background: rgba(0, 102, 255, 0.05);
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
             margin-bottom: 1rem;
-            color: var(--text-primary);
+            color: var(--secondary);
         }
-        
-        .architecture-description p {
-            color: var(--text-secondary);
-            line-height: 1.8;
-            margin-bottom: 1rem;
+
+        .feature-card p {
+            color: var(--gray);
+            line-height: 1.6;
         }
-        
-        .component-list {
-            list-style: none;
-            padding: 0;
-            margin-top: 1.5rem;
+
+        /* Performance Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+            margin-bottom: 4rem;
         }
-        
-        .component-list li {
-            padding: 0.5rem 0;
-            color: var(--text-secondary);
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
         }
-        
-        .component-list strong {
-            color: var(--text-primary);
+
+        .metric-number {
+            font-size: 3rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-label {
+            color: var(--light);
+            margin-top: 0.5rem;
+        }
+
+        /* Technical Advantages */
+        .advantages-section {
+            background: rgba(0, 102, 255, 0.05);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 4rem;
+        }
+
+        .advantages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .advantage-item {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+        }
+
+        .check-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .check-icon::after {
+            content: '✓';
+            color: var(--light);
+            font-weight: bold;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .page-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .layer-content {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="architecture-page">
-        <a href="index.html" class="back-link">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/>
-            </svg>
-            Back to Main Page
-        </a>
-        
-        <div class="page-header">
-            <h1 class="page-title">SEP Dynamics - System Architecture</h1>
-            <p class="page-subtitle">Complete architectural overview of SEP Dynamics</p>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">SEP Dynamics</a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="architecture.html" style="color: var(--secondary);">Architecture</a>
+                <a href="demos.html">Demos</a>
+                <a href="index.html#team">Team</a>
+            </div>
         </div>
-        
-        <div class="mermaid-full">
-            <pre class="mermaid">
-graph TB
-    %% Main Executable
-    subgraph "Executable Layer"
-        exe[sep_engine<br/>Final Binary]
-    end
+    </nav>
 
-    %% Static Libraries with detailed component mapping
-    subgraph "Static Library Layer"
-        subgraph "API & Interface"
-            api[libsep_api.a<br/>HTTP/C Bridge/Rate Limiting<br/>└─ server.cpp<br/>└─ bridge_c.cpp<br/>└─ crow_adapter.cpp<br/>└─ sep_engine.cpp]
-        end
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>SEP Engine Architecture</h1>
+                <p>A quantum-inspired computational framework designed for high-performance pattern analysis and market intelligence</p>
+            </div>
 
-        subgraph "Domain Components"
-            blender[sep_blender<br/>Cycles Integration<br/>└─ cycles_renderer.cpp<br/>└─ mesh_handler.cpp<br/>└─ gpu_context.cpp]
-            audio[libsep_audio.a<br/>PipeWire Integration<br/>└─ pipewire_capture.cpp<br/>└─ pipeline.cpp]
-        end
+            <!-- Architecture Diagram -->
+            <div class="architecture-diagram">
+                <svg class="architecture-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background gradient -->
+                    <defs>
+                        <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#0066ff;stop-opacity:0.2" />
+                            <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0.2" />
+                        </linearGradient>
+                    </defs>
 
-        subgraph "Quantum Processing"
-            quantum[libsep_quantum.a<br/>QBSA/QFH Algorithms<br/>└─ processor.cpp<br/>└─ evolution.cpp<br/>└─ pattern_processor.cpp<br/>└─ qfh.cpp]
-        end
+                    <!-- Data Input Layer -->
+                    <rect x="50" y="50" width="700" height="80" rx="10" fill="none" stroke="#0066ff" stroke-width="2" opacity="0.5"/>
+                    <text x="400" y="90" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">Market Data Ingestion Layer</text>
+                    <text x="200" y="110" text-anchor="middle" fill="#888888" font-size="14">Real-time Feeds</text>
+                    <text x="400" y="110" text-anchor="middle" fill="#888888" font-size="14">Historical Data</text>
+                    <text x="600" y="110" text-anchor="middle" fill="#888888" font-size="14">Alternative Data</text>
 
-        subgraph "Memory Management"
-            memory[libsep_memory.a<br/>Tiered Storage<br/>└─ memory_tier_manager.cpp<br/>└─ quantum_coherence_manager.cpp<br/>└─ redis_manager.cpp]
-        end
+                    <!-- Pattern Processing Layer -->
+                    <rect x="50" y="160" width="700" height="120" rx="10" fill="url(#blueGradient)" stroke="#00d4ff" stroke-width="2"/>
+                    <text x="400" y="190" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">Quantum-Inspired Processing Core</text>
+                    
+                    <!-- QBSA Component -->
+                    <rect x="100" y="210" width="200" height="50" rx="5" fill="#0066ff" opacity="0.3"/>
+                    <text x="200" y="240" text-anchor="middle" fill="#ffffff" font-size="14">QBSA Engine</text>
+                    
+                    <!-- QFH Component -->
+                    <rect x="300" y="210" width="200" height="50" rx="5" fill="#00d4ff" opacity="0.3"/>
+                    <text x="400" y="240" text-anchor="middle" fill="#ffffff" font-size="14">QFH Processor</text>
+                    
+                    <!-- GPU Acceleration -->
+                    <rect x="500" y="210" width="200" height="50" rx="5" fill="#0066ff" opacity="0.3"/>
+                    <text x="600" y="240" text-anchor="middle" fill="#ffffff" font-size="14">GPU Acceleration</text>
 
-        subgraph "CUDA Backend"
-            compat[libsep_compat.a<br/>GPU Abstraction<br/>└─ core.cu<br/>└─ stream.cpp<br/>└─ cuda_api.cu<br/>└─ quantum_kernels.cu<br/>└─ pattern_kernels.cu]
-        end
+                    <!-- Memory Management -->
+                    <rect x="50" y="310" width="700" height="80" rx="10" fill="none" stroke="#00d4ff" stroke-width="2" opacity="0.5"/>
+                    <text x="400" y="340" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">Tiered Memory Architecture</text>
+                    <text x="200" y="365" text-anchor="middle" fill="#888888" font-size="14">Short-term</text>
+                    <text x="400" y="365" text-anchor="middle" fill="#888888" font-size="14">Medium-term</text>
+                    <text x="600" y="365" text-anchor="middle" fill="#888888" font-size="14">Long-term</text>
 
-        subgraph "Core Foundation"
-            core[libsep_core.a<br/>Base Infrastructure<br/>└─ engine.cpp<br/>└─ manager.cpp<br/>└─ metrics_collector.cpp<br/>└─ logging.cpp<br/>└─ dag_graph.cpp]
-        end
-    end
+                    <!-- Output Layer -->
+                    <rect x="50" y="420" width="700" height="60" rx="10" fill="none" stroke="#0066ff" stroke-width="2" opacity="0.5"/>
+                    <text x="400" y="455" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">Trading Decision Interface</text>
 
-    %% External Dependencies
-    subgraph "Cycles Dependencies"
-        cycles_kernel[libcycles_kernel.a]
-        cycles_scene[libcycles_scene.a]
-        cycles_device[libcycles_device.a]
-        cycles_osl[libcycles_osl.a]
-        osl_exec[liboslexec.so]
-        osl_comp[liboslcomp.so]
-        osl_query[liboslquery.so]
-    end
+                    <!-- Connecting arrows -->
+                    <path d="M 400 130 L 400 160" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <path d="M 400 280 L 400 310" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <path d="M 400 390 L 400 420" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)"/>
 
-    subgraph "System Libraries"
-        cuda_runtime[CUDA Runtime<br/>cudart/cuda_driver]
-        pthread[pthread]
-        redis[hiredis]
-        pipewire[pipewire-0.3]
-    end
+                    <!-- Arrow marker -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#00d4ff" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
 
-    %% Dependency Arrows with Link Order
-    exe -.->|1| compat
-    exe -.->|2| cycles_kernel
-    exe -.->|3| cycles_scene
-    exe -.->|4| cycles_device
-    exe -.->|5| cycles_osl
-    exe -.->|6| osl_exec
-    exe -.->|7| osl_comp
-    exe -.->|8| osl_query
-    exe ==>|9| api
-    exe ==>|10| memory
-    exe ==>|11| quantum
-    exe ==>|12| core
-    exe ==>|13| audio
-    exe ==>|14| blender
+            <!-- Performance Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-number">&lt;1ms</div>
+                    <div class="metric-label">Pattern Recognition</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">10TB+</div>
+                    <div class="metric-label">Daily Processing</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">99.99%</div>
+                    <div class="metric-label">Uptime SLA</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">1000x</div>
+                    <div class="metric-label">Parallel Streams</div>
+                </div>
+            </div>
 
-    %% Internal Dependencies
-    api --> quantum
-    api --> memory
-    api --> core
+            <!-- Layer Details -->
+            <div class="layer-section">
+                <div class="layer-header">
+                    <div class="layer-icon">📊</div>
+                    <h2>Data Ingestion Layer</h2>
+                </div>
+                <div class="layer-content">
+                    <div class="feature-card">
+                        <h3>Universal Compatibility</h3>
+                        <p>Seamlessly integrates with all major market data providers and proprietary feeds, processing structured and unstructured data in real-time.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Adaptive Filtering</h3>
+                        <p>Intelligent noise reduction algorithms separate signal from market noise, dramatically improving the quality of input data for analysis.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Low-Latency Pipeline</h3>
+                        <p>Zero-copy architecture and lock-free data structures ensure microsecond-level processing from data arrival to pattern extraction.</p>
+                    </div>
+                </div>
+            </div>
 
-    blender --> quantum
-    blender --> memory
-    blender --> cycles_kernel
-    blender --> cycles_scene
-    blender --> cycles_device
-    blender --> cycles_osl
-    blender --> core
+            <div class="layer-section">
+                <div class="layer-header">
+                    <div class="layer-icon">⚛️</div>
+                    <h2>Quantum-Inspired Core</h2>
+                </div>
+                <div class="layer-content">
+                    <div class="feature-card">
+                        <h3>Pattern Coherence Analysis</h3>
+                        <p>Revolutionary algorithms identify and quantify market pattern stability, providing early warning signals for regime changes and volatility shifts.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Multi-Scale Processing</h3>
+                        <p>Simultaneous analysis across multiple timeframes captures both micro-structure dynamics and macro trends in a unified framework.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Emergent Behavior Detection</h3>
+                        <p>Identifies complex market behaviors that emerge from the interaction of multiple factors, impossible to detect with traditional linear models.</p>
+                    </div>
+                </div>
+            </div>
 
-    audio --> quantum
-    audio --> memory
-    audio --> core
+            <div class="layer-section">
+                <div class="layer-header">
+                    <div class="layer-icon">💾</div>
+                    <h2>Memory Architecture</h2>
+                </div>
+                <div class="layer-content">
+                    <div class="feature-card">
+                        <h3>Intelligent Tiering</h3>
+                        <p>Automatically promotes valuable patterns through memory tiers based on coherence metrics, ensuring optimal resource utilization.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Pattern Evolution Tracking</h3>
+                        <p>Maintains complete lineage of pattern development, enabling sophisticated backtesting and strategy refinement.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Persistent Knowledge Base</h3>
+                        <p>Long-term memory preserves successful trading patterns and market insights, continuously improving system performance.</p>
+                    </div>
+                </div>
+            </div>
 
-    quantum --> compat
-    quantum --> core
-    quantum -.->|manifold symbols| memory
-
-    memory --> core
-    memory --> redis
-
-    compat --> cuda_runtime
-
-
-    %% Symbol Conflicts
-    quantum x--x|multiple defs<br/>manifold::memory<br/>manifold::quantum<br/>manifold::cuda<br/>manifold::api| memory
-
-
-    %% Styling
-    classDef conflict fill:#ffaa66,stroke:#ff6600,stroke-width:3px
-    classDef critical fill:#66ff66,stroke:#00ff00,stroke-width:2px
-    
-    class quantum,memory conflict
-    class compat,core critical
-            </pre>
+            <!-- Technical Advantages -->
+            <div class="advantages-section">
+                <h2 style="font-size: 2rem; margin-bottom: 1rem;">Technical Advantages</h2>
+                <div class="advantages-grid">
+                    <div class="advantage-item">
+                        <div class="check-icon"></div>
+                        <div>
+                            <h4>Hardware Agnostic</h4>
+                            <p style="color: var(--gray); margin-top: 0.5rem;">Optimized for both CPU and GPU execution with automatic hardware detection</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item">
+                        <div class="check-icon"></div>
+                        <div>
+                            <h4>Horizontally Scalable</h4>
+                            <p style="color: var(--gray); margin-top: 0.5rem;">Distributed architecture supports seamless scaling across multiple nodes</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item">
+                        <div class="check-icon"></div>
+                        <div>
+                            <h4>Battle-Tested Algorithms</h4>
+                            <p style="color: var(--gray); margin-top: 0.5rem;">Years of research and development backed by rigorous mathematical proofs</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item">
+                        <div class="check-icon"></div>
+                        <div>
+                            <h4>Real-Time Adaptation</h4>
+                            <p style="color: var(--gray); margin-top: 0.5rem;">Self-tuning parameters adjust to changing market conditions automatically</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item">
+                        <div class="check-icon"></div>
+                        <div>
+                            <h4>Enterprise Security</h4>
+                            <p style="color: var(--gray); margin-top: 0.5rem;">Bank-grade encryption and audit trails protect sensitive trading strategies</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item">
+                        <div class="check-icon"></div>
+                        <div>
+                            <h4>API-First Design</h4>
+                            <p style="color: var(--gray); margin-top: 0.5rem;">RESTful and WebSocket APIs enable seamless integration with existing systems</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <div class="architecture-description">
-            <h2>Architecture Overview</h2>
-            <p>
-                The SEP Dynamics engine is built with a modular, high-performance architecture designed for quantum-inspired
-                computation.
-                The system leverages CUDA for GPU acceleration, integrates with Blender's Cycles renderer for visual processing, 
-                and uses PipeWire for audio capture and analysis.
-            </p>
-            
-            <h3>Key Components</h3>
-            <ul class="component-list">
-                <li><strong>API Layer:</strong> HTTP server with C bridge and rate limiting for external communication</li>
-                <li><strong>Quantum Processing:</strong> QBSA and QFH algorithms for pattern recognition and evolution</li>
-                <li><strong>Memory Management:</strong> Tiered storage with Redis integration for efficient data handling</li>
-                <li><strong>CUDA Backend:</strong> GPU abstraction layer with optimized quantum and pattern kernels</li>
-                <li><strong>Domain Components:</strong> Cycles integration for rendering and PipeWire for audio processing</li>
-                <li><strong>Core Foundation:</strong> Base infrastructure including DAG graph, metrics, and logging</li>
-            </ul>
-            
-            <h3>Design Principles</h3>
-            <p>
-                The architecture follows a clear separation of concerns with static libraries for each major component. 
-                The linking order is carefully managed to resolve dependencies, with some intentional symbol conflicts 
-                between the quantum and memory modules that represent the quantum superposition states in the system.
-            </p>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p style="color: var(--gray);">© 2025 SEP Dynamics. Proprietary technology protected by pending patents.</p>
         </div>
-    </div>
-    
-    <script>
-        mermaid.initialize({ 
-            startOnLoad: true,
-            theme: 'dark',
-            themeVariables: {
-                primaryColor: '#7c3aed',
-                primaryBorderColor: '#6d28d9',
-                primaryTextColor: '#fff',
-                lineColor: '#4ade80',
-                secondaryColor: '#1e293b',
-                tertiaryColor: '#334155',
-                background: '#0f172a',
-                mainBkg: '#1e293b',
-                secondBkg: '#334155',
-                tertiaryBkg: '#475569',
-                darkMode: true
-            }
-        });
-    </script>
+    </footer>
 </body>
 </html>

@@ -3,571 +3,570 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEP Dynamics | Prime-Based Quantum Computing</title>
-    <meta name="description" content="Revolutionary framework for recursive information processing using prime-indexed quantum-inspired algorithms. Where prime numbers meet quantum computing.">
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="assets/css/main.css">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <!-- Three.js for 3D visualizations -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
-    
-    <!-- Mermaid for architecture diagrams -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <title>SEP Dynamics - Quantum-Inspired Financial Intelligence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0066ff;
+            --secondary: #00d4ff;
+            --dark: #0a0a0a;
+            --light: #ffffff;
+            --gray: #888;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 10, 0.8);
+            z-index: 1000;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .cta-button {
+            background: var(--gradient);
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            color: var(--light);
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 102, 255, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-top: 80px;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(0, 102, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--light) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero .subtitle {
+            font-size: 1.5rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        .hero-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+            max-width: 600px;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Technology Section */
+        .section {
+            padding: 6rem 0;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--gray);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .tech-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 102, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tech-card:hover::before {
+            opacity: 1;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 102, 255, 0.3);
+        }
+
+        .tech-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tech-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tech-card p {
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Value Proposition */
+        .value-props {
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 102, 255, 0.05) 50%, transparent 100%);
+        }
+
+        .prop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .prop-item {
+            text-align: center;
+        }
+
+        .prop-number {
+            font-size: 3rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .prop-item h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .prop-item p {
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Team Section */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .team-member {
+            text-align: center;
+        }
+
+        .member-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: var(--gradient);
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--light);
+        }
+
+        .member-name {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .member-title {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .member-bio {
+            color: var(--gray);
+            line-height: 1.6;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 30px;
+            padding: 4rem;
+            text-align: center;
+            margin: 6rem 0;
+        }
+
+        .cta-section h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-section p {
+            color: var(--gray);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--light);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="nav-container">
-        <div class="nav-wrapper">
-            <div class="nav-logo">
-                <span class="logo-text">SEP</span>
-                <span class="logo-subtitle">SEP Dynamics</span>
+    <nav>
+        <div class="nav-container">
+            <div class="logo">SEP Dynamics</div>
+            <div class="nav-links">
+                <a href="#technology">Technology</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="demos.html">Demos</a>
+                <a href="#team">Team</a>
+                <a href="#contact" class="cta-button">Contact Us</a>
             </div>
-            <ul class="nav-menu">
-                <li><a href="#theory" class="nav-link">Theory</a></li>
-                <li><a href="#architecture" class="nav-link">Architecture</a></li>
-                <li><a href="#visualizations" class="nav-link">Visualizations</a></li>
-                <li><a href="demos.html" class="nav-link">Interactive Demos</a></li>
-                <li><a href="#research" class="nav-link">Research</a></li>
-                <li><a href="#get-started" class="nav-link cta">Get Started</a></li>
-            </ul>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero" id="hero">
-        <canvas id="prime-canvas" class="hero-canvas"></canvas>
+    <section class="hero">
+        <div class="hero-bg"></div>
         <div class="hero-content">
-            <h1 class="hero-title">
-                <span class="gradient-text">Where Prime Numbers</span>
-                <br>
-                <span class="gradient-text">Meet Quantum Computing</span>
-            </h1>
-            <p class="hero-subtitle">
-                A revolutionary framework for recursive information processing using 
-                prime-indexed quantum-inspired algorithms
-            </p>
-            <div class="hero-stats">
-                <div class="stat">
-                    <div class="stat-value">∞</div>
-                    <div class="stat-label">Recursive Depth</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">O(log n)</div>
-                    <div class="stat-label">Energy Scaling</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">2^n</div>
-                    <div class="stat-label">State Space</div>
-                </div>
-            </div>
-            <div class="hero-actions">
-                <a href="#visualizations" class="btn btn-primary">Explore Visualizations</a>
-                <a href="https://github.com/scrallex/Self-Emergent-Processor" class="btn btn-secondary">View on GitHub</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Theory Section -->
-    <section class="section" id="theory">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">The Physics Behind SEP</h2>
-                <p class="section-subtitle">
-                    Grounded in real mathematics and quantum information theory
-                </p>
-            </div>
+            <h1>Revolutionizing Quantitative Finance with Quantum-Inspired Computing</h1>
+            <p class="subtitle">SEP Dynamics harnesses the power of recursive information processing to deliver unprecedented accuracy in market analysis and trading decisions.</p>
             
-            <div class="theory-grid">
-                <div class="theory-card">
-                    <div class="theory-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 2v20M2 12h20"/>
-                        </svg>
-                    </div>
-                    <h3>Prime-Indexed Recursion</h3>
-                    <p>
-                        Time advances only at prime-numbered steps (2, 3, 5, 7, 11...), 
-                        creating irreducible computational beats that inject novelty and 
-                        prevent trivial periodicity.
-                    </p>
+            <div class="hero-metrics">
+                <div class="metric">
+                    <div class="metric-value">30%+</div>
+                    <div class="metric-label">Target Annual Returns</div>
                 </div>
-                
-                <div class="theory-card">
-                    <div class="theory-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                        </svg>
-                    </div>
-                    <h3>Quantum Coherence</h3>
-                    <p>
-                        Information states maintain phase relationships through Q-value 
-                        coherence metrics, enabling quantum-like superposition and 
-                        interference in classical computation.
-                    </p>
+                <div class="metric">
+                    <div class="metric-value">10x</div>
+                    <div class="metric-label">Faster Processing</div>
                 </div>
-                
-                <div class="theory-card">
-                    <div class="theory-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                        </svg>
-                    </div>
-                    <h3>Combinatorial Growth</h3>
-                    <p>
-                        Each additional unit exponentially expands the state space while 
-                        energy requirements scale logarithmically, following Landauer's 
-                        principle of information thermodynamics.
-                    </p>
-                </div>
-                
-                <div class="theory-card">
-                    <div class="theory-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
-                        </svg>
-                    </div>
-                    <h3>Emergent Complexity</h3>
-                    <p>
-                        Simple recursive rules generate complex, self-organizing patterns 
-                        that mirror natural systems from quantum mechanics to biological 
-                        intelligence.
-                    </p>
+                <div class="metric">
+                    <div class="metric-value">GPU</div>
+                    <div class="metric-label">Accelerated</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Architecture Section -->
-    <section class="section section-dark" id="architecture">
+    <!-- Technology Section -->
+    <section id="technology" class="section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">System Architecture</h2>
-                <p class="section-subtitle">
-                    Modular, high-performance design for quantum-inspired computation
-                </p>
+                <h2>Our Technology Edge</h2>
+                <p>Moving beyond traditional models with quantum-inspired algorithms that capture market coherence</p>
             </div>
             
-            <div class="architecture-diagram">
-                <div class="mermaid-container">
-                    <pre class="mermaid">
-graph TB
-    %% Main Executable
-    subgraph "Executable Layer"
-        exe[sep_engine<br/>Final Binary]
-    end
-
-    %% Static Libraries with detailed component mapping
-    subgraph "Static Library Layer"
-        subgraph "API & Interface"
-            api[libsep_api.a<br/>HTTP/C Bridge/Rate Limiting<br/>└─ server.cpp<br/>└─ bridge_c.cpp<br/>└─ crow_adapter.cpp<br/>└─ sep_engine.cpp]
-        end
-
-        subgraph "Domain Components"
-            blender[sep_blender<br/>Cycles Integration<br/>└─ cycles_renderer.cpp<br/>└─ mesh_handler.cpp<br/>└─ gpu_context.cpp]
-            audio[libsep_audio.a<br/>PipeWire Integration<br/>└─ pipewire_capture.cpp<br/>└─ pipeline.cpp]
-        end
-
-        subgraph "Quantum Processing"
-            quantum[libsep_quantum.a<br/>QBSA/QFH Algorithms<br/>└─ processor.cpp<br/>└─ evolution.cpp<br/>└─ pattern_processor.cpp<br/>└─ qfh.cpp]
-        end
-
-        subgraph "Memory Management"
-            memory[libsep_memory.a<br/>Tiered Storage<br/>└─ memory_tier_manager.cpp<br/>└─ quantum_coherence_manager.cpp<br/>└─ redis_manager.cpp]
-        end
-
-        subgraph "CUDA Backend"
-            compat[libsep_compat.a<br/>GPU Abstraction<br/>└─ core.cu<br/>└─ stream.cpp<br/>└─ cuda_api.cu<br/>└─ quantum_kernels.cu<br/>└─ pattern_kernels.cu]
-        end
-
-        subgraph "Core Foundation"
-            core[libsep_core.a<br/>Base Infrastructure<br/>└─ engine.cpp<br/>└─ manager.cpp<br/>└─ metrics_collector.cpp<br/>└─ logging.cpp<br/>└─ dag_graph.cpp]
-        end
-    end
-
-    %% External Dependencies
-    subgraph "Cycles Dependencies"
-        cycles_kernel[libcycles_kernel.a]
-        cycles_scene[libcycles_scene.a]
-        cycles_device[libcycles_device.a]
-        cycles_osl[libcycles_osl.a]
-        osl_exec[liboslexec.so]
-        osl_comp[liboslcomp.so]
-        osl_query[liboslquery.so]
-    end
-
-    subgraph "System Libraries"
-        cuda_runtime[CUDA Runtime<br/>cudart/cuda_driver]
-        pthread[pthread]
-        redis[hiredis]
-        pipewire[pipewire-0.3]
-    end
-
-    %% Dependency Arrows with Link Order
-    exe -.->|1| compat
-    exe -.->|2| cycles_kernel
-    exe -.->|3| cycles_scene
-    exe -.->|4| cycles_device
-    exe -.->|5| cycles_osl
-    exe -.->|6| osl_exec
-    exe -.->|7| osl_comp
-    exe -.->|8| osl_query
-    exe ==>|9| api
-    exe ==>|10| memory
-    exe ==>|11| quantum
-    exe ==>|12| core
-    exe ==>|13| audio
-    exe ==>|14| blender
-
-    %% Internal Dependencies
-    api --> quantum
-    api --> memory
-    api --> core
-
-    blender --> quantum
-    blender --> memory
-    blender --> cycles_kernel
-    blender --> cycles_scene
-    blender --> cycles_device
-    blender --> cycles_osl
-    blender --> core
-
-    audio --> quantum
-    audio --> memory
-    audio --> core
-
-    quantum --> compat
-    quantum --> core
-    quantum -.->|manifold symbols| memory
-
-    memory --> core
-    memory --> redis
-
-    compat --> cuda_runtime
-
-
-    %% Symbol Conflicts
-    quantum x--x|multiple defs<br/>manifold::memory<br/>manifold::quantum<br/>manifold::cuda<br/>manifold::api| memory
-
-
-    %% Styling
-    classDef conflict fill:#ffaa66,stroke:#ff6600,stroke-width:3px
-    classDef critical fill:#66ff66,stroke:#00ff00,stroke-width:2px
-    
-    class quantum,memory conflict
-    class compat,core critical
-                    </pre>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-icon">🔬</div>
+                    <h3>QBSA Engine</h3>
+                    <p>Quantum Binary State Analysis identifies pattern misalignments and market inefficiencies in real-time, providing signals traditional models miss.</p>
                 </div>
-                <div class="architecture-link">
-                    <a href="architecture.html" class="btn btn-secondary">View Full Architecture →</a>
+                
+                <div class="tech-card">
+                    <div class="tech-icon">🌊</div>
+                    <h3>QFH Processor</h3>
+                    <p>Quantum Fourier Hierarchy analyzes multi-level market structures to detect coherence ruptures before they manifest as price movements.</p>
                 </div>
-            </div>
-            
-            <div class="performance-metrics">
-                <h3>Performance Characteristics</h3>
-                <div class="metrics-grid">
-                    <div class="metric">
-                        <div class="metric-label">Processing Speed</div>
-                        <div class="metric-value">10^6 patterns/sec</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Memory Efficiency</div>
-                        <div class="metric-value">O(log n) growth</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Coherence Time</div>
-                        <div class="metric-value">Unbounded</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Scalability</div>
-                        <div class="metric-value">Linear with GPUs</div>
-                    </div>
+                
+                <div class="tech-card">
+                    <div class="tech-icon">⚡</div>
+                    <h3>GPU Acceleration</h3>
+                    <p>CUDA-optimized algorithms process massive datasets at speeds impossible with CPU-only solutions, enabling real-time trading decisions.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Visualizations Section -->
-    <section class="section" id="visualizations">
+    <!-- Value Proposition -->
+    <section class="section value-props">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Interactive Visualizations</h2>
-                <p class="section-subtitle">
-                    Explore the beauty and complexity of prime-based computation
-                </p>
+                <h2>Why SEP Dynamics</h2>
+                <p>Addressing the $20 billion proprietary trading market with next-generation technology</p>
             </div>
             
-            <div class="viz-tabs">
-                <button class="viz-tab active" data-viz="prime-spiral">Prime Spiral</button>
-                <button class="viz-tab" data-viz="recursion-tree">Recursion Tree</button>
-                <button class="viz-tab" data-viz="coherence-map">Coherence Map</button>
-                <button class="viz-tab" data-viz="factor-network">Factor Network</button>
-            </div>
-            
-            <div class="viz-container">
-                <div id="viz-prime-spiral" class="viz-panel active">
-                    <canvas id="spiral-canvas"></canvas>
-                    <div class="viz-controls">
-                        <label>
-                            <span>Max Number:</span>
-                            <input type="range" id="spiral-max" min="100" max="10000" value="1000">
-                            <span id="spiral-max-value">1000</span>
-                        </label>
-                        <label>
-                            <span>Highlight Pattern:</span>
-                            <select id="spiral-pattern">
-                                <option value="all">All Primes</option>
-                                <option value="twin">Twin Primes</option>
-                                <option value="mersenne">Mersenne Primes</option>
-                                <option value="gaussian">Gaussian Primes</option>
-                            </select>
-                        </label>
-                    </div>
+            <div class="prop-grid">
+                <div class="prop-item">
+                    <div class="prop-number">01</div>
+                    <h3>Beyond Black-Scholes</h3>
+                    <p>Our quantum-inspired models capture non-linear market behaviors that traditional approaches miss, reducing tail risk by up to 40%.</p>
                 </div>
                 
-                <div id="viz-recursion-tree" class="viz-panel">
-                    <canvas id="tree-canvas"></canvas>
-                    <div class="viz-controls">
-                        <button id="tree-step">Step Forward</button>
-                        <button id="tree-auto">Auto Play</button>
-                        <button id="tree-reset">Reset</button>
-                        <div class="tree-info">
-                            <span>Current Prime: <strong id="tree-prime">2</strong></span>
-                            <span>Information: <strong id="tree-info">1 bit</strong></span>
-                        </div>
-                    </div>
+                <div class="prop-item">
+                    <div class="prop-number">02</div>
+                    <h3>Information Coherence</h3>
+                    <p>Proprietary algorithms quantify market coherence, identifying stability patterns invisible to conventional analysis.</p>
                 </div>
                 
-                <div id="viz-coherence-map" class="viz-panel">
-                    <canvas id="coherence-canvas"></canvas>
-                    <div class="viz-controls">
-                        <label>
-                            <span>Q-Value Threshold:</span>
-                            <input type="range" id="coherence-threshold" min="0" max="100" value="50">
-                        </label>
-                        <label>
-                            <span>Update Speed:</span>
-                            <input type="range" id="coherence-speed" min="1" max="60" value="30">
-                        </label>
-                    </div>
-                </div>
-                
-                <div id="viz-factor-network" class="viz-panel">
-                    <div id="network-container"></div>
-                    <div class="viz-controls">
-                        <label>
-                            <span>Number Range:</span>
-                            <input type="range" id="network-range" min="2" max="100" value="30">
-                            <span id="network-range-value">30</span>
-                        </label>
-                        <button id="network-3d">Toggle 3D</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Interactive Demos Callout -->
-            <div class="demos-callout">
-                <h3>Explore All 12 Interactive Scenes</h3>
-                <p>Experience the full power of SEP through our comprehensive demo suite, featuring quantum effects, wave interference, and emergent behaviors.</p>
-                <a href="demos.html" class="btn btn-primary">Launch Interactive Demos →</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Research Section -->
-    <section class="section section-dark" id="research">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Research & Publications</h2>
-                <p class="section-subtitle">
-                    Peer-reviewed work and theoretical foundations
-                </p>
-            </div>
-            
-            <div class="research-grid">
-                <article class="research-paper">
-                    <h3>Combinatorial Information Growth vs Logarithmic Energy Scaling</h3>
-                    <p class="paper-abstract">
-                        Explores how information capacity grows combinatorially with each
-                        additional unit while energy requirements scale logarithmically,
-                        with applications to quantum mechanics, AI, and biological systems.
-                    </p>
-                    <div class="paper-meta">
-                        <span class="paper-author">Alexander J Nagy</span>
-                        <span class="paper-year">2025</span>
-                    </div>
-                    <a href="QCPandResearch.md" class="paper-link">Read Paper →</a>
-                </article>
-                
-                <article class="research-paper">
-                    <h3>The Unified Field Theory of Combinatorial Quantum Processing</h3>
-                    <p class="paper-abstract">
-                        A comprehensive exploration of how quantum computing principles,
-                        information theory, and prime number mathematics converge to create
-                        a new paradigm for understanding computation and consciousness.
-                    </p>
-                    <div class="paper-meta">
-                        <span class="paper-author">Alexander J Nagy</span>
-                        <span class="paper-year">2025</span>
-                    </div>
-                    <a href="https://x.com/alexanderjnagy/status/1944701576322424851" class="paper-link" target="_blank">Read Article →</a>
-                </article>
-                
-                <article class="research-paper">
-                    <h3>SEP: A Journey into Self-Emergent Consciousness</h3>
-                    <p class="paper-abstract">
-                        An interactive exploration of consciousness through the lens of
-                        self-emergent processing. Experience the philosophical foundations
-                        that inspired the SEP framework through quantum visualizations and
-                        reflection patterns.
-                    </p>
-                    <div class="paper-meta">
-                        <span class="paper-author">Alexander J Nagy</span>
-                        <span class="paper-year">2025</span>
-                    </div>
-                    <a href="https://i-am-sep.github.io/sep/" class="paper-link" target="_blank">Explore Interactive Demo →</a>
-                </article>
-            </div>
-            
-            <div class="citations">
-                <h3>Key References</h3>
-                <ul class="citation-list">
-                    <li>Landauer, R. (1961). "Irreversibility and Heat Generation in the Computing Process"</li>
-                    <li>Shannon, C. (1948). "A Mathematical Theory of Communication"</li>
-                    <li>Feynman, R. (1982). "Simulating Physics with Computers"</li>
-                    <li>Wheeler, J.A. (1990). "Information, Physics, Quantum: The Search for Links"</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- Applications Section -->
-    <section class="section" id="applications">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Real-World Applications</h2>
-                <p class="section-subtitle">
-                    From quantum computing to biological modeling
-                </p>
-            </div>
-            
-            <div class="applications-grid">
-                <div class="app-card">
-                    <div class="app-icon">🔬</div>
-                    <h3>Quantum Computing</h3>
-                    <p>Optimize quantum algorithms and simulate quantum systems efficiently on classical hardware</p>
-                </div>
-                
-                <div class="app-card">
-                    <div class="app-icon">🧠</div>
-                    <h3>AI & Machine Learning</h3>
-                    <p>Enhanced pattern recognition and information processing for next-generation AI systems</p>
-                </div>
-                
-                <div class="app-card">
-                    <div class="app-icon">🔐</div>
-                    <h3>Cryptography</h3>
-                    <p>Prime-based encryption schemes with quantum-resistant properties</p>
-                </div>
-                
-                <div class="app-card">
-                    <div class="app-icon">🧬</div>
-                    <h3>Biological Modeling</h3>
-                    <p>Simulate complex biological systems and evolutionary processes</p>
-                </div>
-                
-                <div class="app-card">
-                    <div class="app-icon">🌌</div>
-                    <h3>Physics Simulations</h3>
-                    <p>Model fundamental physics from information-theoretic principles</p>
-                </div>
-                
-                <div class="app-card">
-                    <div class="app-icon">📊</div>
-                    <h3>Data Analysis</h3>
-                    <p>Discover hidden patterns in complex datasets using quantum-inspired algorithms</p>
+                <div class="prop-item">
+                    <div class="prop-number">03</div>
+                    <h3>Proven Leadership</h3>
+                    <p>Engineering excellence from Apple's manufacturing automation to quantum algorithm development.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Get Started Section -->
-    <section class="section section-dark" id="get-started">
+    <!-- Team Section -->
+    <section id="team" class="section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Get Started with SEP</h2>
-                <p class="section-subtitle">
-                    Join the quantum information revolution
-                </p>
+                <h2>Leadership Team</h2>
+                <p>Combining theoretical expertise with proven execution</p>
             </div>
             
-            <div class="get-started-content">
-                <div class="start-option">
-                    <h3>🚀 Quick Start</h3>
-                    <p>Clone the repository and run the example demos</p>
-                    <pre><code>git clone https://github.com/scrallex/Self-Emergent-Processor
-cd Self-Emergent-Processor
-./build.sh
-./sep_engine --demo</code></pre>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-photo">AN</div>
+                    <h3 class="member-name">Alexander Nagy</h3>
+                    <p class="member-title">Founder & CEO</p>
+                    <p class="member-bio">B.S. Mechanical Engineering, University of Oklahoma. Former automation engineer at Apple via Flex. Developer of control systems for viral engineering projects at Mark Rober's Castle Greyskull LLC.</p>
                 </div>
                 
-                <div class="start-option">
-                    <h3>📚 Documentation</h3>
-                    <p>Comprehensive guides and technical references</p>
-                    <ul>
-                        <li><a href="README.md">Technical Overview</a></li>
-                        <li><a href="architecture.html">Architecture Guide</a></li>
-                        <li><a href="QCPandResearch.md">Theoretical Foundations</a></li>
-                    </ul>
+                <div class="team-member">
+                    <div class="member-photo">WN</div>
+                    <h3 class="member-name">William Nagy</h3>
+                    <p class="member-title">Co-Founder</p>
+                    <p class="member-bio">Strategic advisor bringing deep industry connections and business development expertise to accelerate market entry and partnership opportunities.</p>
                 </div>
-                
-                <div class="start-option">
-                    <h3>🤝 Community</h3>
-                    <p>Connect with researchers and developers</p>
-                    <ul>
-                        <li><a href="https://github.com/scrallex/Self-Emergent-Processor/issues">GitHub Issues</a></li>
-                        <li><a href="https://github.com/scrallex/Self-Emergent-Processor/discussions">Discussions</a></li>
-                        <li><a href="mailto:contact@sep-project.org">Contact Us</a></li>
-                    </ul>
-                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section">
+        <div class="container">
+            <div class="cta-section">
+                <h2>Ready to Transform Your Trading?</h2>
+                <p>Join us in revolutionizing quantitative finance with quantum-inspired technology</p>
+                <a href="#contact" class="cta-button">Schedule a Demo</a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <h4>SEP Dynamics</h4>
-                    <p>Where prime numbers meet quantum computing</p>
-                </div>
-                <div class="footer-links">
-                    <a href="https://github.com/scrallex/Self-Emergent-Processor">GitHub</a>
-                    <a href="docs/theory.md">Theory</a>
-                    <a href="docs/architecture.md">Architecture</a>
-                    <a href="LICENSE">License</a>
-                </div>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="architecture.html">Architecture</a>
+                <a href="demos.html">Live Demos</a>
+                <a href="#contact">Contact</a>
+                <a href="#">Privacy Policy</a>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Alexander J Nagy. Licensed under MIT.</p>
-            </div>
+            <p style="color: var(--gray);">© 2025 SEP Dynamics. All rights reserved.</p>
         </div>
     </footer>
 
-    <!-- Scripts -->
-    <script src="assets/js/main.js"></script>
-    <script src="assets/js/visualizations/prime-spiral.js"></script>
-    <script src="assets/js/visualizations/recursion-tree.js"></script>
-    <script src="assets/js/visualizations/coherence-map.js"></script>
-    <script src="assets/js/visualizations/factor-network.js"></script>
+    <script>
+        // Add smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add parallax effect
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallax = document.querySelector('.hero-bg');
+            parallax.style.transform = `translateY(${scrolled * 0.5}px)`;
+        });
+    </script>
 </body>
 </html>
