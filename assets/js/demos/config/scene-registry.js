@@ -299,3 +299,17 @@ export const VIDEO_SEQUENCE = Object.values(SCENES).map(scene => ({
     focusPoints: scene.videoSequence.focusPoints,
     preset: 'demo'
 }));
+
+// Map of scene name constants to their numeric IDs
+export const SCENE_IDS = Object.fromEntries(
+    Object.values(SCENES).map(scene => [
+        scene.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_'),
+        scene.id
+    ])
+);
+
+// Array of all scene objects for the loader
+export const ALL_SCENES = Object.values(SCENES);
+
+// Default scene ID if none is specified
+export const DEFAULT_SCENE = 1;
