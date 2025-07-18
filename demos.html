@@ -33,6 +33,10 @@
     <!-- Demo Grid -->
     <div class="demo-grid" id="demoGrid"></div>
 
+    <div class="demo-hub-controls">
+        <button id="numberPathBtn" class="btn btn-primary">Number Path Visualization</button>
+    </div>
+
     <!-- Demo Container -->
     <div class="demo-container" id="demoContainer">
         <canvas id="demo-canvas"></canvas>
@@ -242,11 +246,15 @@
                         }
                         demoGrid.appendChild(card);
                     });
+
                 }
 
 
                 // --- Event Listeners ---
                 function setupEventListeners() {
+                    document.getElementById('numberPathBtn').addEventListener('click', () => {
+                        window.location.href = 'assets/js/demos/number_path_visualization.html';
+                    });
                     document.getElementById('hubBtn').addEventListener('click', backToHub);
                     document.getElementById('controlsBtn').addEventListener('click', () => controlPanel.classList.toggle('hidden'));
                     document.getElementById('videoBtn').addEventListener('click', () => framework.toggleVideoMode());
