@@ -5,7 +5,7 @@
  * and boundary induced rotation.
  */
 export default class Scene10 {
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
@@ -16,6 +16,8 @@ export default class Scene10 {
         this.boundaryPadding = 10;
         this.mouse = { x: 0, y: 0, down: false };
         this.animation = true;
+        this.viscosity = 0.99;
+        this.swirlIntensity = 50;
 
         // Timing values for animation control
         this.time = 0;
@@ -83,7 +85,7 @@ export default class Scene10 {
                 const r2 = 80 * 80;
                 if (dist2 < r2 && dist2 > 0) {
                     const dist = Math.sqrt(dist2);
-                    const force = (1 - dist / 80) * 50;
+                    const force = (1 - dist / 80) * this.swirlIntensity;
                     p.vx += (-dy / dist) * force * dt;
                     p.vy += (dx / dist) * force * dt;
                 }
@@ -127,8 +129,8 @@ export default class Scene10 {
                 }
             }
             p.vort = count ? vort / count : 0;
-            p.vx *= 0.99;
-            p.vy *= 0.99;
+            p.vx *= this.viscosity;
+            p.vy *= this.viscosity;
             p.x += p.vx * dt * 60;
             p.y += p.vy * dt * 60;
         }
