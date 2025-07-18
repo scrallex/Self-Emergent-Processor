@@ -533,7 +533,7 @@
                     multidimensional trajectory mapping. Watch as the SEP Engine reveals hidden patterns in 
                     mathematical structures using Ulam spirals, spherical projections, and Hilbert curves.
                 </p>
-                <a href="assets/js/demos/number_path_visualization.html" class="featured-demo-button">
+                <a href="assets/js/demos/demo_runner.html?scene=7" class="featured-demo-button">
                     Launch Prime Trajectory Demo
                 </a>
                 <button class="featured-demo-button secondary" onclick="showDemoInfo('prime-trajectory')">
@@ -685,7 +685,7 @@
             if (demo.status === 'ready') {
                 showLoading();
                 setTimeout(() => {
-                    window.location.href = `demo.html?scene=${demoId}`;
+                    window.location.href = `assets/js/demos/demo_runner.html?scene=${demoId}`;
                 }, 1000);
             }
         }

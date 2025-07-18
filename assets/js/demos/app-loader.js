@@ -6,6 +6,13 @@
 import AppFramework from './core/app-framework.js';
 import { SCENE_IDS, DEFAULT_SCENE } from './config/scene-registry.js';
 
+// Read scene ID from the URL query string
+function getSceneFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const id = parseInt(params.get('scene'), 10);
+    return isNaN(id) ? null : id;
+}
+
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -63,9 +70,10 @@ async function initializeApp() {
         }
 
         // Initialize the framework
+        const sceneId = getSceneFromURL() || DEFAULT_SCENE;
         const app = new AppFramework(canvas, {
             autoStart: true,
-            defaultScene: initialScene,
+            defaultScene: sceneId,
             debug: false,
             recordingEnabled: true,
             persistState: true

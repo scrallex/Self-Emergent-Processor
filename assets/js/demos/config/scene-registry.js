@@ -316,8 +316,16 @@ export const VIDEO_SEQUENCE = Object.values(SCENES).map(scene => ({
     preset: 'demo'
 }));
 
-// Array of all scene definitions for easy iteration
+// Map of scene name constants to their numeric IDs
+export const SCENE_IDS = Object.fromEntries(
+    Object.values(SCENES).map(scene => [
+        scene.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_'),
+        scene.id
+    ])
+);
+
+// Array of all scene objects for the loader
 export const ALL_SCENES = Object.values(SCENES);
 
-// Default scene to load when the app starts
-export const DEFAULT_SCENE = SCENE_IDS.THE_HIDDEN_CODE;
+// Default scene ID if none is specified
+export const DEFAULT_SCENE = 1;
