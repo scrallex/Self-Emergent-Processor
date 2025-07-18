@@ -6,11 +6,19 @@
  * angle between their headings is acute (cosine positive) and disperse when
  * the angle becomes obtuse (cosine negative).
  */
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene8 {
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
+        this.controller = null;
 
         this.boids = [];
         this.time = 0;
@@ -48,7 +56,17 @@ export default class Scene8 {
         this.resize();
         window.addEventListener('resize', () => this.resize());
         this.createFlock(50);
-        
+
+        // Initialize shared interactive controls
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
         // Add mouse interaction
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         this.canvas.addEventListener('click', this.handleMouseClick.bind(this));

@@ -3,7 +3,8 @@
  *
  * Implementation of actual SEP algorithms with 64-bit state pins as an interactive grid.
  * Features QBSA rupture detection and QFH spectral analysis with real-time angle modulation effects.
- */
+*/
+import InteractiveController from '../controllers/interactive-controller.js';
 
 export default class Scene9 {
     /**
@@ -12,11 +13,17 @@ export default class Scene9 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
+        this.controller = null;
         
         // Scene-specific state
         this.time = 0;
@@ -66,6 +73,16 @@ export default class Scene9 {
         window.addEventListener('keydown', this.handleKeyDown);
         
         this.reset();
+
+        // Initialize shared interactive controls
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
         
         // Run a brief demo after initialization
         setTimeout(() => this.runDemoSequence(), 1500);

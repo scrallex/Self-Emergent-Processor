@@ -533,7 +533,7 @@
                     multidimensional trajectory mapping. Watch as the SEP Engine reveals hidden patterns in 
                     mathematical structures using Ulam spirals, spherical projections, and Hilbert curves.
                 </p>
-                <a href="assets/js/demos/number_path_visualization.html" class="featured-demo-button">
+                <a href="demos.html?scene=7" class="featured-demo-button">
                     Launch Prime Trajectory Demo
                 </a>
                 <button class="featured-demo-button secondary" onclick="showDemoInfo('prime-trajectory')">
@@ -586,6 +586,8 @@
         </div>
     </main>
 
+    <canvas id="demo-canvas" style="display:none; width:100%; height:100%;"></canvas>
+
     <!-- Controls Panel -->
     <div class="controls-panel" id="controlsPanel">
         <h3>Demo Controls</h3>
@@ -637,6 +639,15 @@
             hideLoading();
             populateDemoGrid();
             setupEventListeners();
+
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('scene')) {
+                document.getElementById('demo-canvas').style.display = 'block';
+                const loader = document.createElement('script');
+                loader.type = 'module';
+                loader.src = 'assets/js/demos/app-loader.js';
+                document.body.appendChild(loader);
+            }
         });
 
         function populateDemoGrid() {
@@ -684,17 +695,9 @@
 
             if (demo.status === 'ready') {
                 showLoading();
-                // Simulate loading time
                 setTimeout(() => {
-                    if (demoId === '7') {
-                        // Prime trajectory demo
-                        window.location.href = 'assets/js/demos/number_path_visualization.html';
-                    } else {
-                        // Other demos would load here
-                        alert(`Loading ${demo.name}...\nDemo framework integration in progress.`);
-                        hideLoading();
-                    }
-                }, 1000);
+                    window.location.href = `demos.html?scene=${demoId}`;
+                }, 300);
             } else {
                 alert(`${demo.name} is currently ${demo.status}. Coming soon!`);
             }

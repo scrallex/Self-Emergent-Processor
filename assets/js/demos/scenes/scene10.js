@@ -4,11 +4,19 @@
  * Particle-based fluid demonstration showing vorticity colouring
  * and boundary induced rotation.
  */
+import InteractiveController from '../controllers/interactive-controller.js';
+
 export default class Scene10 {
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
+        this.controller = null;
 
         this.particles = [];
         this.numParticles = 300;
@@ -79,6 +87,16 @@ export default class Scene10 {
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
         this.canvas.addEventListener('mouseup', this.handleMouseUp);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
+
+        // Initialize shared interactive controls
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
         return Promise.resolve();
     }
 

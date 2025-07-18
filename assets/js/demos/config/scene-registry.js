@@ -299,3 +299,25 @@ export const VIDEO_SEQUENCE = Object.values(SCENES).map(scene => ({
     focusPoints: scene.videoSequence.focusPoints,
     preset: 'demo'
 }));
+
+// Scene identifiers used by the loader UI
+export const SCENE_IDS = {
+    WAVE_INTERFERENCE: 1,
+    ANGLE_CLASSIFICATION: 2,
+    COSINE_ALIGNMENT: 3,
+    SINE_DEVIATION: 4,
+    THREE_BODY: 5,
+    PI_CALCULATION: 6,
+    PRIME_SPIRAL: 7,
+    FLOCKING: 8,
+    SEP_FRAMEWORK: 9,
+    FLUID_DYNAMICS: 10,
+    DERIVATIVES: 11,
+    META_VISUALIZATION: 12
+};
+
+// Array of all scenes for dynamic loading
+export const ALL_SCENES = Object.values(SCENES);
+
+// Default starting scene
+export const DEFAULT_SCENE = SCENE_IDS.WAVE_INTERFERENCE;

@@ -6,6 +6,7 @@
  * calculations in options pricing and risk management.
  */
 import sepPathLearningSurface from '../utils/sep-surface.js';
+import InteractiveController from '../controllers/interactive-controller.js';
 export default class Scene11 {
     /**
      * Constructor for the scene
@@ -13,11 +14,17 @@ export default class Scene11 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.physics = physics;
+        this.math = math;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
+        this.controller = null;
         
         // Animation state
         this.time = 0;
@@ -135,7 +142,17 @@ export default class Scene11 {
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
         this.canvas.addEventListener('mouseup', this.handleMouseUp);
         this.canvas.addEventListener('wheel', this.handleMouseWheel);
-        
+
+        // Initialize shared interactive controls
+        this.controller = new InteractiveController(
+            this,
+            this.canvas,
+            this.ctx,
+            this.eventManager,
+            this.stateManager,
+            this.renderPipeline
+        ).init();
+
         return Promise.resolve();
     }
     

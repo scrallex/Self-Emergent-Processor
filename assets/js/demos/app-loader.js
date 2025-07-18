@@ -50,10 +50,14 @@ async function initializeApp() {
             canvas.height = appContainer.clientHeight;
         }
         
+        // Determine start scene from URL parameter if provided
+        const params = new URLSearchParams(window.location.search);
+        const startScene = params.get('scene');
+
         // Initialize the framework
         const app = new AppFramework(canvas, {
             autoStart: true,
-            defaultScene: DEFAULT_SCENE,
+            defaultScene: startScene ? parseInt(startScene) : DEFAULT_SCENE,
             debug: false,
             recordingEnabled: true,
             persistState: true
