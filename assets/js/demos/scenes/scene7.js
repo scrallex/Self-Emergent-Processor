@@ -44,6 +44,9 @@ export default class Scene7 {
         this.lastMousePosition = { x: 0, y: 0 };
         this.isRotating = false;
         this.rotation = { x: 0, y: 0, z: 0 };
+        this.impactEffects = [];
+        this.latticePoints = [];
+        this.showLatticeConnections = true;
         
         // Statistics
         this.primeCount = 0;
@@ -200,7 +203,8 @@ export default class Scene7 {
                 color: this.getFactorColor(factor1, factor2),
                 progress: 0,
                 particles: [],
-                active: false
+                active: false,
+                effectsCreated: false
             };
             
             // Add the trajectory
@@ -538,6 +542,7 @@ export default class Scene7 {
                 // Deactivate if completed
                 if (trajectory.progress >= 1.5) {
                     trajectory.active = false;
+                    trajectory.effectsCreated = false; // Reset for next activation
                 }
             }
         }
@@ -559,6 +564,20 @@ export default class Scene7 {
                 number.animation.amplitude = 0.5 + 0.3 * Math.sin(number.animation.phase * 2);
             }
         }
+
+        // Update impact effects
+        this.impactEffects = this.impactEffects.filter(effect => {
+            effect.life -= dt;
+            effect.radius = effect.maxRadius * (1 - Math.pow(1 - effect.life, 2));
+            effect.alpha = effect.life;
+            return effect.life > 0;
+        });
+        
+        // Update lattice point lifetimes
+        this.latticePoints = this.latticePoints.filter(p => {
+            p.life -= dt * 0.125; // Slower decay for lattice points
+            return p.life > 0;
+        });
     }
 
     /**
@@ -767,24 +786,17 @@ export default class Scene7 {
         const centerY = this.gridCenter.y + this.gridOffset.y;
         const radius = this.gridSize * this.spiralRange * 0.5 * this.zoom;
 
-        // Apply sphere rotation
-        const sinX = Math.sin(this.rotation.x);
-        const cosX = Math.cos(this.rotation.x);
-        const sinY = Math.sin(this.rotation.y);
-        const cosY = Math.cos(this.rotation.y);
-        const sinZ = Math.sin(this.rotation.z);
-        const cosZ = Math.cos(this.rotation.z);
-        
         // Process numbers for z-sorting
         const renderObjects = [];
         
-        for (const number of this.numbers) {
-            const theta = (number.x / this.spiralRange) * Math.PI; // longitude
-            const phi = (number.y / this.spiralRange) * (Math.PI / 2); // latitude
-
-            let x = radius * Math.cos(phi) * Math.cos(theta);
-            let y = radius * Math.sin(phi);
-            let z = radius * Math.cos(phi) * Math.sin(theta);
+        const projectTo3D = (x, y, z) => {
+            // Apply sphere rotation
+            const sinX = Math.sin(this.rotation.x);
+            const cosX = Math.cos(this.rotation.x);
+            const sinY = Math.sin(this.rotation.y);
+            const cosY = Math.cos(this.rotation.y);
+            const sinZ = Math.sin(this.rotation.z);
+            const cosZ = Math.cos(this.rotation.z);
 
             // Rotate around X axis
             const y1 = y * cosX - z * sinX;
@@ -804,21 +816,62 @@ export default class Scene7 {
             const projY = centerY + (y3 * distance) / (distance + z2);
             const projSize = this.gridSize * this.zoom / (distance + z2);
 
+            return { x: projX, y: projY, z: z2, size: projSize };
+        };
+
+        for (const number of this.numbers) {
+            const theta = (number.x / this.spiralRange) * Math.PI; // longitude
+            const phi = (number.y / this.spiralRange) * (Math.PI / 2); // latitude
+
+            let x = radius * Math.cos(phi) * Math.cos(theta);
+            let y = radius * Math.sin(phi);
+            let z = radius * Math.cos(phi) * Math.sin(theta);
+
+            const proj = projectTo3D(x, y, z);
+
             renderObjects.push({
+                type: 'number',
                 number,
-                x: projX,
-                y: projY,
-                z: z2,
-                size: projSize
+                x: proj.x,
+                y: proj.y,
+                z: proj.z,
+                size: proj.size
             });
+        }
+
+        for (const effect of this.impactEffects) {
+            const proj = projectTo3D(effect.x, effect.y, 0);
+            renderObjects.push({ type: 'effect', effect, ...proj });
+        }
+
+        for (const point of this.latticePoints) {
+            const proj = projectTo3D(point.x, point.y, 0);
+            renderObjects.push({ type: 'lattice', point, ...proj });
         }
         
         // Sort by z-coordinate (painter's algorithm)
         renderObjects.sort((a, b) => b.z - a.z);
         
-        // Draw numbers
+        // Draw connections behind other objects
+        this.drawLatticeConnections(renderObjects);
+
+        // Draw objects
         for (const obj of renderObjects) {
-            this.drawNumberCell(obj.number, obj.x, obj.y, obj.size * 2);
+            if (obj.type === 'number') {
+                this.drawNumberCell(obj.number, obj.x, obj.y, obj.size * 2);
+            } else if (obj.type === 'effect') {
+                const effect = obj.effect;
+                ctx.beginPath();
+                ctx.arc(obj.x, obj.y, effect.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `${effect.color}${Math.floor(effect.alpha * 255).toString(16).padStart(2, '0')}`;
+                ctx.fill();
+            } else if (obj.type === 'lattice') {
+                const point = obj.point;
+                ctx.beginPath();
+                ctx.arc(obj.x, obj.y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(96, 165, 250, ${point.life})`;
+                ctx.fill();
+            }
         }
     }
     
@@ -1245,6 +1298,38 @@ export default class Scene7 {
             this.gridSize = newSettings.blockSize;
         }
         Object.assign(this.settings, newSettings);
+    }
+
+    /**
+     * Draw connections between lattice points
+     */
+    drawLatticeConnections(renderObjects) {
+        const { ctx } = this;
+        const latticeRenderObjects = renderObjects.filter(obj => obj.type === 'lattice');
+        const MAX_DISTANCE = 150; // Max screen distance for connection
+
+        for (let i = 0; i < latticeRenderObjects.length; i++) {
+            const p1 = latticeRenderObjects[i];
+            for (let j = i + 1; j < latticeRenderObjects.length; j++) {
+                const p2 = latticeRenderObjects[j];
+                
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < MAX_DISTANCE) {
+                    const strength = 1 - (dist / MAX_DISTANCE);
+                    const alpha = Math.min(p1.point.life, p2.point.life) * strength;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = `rgba(96, 165, 250, ${alpha * 0.7})`;
+                    ctx.lineWidth = 2 * alpha;
+                    ctx.stroke();
+                }
+            }
+        }
     }
 
     /**
