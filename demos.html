@@ -3,291 +3,741 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEP Dynamics - Interactive Demos</title>
-    <meta name="description"
-        content="Interactive demonstrations of SEP Dynamics concepts including quantum coherence, prime patterns, and emergent behaviors">
-    
-    <!-- Main and Demo Styles -->
-    <link rel="stylesheet" href="assets/css/main.css">
-    <link rel="stylesheet" href="assets/css/demos.css">
+    <title>Interactive Demos - SEP Dynamics</title>
+    <meta name="description" content="Experience the power of quantum-inspired algorithms through interactive demonstrations of SEP Engine capabilities">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <!-- Demo-specific Styles -->
+        :root {
+            --primary: #0066ff;
+            --secondary: #00d4ff;
+            --dark: #0a0a0a;
+            --light: #ffffff;
+            --gray: #888;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+            --success: #00ff88;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 10, 0.8);
+            z-index: 1000;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .nav-button {
+            background: var(--gradient);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            color: var(--light) !important;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 102, 255, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding-top: 120px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            margin-bottom: 6rem;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-section .subtitle {
+            font-size: 1.4rem;
+            color: var(--gray);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Featured Demo Section */
+        .featured-demo {
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 102, 255, 0.3);
+            border-radius: 30px;
+            padding: 4rem;
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .featured-demo h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .featured-demo p {
+            font-size: 1.2rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .featured-demo-button {
+            background: var(--gradient);
+            color: var(--light);
+            padding: 1.5rem 3rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            margin: 0.5rem;
+        }
+
+        .featured-demo-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 102, 255, 0.4);
+        }
+
+        .featured-demo-button.secondary {
+            background: transparent;
+            color: var(--secondary);
+            border: 2px solid var(--secondary);
+        }
+
+        .featured-demo-button.secondary:hover {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        /* Demo Categories */
+        .demo-categories {
+            margin: 6rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--gray);
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .category-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 102, 255, 0.3);
+            background: rgba(0, 102, 255, 0.05);
+        }
+
+        .category-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .category-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .category-card p {
+            color: var(--gray);
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-count {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Demo Grid */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 102, 255, 0.3);
+            background: rgba(0, 102, 255, 0.05);
+        }
+
+        .demo-status {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .demo-status.ready {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .demo-status.beta {
+            background: rgba(255, 187, 0, 0.2);
+            color: #ffbb00;
+            border: 1px solid rgba(255, 187, 0, 0.3);
+        }
+
+        .demo-status.dev {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .demo-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+        }
+
+        .demo-card .demo-description {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .demo-card .demo-type {
+            color: var(--secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Controls Panel */
+        .controls-panel {
+            position: fixed;
+            top: 120px;
+            right: 2rem;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            z-index: 500;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+
+        .controls-panel.active {
+            transform: translateX(0);
+        }
+
+        .controls-panel h3 {
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--light);
+            font-size: 0.9rem;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .loading-screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 102, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--secondary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero-section h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero-stats {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .category-grid,
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .featured-demo {
+                padding: 2rem;
+            }
+
+            .controls-panel {
+                right: 1rem;
+                left: 1rem;
+                transform: translateY(-100%);
+            }
+
+            .controls-panel.active {
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
-<body class="demo-hub">
+<body>
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
-        <div class="stat-value">SEP</div>
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Loading SEP Dynamics...</p>
+        </div>
     </div>
 
-    <!-- Demo Navigation -->
-    <nav class="demo-nav">
-        <h1>SEP Dynamics Interactive Demos</h1>
-        <div class="nav-controls">
-            <button id="hubBtn" class="btn btn-secondary">Demo Hub</button>
-            <button id="controlsBtn" class="btn btn-secondary">Toggle Controls</button>
-            <button id="videoBtn" class="btn btn-video">Video Mode</button>
-            <a href="index.html" class="btn btn-secondary">Back to Main Site</a>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">SEP Dynamics</div>
+            <div class="nav-links">
+                <a href="index.html#technology">Technology</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="demos.html" style="color: var(--secondary);">Demos</a>
+                <a href="index.html#team">Team</a>
+                <button class="nav-button" id="controlsToggle">Controls</button>
+                <a href="get-involved.html" class="nav-button">Get Involved</a>
+            </div>
         </div>
     </nav>
 
-    <!-- Demo Grid -->
-    <div class="demo-grid" id="demoGrid"></div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h1>Interactive Demonstrations</h1>
+                <p class="subtitle">
+                    Experience the power of quantum-inspired algorithms through real-time visualizations. 
+                    Explore pattern coherence, market dynamics, and emergent behaviors that drive the SEP Engine.
+                </p>
+                
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Interactive Demos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Algorithm Categories</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">60fps</div>
+                        <div class="stat-label">Real-time Performance</div>
+                    </div>
+                </div>
+            </section>
 
-    <div class="demo-hub-controls">
-        <button id="numberPathBtn" class="btn btn-primary">Number Path Visualization</button>
-    </div>
+            <!-- Featured Demo -->
+            <section class="featured-demo">
+                <h2>Prime Trajectory Visualization</h2>
+                <p>
+                    Experience our most advanced demonstration: quantum-inspired prime number analysis through 
+                    multidimensional trajectory mapping. Watch as the SEP Engine reveals hidden patterns in 
+                    mathematical structures using Ulam spirals, spherical projections, and Hilbert curves.
+                </p>
+                <a href="assets/js/demos/number_path_visualization.html" class="featured-demo-button">
+                    Launch Prime Trajectory Demo
+                </a>
+                <button class="featured-demo-button secondary" onclick="showDemoInfo('prime-trajectory')">
+                    Learn More
+                </button>
+            </section>
 
-    <!-- Demo Container -->
-    <div class="demo-container" id="demoContainer">
-        <canvas id="demo-canvas"></canvas>
-    </div>
+            <!-- Demo Categories -->
+            <section class="demo-categories">
+                <div class="section-header">
+                    <h2>Explore by Category</h2>
+                    <p>Each demonstration showcases different aspects of quantum-inspired computation and pattern recognition</p>
+                </div>
 
-    <!-- Control Panel -->
-    <div class="control-panel hidden" id="controlPanel">
+                <div class="category-grid">
+                    <div class="category-card" onclick="filterDemos('quantum')">
+                        <div class="category-icon">🌌</div>
+                        <h3>Quantum Coherence</h3>
+                        <p>Visualize quantum-inspired algorithms, phase coherence, and information pattern evolution in real-time systems.</p>
+                        <div class="demo-count">5 Demonstrations</div>
+                    </div>
+
+                    <div class="category-card" onclick="filterDemos('mathematical')">
+                        <div class="category-icon">🔢</div>
+                        <h3>Mathematical Structures</h3>
+                        <p>Explore prime patterns, fractal geometries, and recursive mathematical relationships through interactive visualizations.</p>
+                        <div class="demo-count">4 Demonstrations</div>
+                    </div>
+
+                    <div class="category-card" onclick="filterDemos('market')">
+                        <div class="category-icon">📈</div>
+                        <h3>Market Dynamics</h3>
+                        <p>Experience how SEP algorithms analyze market data, detect patterns, and predict emergent behaviors in financial systems.</p>
+                        <div class="demo-count">3 Demonstrations</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Demo Grid -->
+            <section>
+                <div class="section-header">
+                    <h2>All Demonstrations</h2>
+                    <p>Interactive experiences showcasing the full capabilities of the SEP Engine</p>
+                </div>
+
+                <div class="demo-grid" id="demoGrid">
+                    <!-- Demos will be populated by JavaScript -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel" id="controlsPanel">
         <h3>Demo Controls</h3>
         
         <div class="control-group">
-            <label>Quality</label>
-            <select id="qualitySelect" class="btn btn-secondary" style="width:100%;">
+            <label for="qualitySelect">Quality</label>
+            <select id="qualitySelect">
                 <option value="low">Low</option>
                 <option value="medium" selected>Medium</option>
                 <option value="high">High</option>
+                <option value="ultra">Ultra</option>
             </select>
         </div>
 
         <div class="control-group">
-            <label for="speedSlider">Speed: <span id="speedValue">1.0x</span></label>
+            <label for="speedSlider">Animation Speed</label>
             <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
         </div>
 
         <div class="control-group">
-            <label for="intensitySlider">Intensity: <span id="intensityValue">50%</span></label>
-            <input type="range" id="intensitySlider" min="0" max="100" value="50">
+            <label for="intensitySlider">Effect Intensity</label>
+            <input type="range" id="intensitySlider" min="10" max="100" step="5" value="50">
         </div>
 
         <div class="control-group">
-            <label for="blockSizeSlider">Block Size: <span id="blockSizeValue">30</span></label>
-            <input type="range" id="blockSizeSlider" min="10" max="60" value="30">
-            <label for="sizeSlider">Particle Size: <span id="sizeValue">3</span></label>
-            <input type="range" id="sizeSlider" min="1" max="10" value="3">
-        </div>
-
-        <div class="control-group">
-            <label>Preset</label>
-            <select id="presetSelect" class="btn btn-secondary" style="width:100%;">
-                <option value="default">Default</option>
-                <option value="intro">Introduction</option>
-                <option value="demo">Demonstration</option>
-                <option value="climax">Climax</option>
-                <option value="outro">Outro</option>
-            </select>
-        </div>
-
-        <div class="control-group">
-            <button id="resetBtn" class="btn">Reset to Default</button>
-            <button id="exportBtn" class="btn">Export Frame</button>
-        </div>
-
-        <div class="control-group">
-            <label>FPS: <span id="fpsCounter">--</span></label>
+            <button class="nav-button" onclick="resetAllControls()">Reset to Default</button>
         </div>
     </div>
 
-    <!-- Demo Framework Script -->
-    <script type="module">
-        import demoFramework from './assets/js/demos/enhanced-framework.js';
+    <script>
+        // Demo Configuration
+        const DEMO_CONFIG = {
+            1: { name: "Quantum Coherence", description: "Visualize quantum state evolution", type: "quantum", status: "ready" },
+            2: { name: "Phase Alignment", description: "Interactive phase synchronization", type: "quantum", status: "ready" },
+            3: { name: "Pattern Evolution", description: "Watch patterns emerge and evolve", type: "quantum", status: "ready" },
+            4: { name: "Recursive Identity", description: "Self-referential mathematical structures", type: "quantum", status: "beta" },
+            5: { name: "Three-Body Problem", description: "Boundary conditions and orbital mechanics", type: "mathematical", status: "ready" },
+            6: { name: "Pi Calculation", description: "Computing π through particle collisions", type: "mathematical", status: "ready" },
+            7: { name: "Prime Spiral", description: "Ulam spiral and trajectory mapping", type: "mathematical", status: "ready" },
+            8: { name: "Flocking Behavior", description: "Cosine-based alignment systems", type: "mathematical", status: "ready" },
+            9: { name: "Market Oscillations", description: "Financial pattern recognition", type: "market", status: "dev" },
+            10: { name: "Volatility Surfaces", description: "Option pricing visualization", type: "market", status: "dev" },
+            11: { name: "Risk Topology", description: "Risk landscape mapping", type: "market", status: "dev" },
+            12: { name: "SEP Meta-System", description: "Unified framework demonstration", type: "quantum", status: "ready" }
+        };
 
-    // DOM Elements
-    const loadingScreen = document.getElementById('loadingScreen');
-    const demoGrid = document.getElementById('demoGrid');
-    const demoContainer = document.getElementById('demoContainer');
-    const controlPanel = document.getElementById('controlPanel');
-        
-            // --- Framework Initialization ---
-        let framework = null;
-        
-        async function initFramework() {
-            framework = demoFramework;
-            await framework.init('demo-canvas');
-        }
-        
-            const showLoading = () => loadingScreen.classList.add('active');
-            const hideLoading = () => loadingScreen.classList.remove('active');
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            hideLoading();
+            populateDemoGrid();
+            setupEventListeners();
+        });
 
-            // --- Demo Loading and Navigation ---
-            async function loadDemo(sceneId) {
-            showLoading();
-            demoGrid.style.display = 'none';
-            demoContainer.classList.add('active');
-            controlPanel.classList.remove('hidden');
+        function populateDemoGrid() {
+            const demoGrid = document.getElementById('demoGrid');
             
-            try {
-                if (!framework) await initFramework();
-                await framework.loadScene(sceneId);
-                document.getElementById('blockSizeSlider').value = framework.settings.blockSize || 30;
-                updateBlockSize();
-            } catch (error) {
-                console.error('Failed to load demo:', error);
-                backToHub();
-            } finally {
-                hideLoading();
-            }
-        }
-
-            function backToHub() {
-                if (framework) framework.unloadCurrentScene();
-                demoContainer.classList.remove('active');
-                demoGrid.style.display = 'grid';
-                controlPanel.classList.add('hidden');
-        }
-
-            // --- UI Controls ---
-            function updateQuality() {
-            const quality = document.getElementById('qualitySelect').value;
-            if (framework) framework.updateSettings({ quality });
-        }
-
-            function updateSpeed() {
-            const speed = parseFloat(document.getElementById('speedSlider').value);
-            document.getElementById('speedValue').textContent = speed.toFixed(1) + 'x';
-            if (framework) framework.updateSettings({ speed });
-        }
-
-        function updateIntensity() {
-            const intensity = parseInt(document.getElementById('intensitySlider').value);
-            document.getElementById('intensityValue').textContent = intensity + '%';
-            if (framework) framework.updateSettings({ intensity });
-        }
-
-            function updateBlockSize() {
-                const blockSize = parseInt(document.getElementById('blockSizeSlider').value);
-                document.getElementById('blockSizeValue').textContent = blockSize;
-                if (framework) framework.updateSettings({ blockSize });
-            }
-            
-            function updateSize() {
-                const size = parseInt(document.getElementById('sizeSlider').value);
-                document.getElementById('sizeValue').textContent = size;
-                if (framework) framework.updateSettings({ size });
-            }
-
-            function applyPreset() {
-            const presetName = document.getElementById('presetSelect').value;
-            if (framework && framework.applyPreset(presetName)) {
-                // Sync UI sliders with preset values
-                const settings = framework.settings;
-                document.getElementById('speedSlider').value = settings.speed;
-                document.getElementById('intensitySlider').value = settings.intensity;
-                document.getElementById('blockSizeSlider').value = settings.blockSize || 30;
-                updateSpeed();
-                updateIntensity();
-                updateBlockSize();
-                document.getElementById('sizeSlider').value = settings.size;
-                updateSpeed();
-                updateIntensity();
-                updateSize();
-            }
-        }
-
-            function resetToDefault() {
-            document.getElementById('presetSelect').value = 'default';
-            applyPreset();
-        }
-
-            function exportFrame() {
-            if (framework) {
-                const dataUrl = framework.exportFrame();
-                if (dataUrl) {
-                    const link = document.createElement('a');
-                    link.download = `sep-demo-${framework.currentScene}-${Date.now()}.png`;
-                    link.href = dataUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            }
-        }
-
-            // --- FPS Counter ---
-        let lastTime = performance.now();
-            let frames = 0;
-            function updateFPS() {
-                const currentTime = performance.now();
-                const deltaTime = currentTime - lastTime;
-                frames++;
+            Object.entries(DEMO_CONFIG).forEach(([id, demo]) => {
+                const demoCard = document.createElement('div');
+                demoCard.className = 'demo-card';
+                demoCard.onclick = () => loadDemo(id);
                 
-                if (deltaTime >= 1000) {
-                    document.getElementById('fpsCounter').textContent = frames;
-                    frames = 0;
-                    lastTime = currentTime;
-                }
-            }
-            
-            function animate() {
-                updateFPS();
-                requestAnimationFrame(animate);
-            }
-
-                // --- Dynamic Content Generation ---
-                function populateDemoGrid() {
-                    const scenes = framework.getAllScenes();
-                    scenes.forEach(scene => {
-                        const card = document.createElement('div');
-                        card.className = 'demo-card';
-                        if (scene.status !== 'ready') card.classList.add('disabled');
-                        card.dataset.scene = scene.id;
-                        card.innerHTML = `
-                    <div class="demo-status ${scene.status}"></div>
-                    <h3>Scene ${scene.id}: ${scene.name}</h3>
-                    <p>${scene.description || 'An interactive visualization.'}</p>
+                demoCard.innerHTML = `
+                    <div class="demo-status ${demo.status}">${demo.status.toUpperCase()}</div>
+                    <h4>${demo.name}</h4>
+                    <p class="demo-description">${demo.description}</p>
+                    <div class="demo-type">${demo.type}</div>
                 `;
-                        if (scene.status === 'ready') {
-                            card.addEventListener('click', () => loadDemo(scene.id));
-                        }
-                        demoGrid.appendChild(card);
-                    });
-
-                }
-
-
-                // --- Event Listeners ---
-                function setupEventListeners() {
-                    document.getElementById('numberPathBtn').addEventListener('click', () => {
-                        window.location.href = 'assets/js/demos/number_path_visualization.html';
-                    });
-                    document.getElementById('hubBtn').addEventListener('click', backToHub);
-                    document.getElementById('controlsBtn').addEventListener('click', () => controlPanel.classList.toggle('hidden'));
-                    document.getElementById('videoBtn').addEventListener('click', () => framework.toggleVideoMode());
-                    document.getElementById('qualitySelect').addEventListener('change', updateQuality);
-                    document.getElementById('speedSlider').addEventListener('input', updateSpeed);
-                    document.getElementById('intensitySlider').addEventListener('input', updateIntensity);
-                    document.getElementById('blockSizeSlider').addEventListener('input', updateBlockSize);
-                    document.getElementById('sizeSlider').addEventListener('input', updateSize);
-                    document.getElementById('presetSelect').addEventListener('change', applyPreset);
-                    document.getElementById('resetBtn').addEventListener('click', resetToDefault);
-                    document.getElementById('exportBtn').addEventListener('click', exportFrame);
-
-                    window.addEventListener('resize', () => framework?.resizeCanvas());
-
-                    document.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape' && demoContainer.classList.contains('active')) backToHub();
-                        else if (e.key.toLowerCase() === 'f' && framework?.currentScene) document.documentElement.requestFullscreen();
-                        else if (e.key.toLowerCase() === 'v') framework?.toggleVideoMode();
-                        else if (e.key.toLowerCase() === 'c') controlPanel.classList.toggle('hidden');
-                    });
-                }
-
-                // --- Main Initialization ---
-                async function main() {
-                    showLoading();
-                    await initFramework();
-                    populateDemoGrid();
-                    setupEventListeners();
-                    hideLoading();
-                    animate();
+                
+                demoGrid.appendChild(demoCard);
+            });
         }
 
-            main().catch(console.error);
-        </script>
-    </body>
-    </html>
+        function setupEventListeners() {
+            document.getElementById('controlsToggle').addEventListener('click', toggleControls);
+            document.getElementById('qualitySelect').addEventListener('change', updateQuality);
+            document.getElementById('speedSlider').addEventListener('input', updateSpeed);
+            document.getElementById('intensitySlider').addEventListener('input', updateIntensity);
+        }
+
+        function toggleControls() {
+            const panel = document.getElementById('controlsPanel');
+            panel.classList.toggle('active');
+        }
+
+        function showLoading() {
+            document.getElementById('loadingScreen').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingScreen').classList.remove('active');
+        }
+
+        function loadDemo(demoId) {
+            const demo = DEMO_CONFIG[demoId];
+            if (!demo) return;
+
+            if (demo.status === 'ready') {
+                showLoading();
+                // Simulate loading time
+                setTimeout(() => {
+                    if (demoId === '7') {
+                        // Prime trajectory demo
+                        window.location.href = 'assets/js/demos/number_path_visualization.html';
+                    } else {
+                        // Other demos would load here
+                        alert(`Loading ${demo.name}...\nDemo framework integration in progress.`);
+                        hideLoading();
+                    }
+                }, 1000);
+            } else {
+                alert(`${demo.name} is currently ${demo.status}. Coming soon!`);
+            }
+        }
+
+        function filterDemos(category) {
+            const demoCards = document.querySelectorAll('.demo-card');
+            demoCards.forEach(card => {
+                const demoType = card.querySelector('.demo-type').textContent.toLowerCase();
+                if (category === 'all' || demoType === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function showDemoInfo(demoType) {
+            const info = {
+                'prime-trajectory': 'The Prime Trajectory Visualization demonstrates quantum-inspired analysis of prime number patterns through multidimensional space. Features include Ulam spiral mapping, spherical projections, and Hilbert curve transformations.'
+            };
+            
+            alert(info[demoType] || 'Demo information coming soon!');
+        }
+
+        function updateQuality(e) {
+            console.log('Quality updated:', e.target.value);
+        }
+
+        function updateSpeed(e) {
+            console.log('Speed updated:', e.target.value);
+        }
+
+        function updateIntensity(e) {
+            console.log('Intensity updated:', e.target.value);
+        }
+
+        function resetAllControls() {
+            document.getElementById('qualitySelect').value = 'medium';
+            document.getElementById('speedSlider').value = '1';
+            document.getElementById('intensitySlider').value = '50';
+            console.log('Controls reset to default');
+        }
+    </script>
+</body>
+</html>
