@@ -6,6 +6,7 @@
  * calculations in options pricing and risk management.
  */
 import sepPathLearningSurface from '../utils/sep-surface.js';
+import InteractiveController from '../controllers/interactive-controller.js';
 export default class Scene11 {
     /**
      * Constructor for the scene
@@ -13,11 +14,14 @@ export default class Scene11 {
      * @param {CanvasRenderingContext2D} ctx - The canvas 2D context
      * @param {Object} settings - Settings object from the framework
      */
-    constructor(canvas, ctx, settings) {
+    constructor(canvas, ctx, settings, physics, math, eventManager, stateManager, renderPipeline) {
         // Core properties
         this.canvas = canvas;
         this.ctx = ctx;
         this.settings = settings;
+        this.eventManager = eventManager;
+        this.stateManager = stateManager;
+        this.renderPipeline = renderPipeline;
         
         // Animation state
         this.time = 0;
@@ -60,6 +64,10 @@ export default class Scene11 {
         this.selectedOption = 0; // 0: call, 1: put
         this.viewMode = '3d'; // '2d', '3d'
         this.rotation = 0;
+
+        // Interactive controller (initialized in init)
+        this.controller = null;
+        this.interactiveElements = [];
         
         // Calculation cache
         this.traditionalSurface = [];
@@ -128,7 +136,19 @@ export default class Scene11 {
     init() {
         // Initialize price surface
         this.calculatePriceSurface();
-        
+
+        // Initialize interactive controller
+        if (!this.controller) {
+            this.controller = new InteractiveController(
+                this,
+                this.canvas,
+                this.ctx,
+                this.eventManager,
+                this.stateManager,
+                this.renderPipeline
+            ).init();
+        }
+
         // Add event listeners
         window.addEventListener('keydown', this.handleKeyDown);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
@@ -1608,6 +1628,65 @@ export default class Scene11 {
     }
 
     /**
+     * Provide custom controls for InteractiveController
+     * @returns {Array} Array of control configurations
+     */
+    getCustomControls() {
+        return [
+            {
+                id: 'surface_resolution',
+                type: 'slider',
+                label: 'Surface Resolution',
+                min: 10,
+                max: 40,
+                value: this.gridResolution,
+                step: 1,
+                onChange: (v) => {
+                    this.gridResolution = v;
+                    this.calculatePriceSurface();
+                }
+            },
+            {
+                id: 'volatility_slider',
+                type: 'slider',
+                label: 'Volatility (%)',
+                min: 10,
+                max: 100,
+                value: this.volatility,
+                step: 1,
+                onChange: (v) => this.updateVolatility(v)
+            },
+            {
+                id: 'toggle_greeks',
+                type: 'toggle',
+                label: 'Show Greeks',
+                value: this.showGreeks,
+                onChange: (val) => {
+                    this.showGreeks = val;
+                }
+            },
+            {
+                id: 'toggle_grid',
+                type: 'toggle',
+                label: 'Grid Lines',
+                value: this.showGridLines,
+                onChange: (val) => {
+                    this.showGridLines = val;
+                }
+            },
+            {
+                id: 'toggle_comparison',
+                type: 'toggle',
+                label: 'SEP Comparison',
+                value: !this.showOptionSurface,
+                onChange: (val) => {
+                    this.showOptionSurface = !val;
+                }
+            }
+        ];
+    }
+
+    /**
      * Update scene settings when changed from the framework
      * @param {Object} newSettings - The new settings object
      */
@@ -1629,5 +1708,12 @@ export default class Scene11 {
         this.canvas.removeEventListener('mousedown', this.handleMouseDown);
         this.canvas.removeEventListener('mouseup', this.handleMouseUp);
         this.canvas.removeEventListener('wheel', this.handleMouseWheel);
+
+        if (this.controller) {
+            this.controller.cleanup();
+            this.controller = null;
+        }
+
+        this.interactiveElements = [];
     }
 }
