@@ -4,50 +4,472 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Get Involved - SEP Dynamics</title>
-    <link rel="stylesheet" href="assets/css/main.css">
     <style>
-        .proposal-section {
-            padding: 4rem 0;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .proposal-content {
-            max-width: 900px;
+
+        :root {
+            --primary: #0066ff;
+            --secondary: #00d4ff;
+            --dark: #0a0a0a;
+            --light: #ffffff;
+            --gray: #888;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 10, 0.8);
+            z-index: 1000;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .cta-button {
+            background: var(--gradient);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            color: var(--light) !important;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 102, 255, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding-top: 120px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
         }
-        .proposal-content h2 {
-            font-size: 2.5rem;
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            margin-bottom: 6rem;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
             margin-bottom: 1.5rem;
             background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .proposal-content h3 {
-            font-size: 1.8rem;
-            margin-top: 2.5rem;
-            margin-bottom: 1rem;
-            color: var(--light);
-        }
-        .proposal-content p, .proposal-content li {
+
+        .hero-section .subtitle {
+            font-size: 1.4rem;
             color: var(--gray);
-            line-height: 1.7;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .funding-highlight {
+            display: inline-block;
+            background: rgba(0, 102, 255, 0.1);
+            border: 1px solid rgba(0, 102, 255, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem 2.5rem;
+            margin-top: 1rem;
+        }
+
+        .funding-amount {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .funding-description {
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+
+        /* Section Headers */
+        .section-header {
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
             margin-bottom: 1rem;
+            text-align: center;
         }
-        .proposal-content ul {
-            list-style-position: inside;
-            padding-left: 1rem;
+
+        .section-header p {
+            color: var(--gray);
+            font-size: 1.2rem;
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto;
         }
-        .metric-highlight {
-            background: #ffffff;
-            border: 1px solid rgba(0, 0, 0, 0.08);
+
+        /* Opportunity Section */
+        .opportunity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 3rem;
+            margin-bottom: 6rem;
+        }
+
+        .opportunity-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 2rem;
-            margin: 2rem 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 2.5rem;
+            transition: all 0.3s;
         }
-        .metric-highlight h4 {
+
+        .opportunity-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 102, 255, 0.3);
+            background: rgba(0, 102, 255, 0.05);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .opportunity-card h3 {
             font-size: 1.5rem;
             margin-bottom: 1rem;
-            color: var(--primary);
+            color: var(--secondary);
+        }
+
+        .opportunity-card p {
+            color: var(--gray);
+            line-height: 1.7;
+        }
+
+        /* Market Metrics */
+        .metrics-section {
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 102, 255, 0.05) 50%, transparent 100%);
+            padding: 4rem 0;
+            margin: 4rem 0;
+            border-radius: 30px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+        }
+
+        .metric-card {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+        }
+
+        .metric-value {
+            font-size: 3rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-description {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Financial Projections */
+        .projections-table {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 3rem 0;
+        }
+
+        .projections-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .projections-table th,
+        .projections-table td {
+            padding: 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .projections-table th {
+            background: rgba(0, 102, 255, 0.1);
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .projections-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .projections-table .year {
+            color: var(--light);
+            font-weight: 600;
+        }
+
+        .projections-table .revenue {
+            color: #00ff88;
+        }
+
+        .projections-table .profit {
+            color: var(--secondary);
+        }
+
+        /* Team Section */
+        .team-section {
+            margin: 6rem 0;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .team-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+        }
+
+        .team-avatar {
+            width: 120px;
+            height: 120px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--light);
+            margin: 0 auto 1.5rem;
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-title {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .team-bio {
+            color: var(--gray);
+            line-height: 1.7;
+        }
+
+        /* Investment CTA */
+        .investment-cta {
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 102, 255, 0.3);
+            border-radius: 30px;
+            padding: 4rem;
+            text-align: center;
+            margin: 6rem 0;
+        }
+
+        .investment-cta h2 {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .investment-cta p {
+            font-size: 1.3rem;
+            color: var(--gray);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .primary-button {
+            background: var(--gradient);
+            color: var(--light);
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 102, 255, 0.4);
+        }
+
+        .secondary-button {
+            background: transparent;
+            color: var(--secondary);
+            padding: 1.2rem 2.5rem;
+            border: 2px solid var(--secondary);
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .secondary-button:hover {
+            background: var(--secondary);
+            color: var(--dark);
+            transform: translateY(-3px);
+        }
+
+        /* Risk Factors */
+        .risk-section {
+            margin: 4rem 0;
+        }
+
+        .risk-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .risk-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .risk-item h4 {
+            color: var(--secondary);
+            margin-bottom: 0.8rem;
+        }
+
+        .risk-item p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero-section h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+
+            .opportunity-grid,
+            .metrics-grid,
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .projections-table {
+                overflow-x: auto;
+            }
         }
     </style>
 </head>
@@ -66,68 +488,214 @@
         </div>
     </nav>
 
-    <!-- Page Header -->
-    <section class="hero">
-        <div class="hero-bg"></div>
-        <div class="hero-content" style="text-align: center;">
-            <h1>Join the Revolution in Financial Intelligence</h1>
-            <p class="subtitle">We are commercializing a new engine for market analysis. Discover our plan and how you can be a part of it.</p>
-        </div>
-    </section>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h1>Join the Financial Intelligence Revolution</h1>
+                <p class="subtitle">
+                    SEP Dynamics is commercializing breakthrough quantum-inspired technology that revolutionizes market analysis. 
+                    We're seeking strategic investors to accelerate our path to market leadership.
+                </p>
+                <div class="funding-highlight">
+                    <div class="funding-amount">$500,000</div>
+                    <div class="funding-description">Seed funding to establish operations and launch proprietary trading</div>
+                </div>
+            </section>
 
-    <!-- Proposal Content -->
-    <main class="proposal-section">
-        <div class="proposal-content">
-            <h2>The Opportunity</h2>
-            <p>In today's volatile markets, traditional quantitative models are failing. SEP Dynamics introduces the SEP Engine, a proprietary C++ framework that provides a new method for market analysis by quantifying the <strong>informational coherence</strong> of raw market data. We distinguish stable, predictive signals from noise, unlocking opportunities that others miss.</p>
+            <!-- Market Opportunity -->
+            <section>
+                <div class="section-header">
+                    <h2>The Market Opportunity</h2>
+                    <p>Traditional quantitative models are failing in today's volatile markets. The SEP Engine represents a paradigm shift in market intelligence.</p>
+                </div>
 
-            <h3>The Problem We Solve</h3>
-            <p>Quantitative models that rely on outdated assumptions of constant volatility result in billions in annual losses. AI/ML alternatives often act as black boxes prone to overfitting. The market needs a better way to price risk and identify alpha.</p>
-            
-            <h3>Our Solution: The SEP Engine</h3>
-            <p>The SEP Engine leverages proprietary, quantum-inspired algorithms (QBSA and QFH kernels) to analyze pattern evolution directly from raw data. This allows us to measure a pattern's internal consistency ("coherence") and its resistance to change ("stability"). The core technology is mature, GPU-accelerated, and ready for deployment.</p>
+                <div class="opportunity-grid">
+                    <div class="opportunity-card">
+                        <div class="card-icon">🎯</div>
+                        <h3>The Problem</h3>
+                        <p>Mainstream models like Black-Scholes rely on outdated assumptions of constant volatility and log-normal distributions, failing to capture emergent behaviors and resulting in billions in annual losses from suboptimal trading decisions.</p>
+                    </div>
 
-            <div class="metric-highlight">
-                <h4>Verifiable Claim #1: Datatype-Agnostic Ingestion</h4>
-                <p>The engine ingests any data source as a raw byte stream without custom parsers. This unlocks alpha from alternative data sources (e.g., satellite imagery, social media) that competitors cannot easily analyze.</p>
-            </div>
+                    <div class="opportunity-card">
+                        <div class="card-icon">⚡</div>
+                        <h3>Our Solution</h3>
+                        <p>The SEP Engine employs quantum-inspired algorithms to analyze pattern evolution and coherence, effectively separating signal from noise for superior predictive analytics in options pricing and risk management.</p>
+                    </div>
 
-            <div class="metric-highlight">
-                <h4>Verifiable Claim #2: Quantifiable Coherence and Stability</h4>
-                <p>Our proprietary metrics distinguish between stable, low-volatility trends and directionless, high-entropy noise. This allows for superior signal-to-noise filtering, enabling more confident trading in trending markets and avoidance of "chop" that erodes profits.</p>
-            </div>
+                    <div class="opportunity-card">
+                        <div class="card-icon">🚀</div>
+                        <h3>Market Timing</h3>
+                        <p>With AI and advanced analytics projected to save 20-40% in banking software costs by 2028, and the digital investment market reaching $3.1 trillion in 2025, the timing for disruptive fintech innovation has never been better.</p>
+                    </div>
+                </div>
+            </section>
 
-            <div class="metric-highlight">
-                <h4>Verifiable Claim #3: High-Performance, Scalable Architecture</h4>
-                <p>Built in modern C++ with a CUDA backend, our engine is engineered for the demands of real-time trading. It can handle high-frequency data feeds and scale to analyze entire markets without falling behind, a claim backed by rigorous performance benchmarks.</p>
-            </div>
+            <!-- Market Metrics -->
+            <section class="metrics-section">
+                <div class="section-header">
+                    <h2>Market Size & Growth</h2>
+                    <p>The convergence of quantum computing, AI, and financial markets creates an unprecedented opportunity for transformative technology.</p>
+                </div>
 
-            <h2>Market Landscape</h2>
-            <p>The quantitative trading and digital investment sector is projected to reach a transaction value of <strong>$3.10 trillion in 2025</strong>. With the rise of AI and market volatility, there is immense demand for robust, next-generation analytical tools. SEP Dynamics is positioned to capture a significant share of this growing market by providing a clear, demonstrable technological edge.</p>
-            
-            <h3>Our Competitive Advantage</h3>
-            <ul>
-                <li><strong>Superior Edge:</strong> We measure information stability, not just volatility, providing a clear trading signal where others see only noise.</li>
-                <li><strong>Efficiency and Scalability:</strong> Our GPU-accelerated engine offers real-time analysis that is critical for high-frequency trading.</li>
-                <li><strong>Transparent & Robust:</strong> Unlike black-box ML models, our physics-grounded approach provides explainable metrics crucial for risk management.</li>
-            </ul>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">$3.1T</div>
+                        <div class="metric-label">Digital Investment Market</div>
+                        <div class="metric-description">2025 transaction value with 10-15% CAGR</div>
+                    </div>
 
-            <h2>Get Involved</h2>
-            <p>SEP Dynamics is poised to become a leader in the next generation of fintech analytics. We are seeking partners, collaborators, and forward-thinking investors to join us on this journey. If you are interested in learning more about our technology and our vision for the future of finance, please reach out.</p>
+                    <div class="metric-card">
+                        <div class="metric-value">$20B</div>
+                        <div class="metric-label">Proprietary Trading Industry</div>
+                        <div class="metric-description">Growing at 4.2% CAGR through 2028</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-value">40%</div>
+                        <div class="metric-label">Banking Software Savings</div>
+                        <div class="metric-description">Projected savings from AI/ML integration</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-value">$2.06T</div>
+                        <div class="metric-label">Robo-Advisor AUM</div>
+                        <div class="metric-description">Expected by end of 2025</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Financial Projections -->
+            <section>
+                <div class="section-header">
+                    <h2>Financial Projections</h2>
+                    <p>Conservative projections based on industry benchmarks and proven trading strategies. Break-even by Year 3 with accelerating growth.</p>
+                </div>
+
+                <div class="projections-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Revenue ($K)</th>
+                                <th>Operating Costs ($K)</th>
+                                <th>Net Profit ($K)</th>
+                                <th>Cumulative Cash Flow ($K)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="year">2025</td>
+                                <td class="revenue">250</td>
+                                <td>500</td>
+                                <td>-250</td>
+                                <td>-250</td>
+                            </tr>
+                            <tr>
+                                <td class="year">2026</td>
+                                <td class="revenue">400</td>
+                                <td>600</td>
+                                <td>-200</td>
+                                <td>-450</td>
+                            </tr>
+                            <tr>
+                                <td class="year">2027</td>
+                                <td class="revenue">1,100</td>
+                                <td>800</td>
+                                <td class="profit">300</td>
+                                <td>-150</td>
+                            </tr>
+                            <tr>
+                                <td class="year">2028</td>
+                                <td class="revenue">2,400</td>
+                                <td>1,200</td>
+                                <td class="profit">1,200</td>
+                                <td class="profit">1,050</td>
+                            </tr>
+                            <tr>
+                                <td class="year">2029</td>
+                                <td class="revenue">4,800</td>
+                                <td>1,800</td>
+                                <td class="profit">3,000</td>
+                                <td class="profit">4,050</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Leadership Team -->
+            <section class="team-section">
+                <div class="section-header">
+                    <h2>Leadership Team</h2>
+                    <p>Proven execution capabilities combining theoretical expertise with real-world engineering experience in high-stakes environments.</p>
+                </div>
+
+                <div class="team-grid">
+                    <div class="team-card">
+                        <div class="team-avatar">AN</div>
+                        <div class="team-name">Alexander Nagy</div>
+                        <div class="team-title">Founder & CEO</div>
+                        <div class="team-bio">
+                            B.S. Mechanical Engineering, University of Oklahoma (2019). Combines theoretical expertise in thermodynamics and physics with proven execution. Developed control systems for viral projects at Mark Rober's Castle Greyskull LLC and mission-critical automation for Apple's manufacturing at Flex (2022-2025).
+                        </div>
+                    </div>
+
+                    <div class="team-card">
+                        <div class="team-avatar">WN</div>
+                        <div class="team-name">William Nagy</div>
+                        <div class="team-title">Co-Founder</div>
+                        <div class="team-bio">
+                            Strategic co-founder bringing complementary expertise to SEP Dynamics' mission of revolutionizing quantitative finance through quantum-inspired computational frameworks.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Investment CTA -->
+            <section class="investment-cta">
+                <h2>Ready to Lead the Future of Finance?</h2>
+                <p>
+                    Join us in commercializing breakthrough technology that will define the next generation of financial intelligence. 
+                    Our de-risked approach combines proven technology with experienced leadership and clear market demand.
+                </p>
+                <div class="cta-buttons">
+                    <a href="mailto:alexander@sepdynamics.com" class="primary-button">Schedule Investor Meeting</a>
+                    <a href="#" class="secondary-button">Download Full Pitch Deck</a>
+                </div>
+            </section>
+
+            <!-- Risk Factors -->
+            <section class="risk-section">
+                <div class="section-header">
+                    <h2>Risk Factors & Mitigations</h2>
+                    <p>We've identified key risks and developed comprehensive mitigation strategies to protect investor capital and ensure execution success.</p>
+                </div>
+
+                <div class="risk-list">
+                    <div class="risk-item">
+                        <h4>Market Risk</h4>
+                        <p>Volatile markets could impact trading performance. Mitigated through extensive backtesting, diversified strategies, and conservative risk management protocols.</p>
+                    </div>
+
+                    <div class="risk-item">
+                        <h4>Technology Risk</h4>
+                        <p>Competitive advantage depends on proprietary algorithms. Protected through comprehensive IP strategy, patents on core quantum-inspired kernels, and trade secret protocols.</p>
+                    </div>
+
+                    <div class="risk-item">
+                        <h4>Regulatory Risk</h4>
+                        <p>Financial regulations could impact operations. Addressed through compliance-first approach, legal counsel, and flexible technology architecture.</p>
+                    </div>
+
+                    <div class="risk-item">
+                        <h4>Funding Risk</h4>
+                        <p>Capital requirements for growth and operations. Mitigated through parallel non-dilutive funding (NSF grants) and revenue generation from proprietary trading.</p>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
-
-    <!-- Footer -->
-    <footer id="contact">
-        <div class="footer-content">
-            <p>Contact us to learn more.</p>
-            <a href="mailto:alexander@sepdynamics.com" class="cta-button">alexander@sepdynamics.com</a>
-            <div class="footer-links">
-                <a href="index.html">Home</a>
-                <a href="https://github.com/your-repo">GitHub</a>
-            </div>
-            <p>&copy; 2025 SEP Dynamics. All Rights Reserved.</p>
-        </div>
-    </footer>
 </body>
 </html>
