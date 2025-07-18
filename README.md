@@ -80,7 +80,16 @@ _(Raw research notes, ongoing experiments, and full technical depth)_
 
 ---
 
-## 📚 **References & Inspirations**
+## 🚀 **Development Timeline**
+
+- **Present - Early 2025:** Continue development and refinement of the SEP engine and its theoretical underpinnings while employed at Apple (Flex).
+- **Early 2025:** Achieve a functional and compelling demo of the SEP engine.
+- **Mid 2025:** Transition to full-time dedication to the SEP project.
+- **July 2025:** Formally establish the LLC for the project and have the core engine built and verified.
+
+---
+
+## � **References & Inspirations**
 
 SEP synthesizes foundational work from:
 
