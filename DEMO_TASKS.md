@@ -49,3 +49,17 @@ This document tracks outstanding tasks for each interactive demo scene. Tasks fo
 ## Scene 12 – Reality’s Code
    [ ] Merge elements from all scenes into a cohesive meta‑visualization.
    [ ] Display SEP logo with propagating coherence waves.
+
+## New Demo Framing Integration
+   [ ] Create a universal demo_runner.html to host the shared canvas and load scenes based on a `scene` query parameter.
+   [ ] Update `demos.html` cards to open demo_runner.html with the selected scene id.
+   [ ] Ensure every scene module exports a default class compatible with `framework.js` loader.
+   [ ] Wire per-scene control panels through `interactive-controller.js` so each demo exposes its own settings.
+   [ ] Pass quality, speed, and intensity controls from the landing page to `demoFramework.updateSettings()`.
+   [ ] Implement placeholder handling in `framework.js` for scenes still under construction.
+   [ ] Preload required assets and show the animated loading overlay before a scene starts.
+   [ ] Verify that `framework.js` reads the `scene` parameter on page load and launches the correct module.
+   [ ] Rework `loadDemo()` in demos.html to remove old alerts and rely exclusively on the new loader.
+   [ ] Test scene initialization order to avoid race conditions when switching quickly between demos.
+   [ ] Validate unique control presets for all 12 scenes and document them in `scene-registry.js`.
+   [ ] Confirm full-screen, pause, and recording buttons operate consistently across scenes.
