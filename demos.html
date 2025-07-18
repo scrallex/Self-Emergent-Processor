@@ -684,19 +684,9 @@
 
             if (demo.status === 'ready') {
                 showLoading();
-                // Simulate loading time
                 setTimeout(() => {
-                    if (demoId === '7') {
-                        // Prime trajectory demo
-                        window.location.href = 'assets/js/demos/number_path_visualization.html';
-                    } else {
-                        // Other demos would load here
-                        alert(`Loading ${demo.name}...\nDemo framework integration in progress.`);
-                        hideLoading();
-                    }
+                    window.location.href = `demo.html?scene=${demoId}`;
                 }, 1000);
-            } else {
-                alert(`${demo.name} is currently ${demo.status}. Coming soon!`);
             }
         }
 
