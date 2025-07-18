@@ -143,7 +143,7 @@ class NumberPathVisualization {
         if (this.path) {
             this.currentFrame = (this.currentFrame || 0) + 1;
             if (this.currentFrame >= this.path.length) {
-                this.currentFrame = this.path.length -1;
+                this.currentFrame = this.path.length - 1;
             }
         }
 
@@ -174,6 +174,14 @@ class NumberPathVisualization {
             this.ctx.lineTo(endPoint.x * 10 + this.canvas.width / 2, endPoint.y * 10 + this.canvas.height / 2);
             this.ctx.stroke();
         }
+
+        if (this.path && this.currentFrame > 0) {
+            const head = this.path[this.currentFrame];
+            this.ctx.fillStyle = 'white';
+            this.ctx.beginPath();
+            this.ctx.arc(head.x * 10 + this.canvas.width / 2, head.y * 10 + this.canvas.height / 2, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
     }
 
     drawSpiral() {
@@ -191,6 +199,14 @@ class NumberPathVisualization {
             this.ctx.lineTo(endPoint.spiralX * 10 + this.canvas.width / 2, endPoint.spiralY * 10 + this.canvas.height / 2);
             this.ctx.stroke();
         }
+
+        if (this.path && this.currentFrame > 0) {
+            const head = this.path[this.currentFrame];
+            this.ctx.fillStyle = 'white';
+            this.ctx.beginPath();
+            this.ctx.arc(head.spiralX * 10 + this.canvas.width / 2, head.spiralY * 10 + this.canvas.height / 2, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
     }
 
     drawSphere() {
@@ -198,6 +214,9 @@ class NumberPathVisualization {
 
         if (this.pathLine) {
             this.scene.remove(this.pathLine);
+        }
+        if (this.headSphere) {
+            this.scene.remove(this.headSphere);
         }
 
         const geometry = new THREE.BufferGeometry();
@@ -224,6 +243,15 @@ class NumberPathVisualization {
         const material = new THREE.LineBasicMaterial({ vertexColors: true });
         this.pathLine = new THREE.LineSegments(geometry, material);
         this.scene.add(this.pathLine);
+
+        if (this.path && this.currentFrame > 0) {
+            const head = this.getSphereCoordinates(this.currentFrame);
+            const sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+            const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            this.headSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            this.headSphere.position.set(head.x, head.y, head.z);
+            this.scene.add(this.headSphere);
+        }
     }
 
     getSphereCoordinates(pathIndex) {
